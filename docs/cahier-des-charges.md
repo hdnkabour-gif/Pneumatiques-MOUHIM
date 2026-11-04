@@ -1,5 +1,6 @@
 # PNEU MOUHIM Manager – Cahier des charges
 
+**Version :** 1.1 – 4 novembre 2026
 **Activité :** pneumatiques neufs et d'occasion, jantes, huiles, filtres, batteries, éclairage et services automobiles liés
 **Pays :** Maroc – **Devise :** MAD – **Langues :** français / arabe (LTR et RTL)
 **Supports :** PC, tablette, smartphone
@@ -110,7 +111,7 @@ Catégories hiérarchiques configurables. Catégories initiales :
 
 ### 5.2 Champs communs à tous les produits
 
-Nom, catégorie, marque, référence fabricant, références alternatives, SKU interne (généré automatiquement), unité (pièce, litre…), TVA, prix d'achat de référence, CUMP calculé, niveau de prix (particulier / professionnel / revendeur), seuil minimum par site, fournisseur(s), photos, description, actif / inactif.
+Nom, catégorie, marque, référence fabricant, références alternatives, SKU interne (généré automatiquement), unité (pièce, bidon, kit…), TVA (20 %), prix d'achat de référence, CUMP calculé, niveau de prix (particulier / professionnel / revendeur), seuil minimum par site, fournisseur(s), photos, description, actif / inactif.
 
 Seuls sont obligatoires : nom (ou dimension), catégorie, prix de vente. Les autres champs sont dans « Plus de détails ».
 
@@ -143,8 +144,8 @@ La recherche propose les **jeux assortis** (2 ou 4 pneus de même dimension, mê
 
 ### 5.5 Huiles et liquides
 
-Viscosité (0W20, 5W30, 10W40…), normes ACEA / API, homologations constructeur, type (synthèse, semi-synthèse, minérale), contenance (1L, 4L, 5L, 20L, fût 208L).
-Vente **au litre** possible depuis un bidon ou fût (produit « vrac » en litres).
+Viscosité (0W20, 5W30, 10W40…), normes ACEA / API, homologations constructeur, type (synthèse, semi-synthèse, minérale), contenance (1L, 2L, 4L, 5L…).
+Vente **par bidon fermé uniquement** : pas de vente au litre ni de stock en fût.
 
 ### 5.6 Filtres
 
@@ -214,18 +215,28 @@ Un client peut avoir plusieurs véhicules : immatriculation (format marocain + W
 
 Historique complet par véhicule : pneus, huiles, filtres, batteries, prestations, kilométrage à chaque passage, factures.
 
-### 7.3 Compatibilité « apprise » (V1)
-À chaque vente liée à un véhicule, le système enregistre ce qui a été monté (dimension de pneu, huile et quantité, références de filtres, batterie, ampoules).
-Lors d'une recherche par modèle de véhicule, il propose :
-- **pour ce véhicule client** : « Dernière vidange : huile X 5W30, 4,5 L, filtre réf. Y » ;
-- **pour ce modèle** : « Dimensions les plus utilisées chez nous pour Peugeot 208 : 195/55 R16 (14 fois), 185/65 R15 (6 fois) ».
+### 7.3 Compatibilités vérifiées
+Associations modèle / motorisation / années ↔ produit ou spécification : dimensions de pneus (avant / arrière, indices), viscosité et normes d'huile, références de filtres, caractéristiques de batterie, culots d'ampoules, pièces de freinage si activé.
 
-### 7.4 Compatibilité saisie
-Saisie manuelle de compatibilités modèle / motorisation ↔ produit ou spécification (dimension, viscosité et norme, référence filtre, batterie, culot d'ampoule), avec **source**, **date** et **statut** : Non vérifié, Vérifié, À contrôler, Obsolète.
+Trois sources d'alimentation :
+1. **Données vérifiées fournies par l'entreprise** (chargement initial).
+2. **Saisie manuelle** par un utilisateur autorisé (permission dédiée).
+3. **Import Excel** avec modèle téléchargeable, contrôle, aperçu et rapport d'erreurs (section 17).
+
+Chaque compatibilité porte : source, date, auteur, statut (Vérifié, Non vérifié, À contrôler, Obsolète), notes.
+- Seules les compatibilités au statut **Vérifié** sont affichées comme compatibles dans l'écran de vente.
+- Les autres sont visibles uniquement par les utilisateurs autorisés, clairement marquées.
+- Toute modification est journalisée.
+
+### 7.4 Historique d'utilisation (information)
+Le système affiche séparément ce qui a déjà été monté :
+- **sur ce véhicule client** : « Dernière vidange : huile X 5W30, filtre réf. Y – 12/09/2026, 84 000 km » ;
+- **sur ce modèle chez nous** : « Déjà monté sur Peugeot 208 : 195/55 R16 (14 fois) ».
+
+Cet historique est une information d'aide, jamais présenté comme une compatibilité vérifiée. Un utilisateur autorisé peut, après vérification, le transformer en compatibilité vérifiée.
 
 Règles :
-- Jamais de compatibilité inventée.
-- Affichage clair de la différence entre « vérifié », « déjà utilisé chez nous » et « non vérifié ».
+- Jamais de compatibilité inventée ou générée automatiquement.
 - Compatibilité indépendante du stock : afficher la disponibilité par site à côté.
 
 ---
@@ -292,7 +303,7 @@ Statuts d'une vente : Brouillon, Validée, Annulée (par avoir).
 
 ### 10.4 Mentions et mise en page
 - En-tête configurable : logo, raison sociale, adresse, ICE, IF, RC, Patente (TP), CNSS, téléphone, RIB.
-- Détail HT / TVA / TTC, montant TTC **en toutes lettres** (« Arrêtée la présente facture à la somme de… »).
+- Détail HT / TVA 20 % / TTC, montant TTC **en toutes lettres** (« Arrêtée la présente facture à la somme de… »).
 - N° de bon de commande client si fourni.
 - Français par défaut ; arabe possible.
 - Toutes les mentions légales, le droit de timbre éventuel et la numérotation sont **validés par le comptable** avant production.
@@ -433,7 +444,7 @@ Chaque phase se termine par des tests verts, une démonstration et la mise à jo
 | 4. Argent | Comptes clients, paiements, affectation, crédit et plafonds, chèques / LCN, balance âgée, relevés, caisse par site, clôture, verrouillage, dépenses | Scénarios de crédit et de caisse (voir 21) |
 | 5. Démarrage | Imports Excel, soldes et stocks d'ouverture, tableau de bord, résumé quotidien, `DemoSeeder` | **Mise à l'essai chez le client** |
 | 6. Achats et atelier | Fournisseurs, commandes, réceptions, dettes, comparaison des prix, écran technicien, tableau atelier | Cycle achat → stock → paiement complet |
-| 7. Compléments | Compatibilité (apprise + saisie), rapports avancés, rapports flottes, équipements et maintenance, exports comptables, garanties | Rapports validés par le propriétaire |
+| 7. Compléments | Compatibilités vérifiées (saisie manuelle, import Excel, données fournies), historique d'utilisation, rapports avancés, rapports flottes, équipements et maintenance, exports comptables, garanties | Rapports validés par le propriétaire |
 
 ---
 
@@ -472,4 +483,4 @@ Chaque phase se termine par des tests verts, une démonstration et la mise à jo
 
 ## 22. Points à valider avec le comptable avant production
 
-Numérotation des documents, mentions obligatoires sur factures et avoirs, droit de timbre sur paiements en espèces, traitement de la TVA sur les pneus d'occasion et les reprises, délais de paiement légaux, méthode de valorisation du stock (CUMP), format des exports comptables.
+Ces points sont des paramètres configurables (D-30) en attendant la validation : numérotation des documents, mentions obligatoires sur factures et avoirs, droit de timbre sur paiements en espèces, traitement de la TVA sur les pneus d'occasion et les reprises, délais de paiement légaux, méthode de valorisation du stock (CUMP), format des exports comptables.

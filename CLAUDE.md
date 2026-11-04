@@ -74,7 +74,7 @@ L'application est utilisée par des vendeurs et des techniciens pressés, sur PC
 
 - Une vente standard doit pouvoir être réalisée **en moins d'une minute**, sur un seul écran.
 - Une **barre de recherche unique** comprend : dimension (`205 55 16`, `2055516`, `205/55R16`), immatriculation, nom, téléphone, référence, SKU.
-- Valeurs par défaut partout : site de l'utilisateur, TVA par défaut, date du jour, paiement en espèces.
+- Valeurs par défaut partout : site de l'utilisateur, TVA 20 %, date du jour, paiement en espèces.
 - Champs obligatoires réduits au strict minimum ; champs avancés repliés (« Plus de détails »).
 - Boutons larges et utilisables au doigt sur tablette et téléphone.
 - L'écran de vente et l'écran technicien ne sont **pas** des tables Filament : ce sont des écrans Livewire dédiés, rapides et épurés.

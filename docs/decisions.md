@@ -1,5 +1,7 @@
 # Décisions du projet – PNEU MOUHIM Manager
 
+**Version 1.1 – 4 novembre 2026** (modifications : D-06, D-19, D-24, D-30)
+
 Ces décisions sont validées. Toute modification nécessite l'accord explicite du responsable du projet.
 Format : **D-XX – Titre** : décision, puis raison.
 
@@ -17,7 +19,7 @@ Format : **D-XX – Titre** : décision, puis raison.
 
 **D-05 – Montants.** Stockés en centimes (bigint). Devise unique : MAD.
 
-**D-06 – Quantités.** `decimal(12,3)` avec une unité par produit (pièce, litre, kg…), pour permettre la vente d'huile au litre (vrac).
+**D-06 – Quantités.** Quantités entières (unité : pièce, bidon, kit…). Pas de vente au litre ni de stock en fût : les huiles sont achetées et vendues par bidon fermé (1L, 4L, 5L…).
 
 ## Sites et stock
 
@@ -47,7 +49,7 @@ Format : **D-XX – Titre** : décision, puis raison.
 
 **D-18 – Protection des marges.** Prix de vente suggéré = coût + marge par catégorie. Vente sous le coût bloquée sans approbation. Remise plafonnée par rôle ; au-delà, approbation du propriétaire.
 
-**D-19 – TVA.** 20 % par défaut, configurable par produit et par service. Toutes les règles fiscales (mentions légales, droit de timbre, délais de paiement) sont validées par le comptable avant production.
+**D-19 – TVA.** Taux unique de 20 % sur tous les produits et services. Le taux est un paramètre de l'application (non codé en dur) et il est enregistré sur chaque ligne de document, afin qu'un changement futur n'altère jamais les documents déjà émis.
 
 ## Crédit et paiements
 
@@ -61,7 +63,7 @@ Format : **D-XX – Titre** : décision, puis raison.
 
 ## Atelier, compatibilité, divers
 
-**D-24 – Compatibilité véhicules.** V1 = compatibilité « apprise » (à partir des ventes réelles et de l'historique des véhicules clients) + saisie manuelle avec source et statut. Pas de base de données commerciale (type TecDoc) en V1.
+**D-24 – Compatibilité véhicules.** Seules les compatibilités **vérifiées** sont présentées comme compatibilités. Sources : données vérifiées fournies par l'entreprise, saisie manuelle par un utilisateur autorisé, import Excel. Chaque ligne a une source, une date, un auteur et un statut. L'historique des véhicules clients (ce qui a déjà été monté) est affiché séparément, comme information, jamais comme compatibilité. Pas de base de données commerciale (type TecDoc) en V1.
 
 **D-25 – Approbations.** Module central de demandes d'approbation (remise, crédit, vente sous le coût, ajustement de stock, annulation). Le propriétaire est notifié et décide depuis son téléphone.
 
@@ -72,3 +74,5 @@ Format : **D-XX – Titre** : décision, puis raison.
 **D-28 – Hors périmètre V1.** Paie, planning RH, e-commerce, comptabilité complète (export uniquement), API WhatsApp, base TecDoc.
 
 **D-29 – Verrouillage journalier.** Après clôture de caisse d'un site, les opérations de cette journée ne sont plus modifiables sans permission du propriétaire, avec motif obligatoire.
+
+**D-30 – Paramètres fiscaux.** Droit de timbre, règles de numérotation, mentions légales et traitement fiscal des pneus d'occasion et des reprises sont des **paramètres configurables** (activables / désactivables, taux et seuils modifiables) en attendant la validation du comptable. Aucune de ces règles n'est codée en dur.
