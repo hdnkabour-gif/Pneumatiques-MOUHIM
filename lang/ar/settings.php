@@ -1,0 +1,38 @@
+<?php
+
+return [
+    'title' => 'إعدادات الشركة',
+    'saved' => 'تم حفظ الإعدادات.',
+    'sections' => [
+        'company' => 'الشركة',
+        'legal' => 'المعرّفات القانونية',
+        'bank' => 'البنك',
+        'tax' => 'الضرائب',
+        'tax_help' => 'إعدادات مؤقتة في انتظار تأكيد المحاسب (D-30).',
+    ],
+    'fields' => [
+        'company_name' => 'الاسم التجاري',
+        'company_address' => 'العنوان',
+        'company_city' => 'المدينة',
+        'company_phone' => 'الهاتف',
+        'company_email' => 'البريد الإلكتروني',
+        'company_logo' => 'الشعار',
+        'ice' => 'ICE (المعرف الموحد للمقاولة)',
+        'if' => 'IF (التعريف الضريبي)',
+        'rc' => 'RC (السجل التجاري)',
+        'patente' => 'الضريبة المهنية (TP)',
+        'cnss' => 'CNSS',
+        'bank_name' => 'البنك',
+        'rib' => 'RIB',
+        'vat_rate' => 'نسبة الضريبة على القيمة المضافة (%)',
+        'stamp_duty_enabled' => 'واجب التنبر على الأداء نقدا',
+        'stamp_duty_rate' => 'نسبة واجب التنبر (%)',
+        'stamp_duty_threshold' => 'الحد الأدنى (درهم)',
+        'legal_mentions' => 'البيانات القانونية (أسفل الفاتورة)',
+        'used_tyre_vat_enabled' => 'تطبيق الضريبة على العجلات المستعملة',
+        'trade_in_vat_enabled' => 'تطبيق الضريبة على الاسترجاع',
+        'document_number_pattern' => 'صيغة الترقيم',
+        'document_number_pattern_help' => 'المتغيرات: {PREFIX}، {YEAR}، {NUMBER}',
+        'document_number_padding' => 'عدد الأرقام',
+    ],
+];

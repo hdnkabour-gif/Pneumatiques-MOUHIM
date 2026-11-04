@@ -1,0 +1,38 @@
+<?php
+
+return [
+    'title' => 'Paramètres société',
+    'saved' => 'Paramètres enregistrés.',
+    'sections' => [
+        'company' => 'Société',
+        'legal' => 'Identifiants légaux',
+        'bank' => 'Banque',
+        'tax' => 'Fiscalité',
+        'tax_help' => 'Paramètres provisoires à faire valider par le comptable (D-30).',
+    ],
+    'fields' => [
+        'company_name' => 'Raison sociale',
+        'company_address' => 'Adresse',
+        'company_city' => 'Ville',
+        'company_phone' => 'Téléphone',
+        'company_email' => 'Email',
+        'company_logo' => 'Logo',
+        'ice' => 'ICE',
+        'if' => 'IF (Identifiant fiscal)',
+        'rc' => 'RC (Registre de commerce)',
+        'patente' => 'Patente (TP)',
+        'cnss' => 'CNSS',
+        'bank_name' => 'Banque',
+        'rib' => 'RIB',
+        'vat_rate' => 'Taux de TVA (%)',
+        'stamp_duty_enabled' => 'Droit de timbre sur paiements en espèces',
+        'stamp_duty_rate' => 'Taux du droit de timbre (%)',
+        'stamp_duty_threshold' => 'Seuil minimum (MAD)',
+        'legal_mentions' => 'Mentions légales (pied de facture)',
+        'used_tyre_vat_enabled' => 'TVA appliquée aux pneus d\'occasion',
+        'trade_in_vat_enabled' => 'TVA appliquée aux reprises',
+        'document_number_pattern' => 'Format de numérotation',
+        'document_number_pattern_help' => 'Variables : {PREFIX}, {YEAR}, {NUMBER}',
+        'document_number_padding' => 'Nombre de chiffres',
+    ],
+];
