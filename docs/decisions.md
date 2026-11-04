@@ -76,3 +76,23 @@ Format : **D-XX – Titre** : décision, puis raison.
 **D-29 – Verrouillage journalier.** Après clôture de caisse d'un site, les opérations de cette journée ne sont plus modifiables sans permission du propriétaire, avec motif obligatoire.
 
 **D-30 – Paramètres fiscaux.** Droit de timbre, règles de numérotation, mentions légales et traitement fiscal des pneus d'occasion et des reprises sont des **paramètres configurables** (activables / désactivables, taux et seuils modifiables) en attendant la validation du comptable. Aucune de ces règles n'est codée en dur.
+
+## Décisions techniques – Phase 1 (4 novembre 2026)
+
+Choix d'implémentation pris pendant la phase 1. Les points marqués **(à confirmer)** attendent la réponse du responsable du projet.
+
+**D-31 – Versions.** PHP 8.4, Laravel 13, Filament 5, Livewire 4, PostgreSQL 17, Pest 5. Image Docker unique basée sur FrankenPHP (serveur web + PHP), identique en local et sur Railway. Raison : versions stables actuelles, un seul conteneur simple à déployer.
+
+**D-32 – Rôles et permissions.** Package gratuit `spatie/laravel-permission`. Les cinq rôles par défaut existent dès le départ, y compris Responsable de site (il suffit de ne l'attribuer à personne s'il n'est pas utilisé). Le rôle Propriétaire a toujours toutes les permissions et n'est pas modifiable. Les utilisateurs et les sites ne sont jamais supprimés, seulement désactivés. Raison : l'historique doit rester attribuable.
+
+**D-33 – Affectation aux sites.** Un utilisateur a un ou plusieurs sites affectés et un site par défaut. Le propriétaire (ou la permission « voir tous les sites ») voit tout. Le filtrage est appliqué dans les requêtes serveur, pas seulement dans l'interface.
+
+**D-34 – Journal d'activité.** Package `spatie/laravel-activitylog`, enrichi du site et de l'adresse IP. Il est non modifiable : un trigger PostgreSQL refuse toute modification ou suppression, et le journal n'est jamais purgé.
+
+**D-35 – Paramètres.** Table clé / valeur. Les valeurs par défaut sont dans `config/mouhim.php`. Les taux sont stockés en points de base (20 % = 2000) et les montants en centimes, jamais en nombre à virgule.
+
+**D-36 – Compte propriétaire.** Aucun compte n'est créé par défaut. Le premier propriétaire est créé par la commande `php artisan app:create-owner`, avec un mot de passe d'au moins 12 caractères.
+
+**D-37 – Sauvegardes.** Package `spatie/laravel-backup`. Sauvegarde quotidienne à 02:00 (heure du Maroc) de la base et des fichiers envoyés, vers un stockage compatible S3 externe à Railway, conservée au moins 30 jours. Restauration avec `php artisan app:backup-restore`, vérifiée par un test automatisé. Fournisseur de stockage **(à confirmer)** : Cloudflare R2 ou Backblaze B2, qui ont tous deux une offre gratuite suffisante.
+
+**D-38 – Double authentification du propriétaire.** Reportée **(à confirmer)**. Filament 5 la propose nativement : elle peut être activée plus tard sans refonte.
