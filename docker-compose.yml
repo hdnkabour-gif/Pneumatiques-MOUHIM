@@ -1,0 +1,50 @@
+# Environnement local identique à Railway : même image, même entrypoint.
+services:
+  app:
+    build:
+      context: .
+      args:
+        COMPOSER_DEV: "1"
+    command: web
+    ports:
+      - "8080:8080"
+    env_file: .env
+    environment:
+      DB_HOST: db
+      PORT: 8080
+      # Tests (php artisan test) use the mouhim_test database created by docker/postgres-init.sql
+    depends_on:
+      db:
+        condition: service_healthy
+
+  scheduler:
+    build:
+      context: .
+      args:
+        COMPOSER_DEV: "1"
+    command: scheduler
+    env_file: .env
+    environment:
+      DB_HOST: db
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-mouhim}
+      POSTGRES_USER: ${DB_USERNAME:-mouhim}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-mouhim}"]
+      interval: 5s
+      retries: 10
+
+volumes:
+  pgdata:
