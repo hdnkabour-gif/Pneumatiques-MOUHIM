@@ -16,7 +16,7 @@ return [
     'category_type' => [
         'new_tyre' => 'Pneus neufs', 'used_tyre' => 'Pneus d\'occasion', 'rim' => 'Jantes', 'tyre_supply' => 'Consommables pneus',
         'oil' => 'Huiles', 'fluid' => 'Liquides', 'filter' => 'Filtres', 'battery' => 'Batteries', 'lighting' => 'Éclairage',
-        'wiper' => 'Essuie-glace', 'brake' => 'Freinage', 'accessory' => 'Accessoires', 'service' => 'Prestations', 'other' => 'Autres',
+        'wiper' => 'Essuie-glace', 'brake' => 'Freinage', 'accessory' => 'Accessoires', 'service' => 'Prestations', 'bundle' => 'Forfaits', 'other' => 'Autres',
     ],
     'used_tyre_status' => [
         'pending_inspection' => 'En attente de contrôle', 'in_stock' => 'En stock', 'reserved' => 'Réservé',

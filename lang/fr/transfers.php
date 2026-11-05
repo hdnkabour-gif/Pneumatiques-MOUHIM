@@ -31,6 +31,8 @@ return [
         'suggested' => 'Suggéré',
     ],
     'actions' => [
+        'new' => 'Nouveau transfert',
+        'add_line' => 'Ajouter un article',
         'send' => 'Envoyer',
         'receive' => 'Réceptionner',
         'cancel' => 'Annuler le transfert',

@@ -3,6 +3,7 @@
 return [
     'name' => 'PNEU MOUHIM Manager',
     'language' => 'Langue',
+    'print' => 'Imprimer',
     'more_details' => 'Plus de détails',
     'yes' => 'Oui',
     'no' => 'Non',

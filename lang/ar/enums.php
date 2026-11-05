@@ -16,7 +16,7 @@ return [
     'category_type' => [
         'new_tyre' => 'إطارات جديدة', 'used_tyre' => 'إطارات مستعملة', 'rim' => 'جنوط', 'tyre_supply' => 'مستهلكات الإطارات',
         'oil' => 'زيوت', 'fluid' => 'سوائل', 'filter' => 'فلاتر', 'battery' => 'بطاريات', 'lighting' => 'إنارة',
-        'wiper' => 'ماسحات', 'brake' => 'فرامل', 'accessory' => 'إكسسوارات', 'service' => 'خدمات', 'other' => 'أخرى',
+        'wiper' => 'ماسحات', 'brake' => 'فرامل', 'accessory' => 'إكسسوارات', 'service' => 'خدمات', 'bundle' => 'عروض مجمّعة', 'other' => 'أخرى',
     ],
     'used_tyre_status' => [
         'pending_inspection' => 'في انتظار الفحص', 'in_stock' => 'في المخزون', 'reserved' => 'محجوز',

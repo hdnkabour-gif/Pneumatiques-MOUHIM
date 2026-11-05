@@ -3,6 +3,7 @@
 return [
     'label' => 'Pneu d\'occasion',
     'plural' => 'Pneus d\'occasion',
+    'search_placeholder' => 'Code, dimension (205 55 16), modèle…',
     'fields' => [
         'code' => 'Code',
         'site' => 'Site',

@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'search_placeholder' => 'المقاس (205 55 16)، الاسم، SKU، المرجع، 5W30، H7…',
+    'filters' => ['in_stock' => 'في المخزون'],
     'navigation' => 'الكتالوج',
     'categories' => [
         'label' => 'صنف',
@@ -97,6 +99,9 @@ return [
         'quantity' => 'الكمية',
         'allocated_price' => 'سعر الوحدة داخل العرض',
         'bundle_total' => 'مجموع العرض',
+    ],
+    'help' => [
+        'tyre_name' => 'فارغ = يُنشأ تلقائيا من العلامة والطراز والمقاس.',
     ],
     'sections' => [
         'main' => 'المعلومات الأساسية',

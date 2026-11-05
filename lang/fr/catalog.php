@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'search_placeholder' => 'Dimension (205 55 16), nom, SKU, référence, 5W30, H7…',
+    'filters' => ['in_stock' => 'En stock'],
     'navigation' => 'Catalogue',
     'categories' => [
         'label' => 'Catégorie',
@@ -97,6 +99,9 @@ return [
         'quantity' => 'Quantité',
         'allocated_price' => 'Prix unitaire dans le forfait',
         'bundle_total' => 'Total du forfait',
+    ],
+    'help' => [
+        'tyre_name' => 'Vide = généré depuis la marque, le modèle et la dimension.',
     ],
     'sections' => [
         'main' => 'Informations principales',
