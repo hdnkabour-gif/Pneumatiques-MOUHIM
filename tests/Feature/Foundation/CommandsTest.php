@@ -49,3 +49,52 @@ it('refuses to load demo data in production', function () {
     $this->app['env'] = 'testing';
     expect(User::query()->count())->toBe(0);
 });
+
+describe('owner bootstrap from environment variables', function () {
+    $set = function (array $vars) {
+        foreach ($vars as $key => $value) {
+            putenv("{$key}={$value}");
+            $_ENV[$key] = $_SERVER[$key] = $value;
+        }
+    };
+
+    afterEach(function () {
+        foreach (['OWNER_NAME', 'OWNER_EMAIL', 'OWNER_PASSWORD'] as $key) {
+            putenv($key);
+            unset($_ENV[$key], $_SERVER[$key]);
+        }
+    });
+
+    it('does nothing when the variables are absent', function () {
+        $this->artisan('app:create-owner', ['--from-env' => true])->assertSuccessful();
+
+        expect(User::query()->count())->toBe(0);
+    });
+
+    it('creates the first owner from the variables', function () use ($set) {
+        $set(['OWNER_NAME' => 'Mouhim', 'OWNER_EMAIL' => 'owner@pneumouhim.ma', 'OWNER_PASSWORD' => 'Tres-Solide-2026']);
+
+        $this->artisan('app:create-owner', ['--from-env' => true])->assertSuccessful();
+
+        $owner = User::query()->where('email', 'owner@pneumouhim.ma')->firstOrFail();
+        expect($owner->isOwner())->toBeTrue()->and($owner->name)->toBe('Mouhim');
+    });
+
+    it('never creates a second owner, even if the variables are left behind', function () use ($set) {
+        owner();
+        $set(['OWNER_EMAIL' => 'second@pneumouhim.ma', 'OWNER_PASSWORD' => 'Tres-Solide-2026']);
+
+        $this->artisan('app:create-owner', ['--from-env' => true])->assertSuccessful();
+
+        expect(User::query()->where('email', 'second@pneumouhim.ma')->exists())->toBeFalse()
+            ->and(User::role(RoleName::Owner->value)->count())->toBe(1);
+    });
+
+    it('refuses a weak password from the variables', function () use ($set) {
+        $set(['OWNER_EMAIL' => 'owner@pneumouhim.ma', 'OWNER_PASSWORD' => 'admin']);
+
+        $this->artisan('app:create-owner', ['--from-env' => true])->assertFailed();
+
+        expect(User::query()->count())->toBe(0);
+    });
+});

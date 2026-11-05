@@ -24,5 +24,6 @@ return [
     'commands' => [
         'owner_created' => 'Compte propriétaire créé : :email',
         'owner_exists' => 'Un propriétaire existe déjà. Utilisez --force pour en créer un autre.',
+        'owner_env_ignored' => 'Un propriétaire existe déjà : les variables OWNER_* sont ignorées. Supprimez-les dans Railway.',
     ],
 ];

@@ -24,5 +24,6 @@ return [
     'commands' => [
         'owner_created' => 'تم إنشاء حساب المالك: :email',
         'owner_exists' => 'يوجد مالك بالفعل. استعمل --force لإنشاء مالك آخر.',
+        'owner_env_ignored' => 'يوجد مالك بالفعل: تم تجاهل متغيرات OWNER_*. احذفها من Railway.',
     ],
 ];
