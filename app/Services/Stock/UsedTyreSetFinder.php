@@ -24,7 +24,7 @@ class UsedTyreSetFinder
             ->when($size, fn ($q) => $q->where('width', $size['width'])
                 ->where('aspect_ratio', $size['aspect_ratio'])
                 ->where('rim_diameter', $size['rim_diameter']))
-            ->with('brand')
+            ->with(['brand', 'site'])
             ->get();
 
         $sets = collect();

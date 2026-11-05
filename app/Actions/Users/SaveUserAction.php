@@ -6,6 +6,7 @@ use App\Enums\RoleName;
 use App\Models\User;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Models\Role;
 
@@ -49,7 +50,11 @@ class SaveUserAction
 
             $user ??= new User;
             $wasOwner = $user->exists && $user->isOwner();
-            $user->fill($attributes)->save();
+            $user->fill($attributes);
+            if (filled($data['approval_pin'] ?? null) && $actor->isOwner()) {
+                $user->approval_pin = Hash::make((string) $data['approval_pin']);
+            }
+            $user->save();
             $user->syncRoles([$role->name]);
             $user->sites()->sync($siteIds);
 

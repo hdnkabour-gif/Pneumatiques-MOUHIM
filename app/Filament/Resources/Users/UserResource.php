@@ -19,6 +19,9 @@ class UserResource extends Resource
 {
     protected static ?string $model = User::class;
 
+    /** French labels keep their own capitalisation ("Pneus d'occasion"). */
+    protected static bool $hasTitleCaseModelLabel = false;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUsers;
 
     protected static ?int $navigationSort = 20;
@@ -50,7 +53,7 @@ class UserResource extends Resource
             return $query;
         }
 
-        return $query->where(fn (Builder $q) => $q
+        return $query->where(fn (Builder $query) => $query
             ->whereKey($actor->getKey())
             ->orWhereHas('sites', fn (Builder $s) => $s->whereIn('sites.id', $actor->siteIds())));
     }

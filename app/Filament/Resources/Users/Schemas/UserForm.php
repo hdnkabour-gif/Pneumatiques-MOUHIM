@@ -69,6 +69,11 @@ class UserForm
                     ->collapsed()
                     ->schema([
                         TextInput::make('phone')->label(__('users.fields.phone'))->tel()->maxLength(30),
+                        TextInput::make('approval_pin')->label(__('approvals.fields.approval_pin'))
+                            ->helperText(__('approvals.fields.approval_pin_help'))
+                            ->password()->revealable()->rule('regex:/^\\d{4,8}$/')->autocomplete('new-password')
+                            ->dehydrated(fn (?string $state) => filled($state))
+                            ->visible(fn () => auth()->user()?->isOwner()),
                     ]),
             ]);
     }
