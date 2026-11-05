@@ -24,6 +24,26 @@ enum Permission: string
     // Activity log
     case ActivityLogView = 'activity_log.view';
 
+    // Catalog (phase 2)
+    case ProductsView = 'products.view';
+    case ProductsManage = 'products.manage';
+    case CostsView = 'costs.view'; // purchase costs, average cost, margins, stock value
+
+    // Stock (phase 2)
+    case StockView = 'stock.view';
+    case StockReceive = 'stock.receive';
+    case StockAdjust = 'stock.adjust'; // request adjustments / damaged (approval required)
+    case TransfersSend = 'transfers.send';
+    case TransfersReceive = 'transfers.receive';
+    case ReplenishmentRequest = 'replenishment.request';
+    case InventoryCount = 'inventory.count';
+    case InventoryApprove = 'inventory.approve';
+    case UsedTyresManage = 'used_tyres.manage';
+    case UsedTyresInspect = 'used_tyres.inspect';
+
+    // Approvals
+    case ApprovalsDecide = 'approvals.decide';
+
     public function label(): string
     {
         return __('permissions.'.$this->value);

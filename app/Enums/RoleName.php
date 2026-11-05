@@ -29,8 +29,20 @@ enum RoleName: string
     {
         return match ($this) {
             self::Owner => Permission::cases(),
-            self::SiteManager => [Permission::SitesView, Permission::UsersView],
-            self::Seller, self::Storekeeper => [Permission::SitesView],
+            self::SiteManager => [
+                Permission::SitesView, Permission::UsersView, Permission::ProductsView, Permission::StockView,
+                Permission::StockAdjust, Permission::TransfersReceive, Permission::ReplenishmentRequest,
+                Permission::InventoryCount, Permission::UsedTyresManage, Permission::UsedTyresInspect,
+            ],
+            self::Seller => [
+                Permission::SitesView, Permission::ProductsView, Permission::StockView,
+                Permission::ReplenishmentRequest, Permission::UsedTyresManage, Permission::UsedTyresInspect,
+            ],
+            self::Storekeeper => [
+                Permission::SitesView, Permission::ProductsView, Permission::StockView, Permission::StockReceive,
+                Permission::StockAdjust, Permission::TransfersSend, Permission::TransfersReceive,
+                Permission::InventoryCount, Permission::UsedTyresManage,
+            ],
             self::Technician => [],
         };
     }
