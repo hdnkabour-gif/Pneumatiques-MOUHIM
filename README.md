@@ -120,7 +120,12 @@ Version du client PostgreSQL : `pg_dump` doit être de version ≥ au serveur. L
 version 17 ; si le PostgreSQL de Railway est plus récent, définir la variable de build
 `PG_CLIENT_VERSION` (ex. `18`).
 
-Premier déploiement : ouvrir un shell sur le service `web` puis `php artisan app:create-owner`.
+Premier déploiement – compte propriétaire, au choix :
+
+- **Console Railway** : `php artisan app:create-owner` (interactif) ;
+- **sans console** : ajouter temporairement `OWNER_NAME`, `OWNER_EMAIL`, `OWNER_PASSWORD`
+  (≥ 12 caractères, lettres et chiffres). Le compte est créé au démarrage s'il n'existe aucun
+  propriétaire ; **supprimer ensuite ces trois variables**. Elles sont ignorées dès qu'un propriétaire existe.
 
 ## Sauvegardes et restauration
 

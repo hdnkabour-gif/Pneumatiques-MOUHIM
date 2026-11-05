@@ -1,5 +1,12 @@
 # Changelog
 
+## [Non publié]
+
+### Ajouté
+- Création du premier propriétaire depuis les variables `OWNER_*` au démarrage du conteneur
+  (`app:create-owner --from-env`), pour les hébergements sans console disponible. Sans effet si un
+  propriétaire existe déjà ; un mot de passe trop faible est refusé sans bloquer le démarrage.
+
 ## [Phase 1 – Fondations] – 2026-11-04
 
 ### Ajouté
