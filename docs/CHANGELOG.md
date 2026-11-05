@@ -34,6 +34,7 @@
 ## [Non publié]
 
 ### Ajouté
+- 57 marques de pneus et de lubrifiants issues du classeur de référence V1.2 (noms seuls, aucun produit créé).
 - Double authentification obligatoire pour le propriétaire (application Google / Microsoft Authenticator,
   codes de secours), configurée depuis la page « Profil » (D-47). Indisponible pour les autres rôles.
 - Page « Profil » : chaque utilisateur peut changer son nom, son email et son mot de passe.

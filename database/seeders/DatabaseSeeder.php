@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             RolesAndPermissionsSeeder::class,
             SitesSeeder::class,
             CategoriesSeeder::class,
+            ReferenceBrandsSeeder::class,
         ]);
     }
 }
