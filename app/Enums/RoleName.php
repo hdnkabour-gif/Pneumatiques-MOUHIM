@@ -33,10 +33,12 @@ enum RoleName: string
                 Permission::SitesView, Permission::UsersView, Permission::ProductsView, Permission::StockView,
                 Permission::StockAdjust, Permission::TransfersReceive, Permission::ReplenishmentRequest,
                 Permission::InventoryCount, Permission::UsedTyresManage, Permission::UsedTyresInspect,
+                Permission::CompatibilitiesView,
             ],
             self::Seller => [
                 Permission::SitesView, Permission::ProductsView, Permission::StockView,
                 Permission::ReplenishmentRequest, Permission::UsedTyresManage, Permission::UsedTyresInspect,
+                Permission::CompatibilitiesView,
             ],
             self::Storekeeper => [
                 Permission::SitesView, Permission::ProductsView, Permission::StockView, Permission::StockReceive,

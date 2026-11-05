@@ -44,6 +44,11 @@ enum Permission: string
     // Approvals
     case ApprovalsDecide = 'approvals.decide';
 
+    // Vehicles & compatibilities (D-48)
+    case CompatibilitiesView = 'compatibilities.view';
+    case CompatibilitiesManage = 'compatibilities.manage';   // reference data, manual entry, import
+    case CompatibilitiesVerify = 'compatibilities.verify';   // mark a compatibility as verified
+
     public function label(): string
     {
         return __('permissions.'.$this->value);
