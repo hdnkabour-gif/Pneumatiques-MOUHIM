@@ -4,6 +4,7 @@ use App\Enums\RoleName;
 use App\Models\Site;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
+use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -27,7 +28,11 @@ function userWithRole(RoleName $role, string ...$siteCodes): User
     return User::factory()->role($role)->forSites(...$sites)->create();
 }
 
+/** An owner with two-factor authentication already set up (D-47). */
 function owner(): User
 {
-    return userWithRole(RoleName::Owner, 'DEP', 'M01', 'M02');
+    $owner = userWithRole(RoleName::Owner, 'DEP', 'M01', 'M02');
+    $owner->forceFill(['app_authentication_secret' => app(AppAuthentication::class)->generateSecret()])->save();
+
+    return $owner;
 }

@@ -3,8 +3,11 @@
 namespace App\Providers\Filament;
 
 use App\Enums\Locale;
+use App\Filament\Pages\Auth\EditProfile;
+use App\Http\Middleware\EnsureOwnerTwoFactor;
 use App\Http\Middleware\SetLocale;
 use Filament\Actions\Action;
+use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -34,6 +37,11 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             // Built-in login is rate limited (5 attempts / minute) and refuses inactive users.
             ->login()
+            ->profile(EditProfile::class, isSimple: false)
+            // Google Authenticator / Microsoft Authenticator…, with recovery codes (§19, D-47).
+            ->multiFactorAuthentication([
+                AppAuthentication::make()->recoverable()->brandName('PNEU MOUHIM'),
+            ])
             ->brandName(fn () => __('app.name'))
             ->colors([
                 'primary' => Color::Amber,
@@ -81,6 +89,7 @@ class AdminPanelProvider extends PanelProvider
             ->middleware([SetLocale::class], isPersistent: true)
             ->authMiddleware([
                 Authenticate::class,
+                EnsureOwnerTwoFactor::class,
             ]);
     }
 }

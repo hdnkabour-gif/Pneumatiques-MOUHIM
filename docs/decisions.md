@@ -114,3 +114,5 @@ Choix d'implémentation pris pendant la phase 1. Les points marqués **(à confi
 **D-45 – Stock jamais négatif.** Une sortie qui rendrait le stock d'un site négatif est refusée. Les niveaux de stock sont verrouillés (`SELECT … FOR UPDATE`) pendant chaque mouvement.
 
 **D-46 – Pneus d'occasion hors registre quantitatif.** Chaque pneu d'occasion est une fiche individuelle dont le statut et le site font foi. Ses entrées et sorties sont tout de même tracées dans `stock_movements`, avec la fiche liée. Le transfert de pneus d'occasion entre sites viendra plus tard **(à confirmer)**.
+
+**D-47 – Double authentification.** Obligatoire pour les comptes propriétaire, indisponible pour les autres rôles. Elle utilise une application d'authentification sur le téléphone (Google Authenticator, Microsoft Authenticator…) et fournit des codes de secours à usage unique. Un propriétaire qui ne l'a pas encore configurée est redirigé vers son profil jusqu'à ce qu'il le fasse.

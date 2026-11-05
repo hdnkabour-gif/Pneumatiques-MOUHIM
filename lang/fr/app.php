@@ -11,6 +11,10 @@ return [
     'inactive' => 'Inactif',
     'created_at' => 'Créé le',
     'updated_at' => 'Modifié le',
+    'two_factor' => [
+        'required_title' => 'Double authentification obligatoire',
+        'required_body' => 'Votre compte propriétaire doit être protégé par un code sur votre téléphone. Installez Google Authenticator (ou équivalent), puis cliquez sur « Configurer » ci-dessous et scannez le QR code. Conservez les codes de secours en lieu sûr.',
+    ],
     'navigation' => [
         'catalog' => 'Catalogue',
         'stock' => 'Stock',

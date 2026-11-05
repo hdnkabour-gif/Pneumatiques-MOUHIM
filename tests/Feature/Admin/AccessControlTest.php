@@ -54,7 +54,8 @@ it('lets the site manager see users but not manage them', function () {
 });
 
 it('lets every active role open the dashboard', function (RoleName $role) {
-    $this->actingAs(userWithRole($role, 'M01'))->get('/admin')->assertOk();
+    $user = $role === RoleName::Owner ? owner() : userWithRole($role, 'M01');
+    $this->actingAs($user)->get('/admin')->assertOk();
 })->with(RoleName::cases());
 
 it('redirects guests to the login page', function (string $url) {

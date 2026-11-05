@@ -159,6 +159,8 @@ Sauvegarde manuelle : `php artisan backup:run`.
 
 - Aucun compte par défaut ; le propriétaire est créé par `app:create-owner` (mot de passe ≥ 12 caractères).
 - Connexion limitée à 5 tentatives par minute ; comptes désactivables (jamais supprimés).
+- Double authentification obligatoire pour les propriétaires (D-47). Téléphone perdu : se connecter avec un
+  code de secours, puis reconfigurer depuis « Profil ».
 - Toutes les pages vérifient les permissions côté serveur (Policies), testé par URL directe.
 - Journal d'activité non modifiable (protégé par trigger PostgreSQL).
 - `.env` et secrets jamais commités.

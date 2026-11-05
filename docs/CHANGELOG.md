@@ -34,6 +34,11 @@
 ## [Non publié]
 
 ### Ajouté
+- Double authentification obligatoire pour le propriétaire (application Google / Microsoft Authenticator,
+  codes de secours), configurée depuis la page « Profil » (D-47). Indisponible pour les autres rôles.
+- Page « Profil » : chaque utilisateur peut changer son nom, son email et son mot de passe.
+
+### Ajouté
 - Création du premier propriétaire depuis les variables `OWNER_*` au démarrage du conteneur
   (`app:create-owner --from-env`), pour les hébergements sans console disponible. Sans effet si un
   propriétaire existe déjà ; un mot de passe trop faible est refusé sans bloquer le démarrage.

@@ -11,6 +11,10 @@ return [
     'inactive' => 'غير نشط',
     'created_at' => 'تاريخ الإنشاء',
     'updated_at' => 'تاريخ التعديل',
+    'two_factor' => [
+        'required_title' => 'التحقق بخطوتين إلزامي',
+        'required_body' => 'يجب حماية حساب المالك برمز على هاتفك. ثبّت تطبيق Google Authenticator (أو ما يشبهه)، ثم اضغط على «Configurer» أدناه وامسح رمز QR. احتفظ برموز الاسترجاع في مكان آمن.',
+    ],
     'navigation' => [
         'catalog' => 'الكتالوج',
         'stock' => 'المخزون',
