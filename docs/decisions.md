@@ -96,3 +96,21 @@ Choix d'implémentation pris pendant la phase 1. Les points marqués **(à confi
 **D-37 – Sauvegardes.** Package `spatie/laravel-backup`. Sauvegarde quotidienne à 02:00 (heure du Maroc) de la base et des fichiers envoyés, vers un stockage compatible S3 externe à Railway, conservée au moins 30 jours. Restauration avec `php artisan app:backup-restore`, vérifiée par un test automatisé. Fournisseur de stockage **(à confirmer)** : Cloudflare R2 ou Backblaze B2, qui ont tous deux une offre gratuite suffisante.
 
 **D-38 – Double authentification du propriétaire.** Reportée **(à confirmer)**. Filament 5 la propose nativement : elle peut être activée plus tard sans refonte.
+
+## Décisions – Phase 2 (5 novembre 2026)
+
+**D-39 – Réception simplifiée.** En attendant le module Achats (phase 6), une réception simple (produit, site, quantité, coût unitaire, DOT, fournisseur en texte libre) et la saisie du stock d'ouverture créent les mouvements d'entrée et mettent à jour le CUMP. Elles seront remplacées par la réception sur bon de commande.
+
+**D-40 – Marges par catégorie.** Le champ « marge par défaut » d'une catégorie est vide à la création et sera rempli par le propriétaire. Sans marge, aucun prix de vente n'est suggéré.
+
+**D-41 – SKU.** Le SKU est généré automatiquement avec un préfixe par catégorie et un numéro à 6 chiffres (ex. `PN-000123` pour un pneu neuf, `PO-000045` pour un pneu d'occasion, `HU-000012` pour une huile). Le préfixe se configure sur la catégorie.
+
+**D-42 – Âge des pneus.** Une alerte signale les pneus en stock dont le DOT a plus de 36 mois. Le seuil est un paramètre modifiable.
+
+**D-43 – Jeux de pneus d'occasion.** Un jeu de 2 ou 4 pneus réunit des pneus de même dimension, même marque et même modèle, dont la profondeur de sculpture ne diffère pas de plus de 1 mm. La tolérance est un paramètre modifiable.
+
+**D-44 – Noms en arabe.** Les catégories et les services ont un nom en français (obligatoire) et un nom en arabe (facultatif), affiché aux utilisateurs arabophones. Les produits gardent un seul nom.
+
+**D-45 – Stock jamais négatif.** Une sortie qui rendrait le stock d'un site négatif est refusée. Les niveaux de stock sont verrouillés (`SELECT … FOR UPDATE`) pendant chaque mouvement.
+
+**D-46 – Pneus d'occasion hors registre quantitatif.** Chaque pneu d'occasion est une fiche individuelle dont le statut et le site font foi. Ses entrées et sorties sont tout de même tracées dans `stock_movements`, avec la fiche liée. Le transfert de pneus d'occasion entre sites viendra plus tard **(à confirmer)**.
