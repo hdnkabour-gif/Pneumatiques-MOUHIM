@@ -1,6 +1,7 @@
 <?php
 
 use App\Support\Decimal;
+use App\Support\Money;
 
 it('converts user decimals to integer cents without floats', function (string $input, int $cents) {
     expect(Decimal::toCents($input))->toBe($cents);
@@ -23,3 +24,10 @@ it('formats integers back to decimals', function () {
 it('rejects invalid or over-precise values', function (string $input) {
     Decimal::toCents($input);
 })->throws(InvalidArgumentException::class)->with(['abc', '1,234', '12.345', '.', '1.2.3']);
+
+it('formats amounts in MAD with a thousands separator', function () {
+    expect(Money::format(120000))->toBe("1\u{202F}200,00 MAD")
+        ->and(Money::format(123456789))->toBe("1\u{202F}234\u{202F}567,89 MAD")
+        ->and(Money::format(-5))->toBe('-0,05 MAD')
+        ->and(Money::format(null))->toBe('—');
+});
