@@ -42,7 +42,7 @@ class CategoriesSeeder extends Seeder
             ['Prestations', 'خدمات', CategoryType::Service, 'SE', [
                 ['Pneumatique', 'الإطارات'], ['Entretien', 'الصيانة'], ['Électricité et éclairage', 'الكهرباء والإنارة'],
             ]],
-            ['Forfaits', 'عروض مجمّعة', CategoryType::Other, 'FO', []],
+            ['Forfaits', 'عروض مجمّعة', CategoryType::Bundle, 'FO', []],
             ['Autres', 'أخرى', CategoryType::Other, 'AU', []],
         ];
 

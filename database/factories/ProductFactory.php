@@ -53,7 +53,7 @@ class ProductFactory extends Factory
     {
         return $this->state(fn () => [
             'kind' => ProductKind::Bundle,
-            'category_id' => Category::query()->where('name', 'Forfaits')->firstOrFail()->id,
+            'category_id' => Category::query()->where('type', CategoryType::Bundle->value)->firstOrFail()->id,
             'name' => 'Forfait '.fake()->unique()->word(),
         ]);
     }

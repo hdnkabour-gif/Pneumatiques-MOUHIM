@@ -24,6 +24,7 @@ enum CategoryType: string implements HasLabel
     case Brake = 'brake';
     case Accessory = 'accessory';
     case Service = 'service';
+    case Bundle = 'bundle';
     case Other = 'other';
 
     /** Name of the Product relation holding this category's technical fields. */
@@ -41,6 +42,10 @@ enum CategoryType: string implements HasLabel
 
     public function productKind(): ProductKind
     {
-        return $this === self::Service ? ProductKind::Service : ProductKind::Goods;
+        return match ($this) {
+            self::Service => ProductKind::Service,
+            self::Bundle => ProductKind::Bundle,
+            default => ProductKind::Goods,
+        };
     }
 }
