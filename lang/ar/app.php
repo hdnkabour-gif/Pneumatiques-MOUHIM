@@ -11,6 +11,8 @@ return [
     'created_at' => 'تاريخ الإنشاء',
     'updated_at' => 'تاريخ التعديل',
     'navigation' => [
+        'catalog' => 'الكتالوج',
+        'stock' => 'المخزون',
         'administration' => 'الإدارة',
         'settings' => 'الإعدادات',
     ],

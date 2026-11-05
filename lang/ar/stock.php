@@ -1,0 +1,70 @@
+<?php
+
+return [
+    'navigation' => 'المخزون',
+    'levels' => [
+        'label' => 'مستوى المخزون',
+        'plural' => 'المخزون حسب الموقع',
+    ],
+    'movements' => [
+        'label' => 'حركة',
+        'plural' => 'حركات المخزون',
+    ],
+    'fields' => [
+        'product' => 'المنتج',
+        'site' => 'الموقع',
+        'quantity' => 'الكمية',
+        'reserved' => 'محجوز',
+        'available' => 'متاح',
+        'minimum' => 'الحد الأدنى',
+        'value' => 'القيمة (التكلفة المتوسطة)',
+        'unit_cost' => 'تكلفة الوحدة',
+        'type' => 'النوع',
+        'reason' => 'السبب',
+        'user' => 'بواسطة',
+        'date' => 'التاريخ',
+        'document' => 'الوثيقة',
+        'dot' => 'DOT',
+        'dot_week' => 'DOT – الأسبوع',
+        'dot_year' => 'DOT – السنة',
+        'supplier' => 'المورد',
+        'opening' => 'مخزون افتتاحي',
+        'delta' => 'التصحيح (+ / −)',
+        'damaged' => 'منتج تالف',
+        'total' => 'المجموع',
+        'last_exit' => 'آخر خروج',
+        'age_months' => 'العمر (أشهر)',
+    ],
+    'filters' => [
+        'below_minimum' => 'تحت الحد الأدنى',
+        'out_of_stock' => 'نافد',
+        'dormant' => 'بدون خروج منذ :days يوما',
+        'old_tyres' => 'إطارات أقدم من :months شهرا',
+    ],
+    'actions' => [
+        'receive' => 'استلام / مخزون افتتاحي',
+        'adjust' => 'طلب تسوية',
+        'history' => 'بطاقة المخزون',
+    ],
+    'messages' => [
+        'received' => 'تم تسجيل المخزون.',
+        'adjustment_requested' => 'أُرسل الطلب إلى المالك للموافقة.',
+        'adjustment_done' => 'تمت التسوية.',
+    ],
+    'old_tyres' => [
+        'label' => 'دفعة إطارات',
+        'plural' => 'إطارات قديمة',
+    ],
+    'errors' => [
+        'insufficient' => 'المخزون غير كافٍ من « :product » في :site: المتاح :available، المطلوب :requested.',
+        'not_stocked' => '« :product » ليس سلعة مخزّنة.',
+        'quantity_positive' => 'يجب أن تكون الكمية أكبر من صفر.',
+        'lots_inconsistent' => 'دفعات « :product » لا تطابق المخزون. شغّل التحقق من المخزون.',
+        'invalid_dot' => 'يجب أن يكون أسبوع DOT بين 1 و53.',
+        'invalid_adjustment' => 'تصحيح غير صالح: أدخل كمية غير صفرية (سالبة للمنتج التالف).',
+    ],
+    'verify' => [
+        'ok' => 'المخزون متطابق: لا فرق بين السجل والأرصدة.',
+        'differences' => 'وُجد :count فرق بين السجل وأرصدة المخزون.',
+    ],
+];

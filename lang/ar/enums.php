@@ -1,0 +1,43 @@
+<?php
+
+return [
+    'product_kind' => ['goods' => 'سلعة', 'service' => 'خدمة', 'bundle' => 'عرض مجمّع'],
+    'unit' => ['piece' => 'قطعة', 'can' => 'بيدون', 'kit' => 'طقم', 'set' => 'مجموعة'],
+    'tyre_season' => ['summer' => 'صيفي', 'winter' => 'شتوي', 'all_season' => 'لكل الفصول'],
+    'tyre_usage' => ['car' => 'سياحية', 'suv' => 'SUV / دفع رباعي', 'van' => 'نفعية', 'truck' => 'وزن ثقيل', 'moto' => 'دراجة نارية'],
+    'oil_type' => ['synthetic' => 'اصطناعي', 'semi_synthetic' => 'نصف اصطناعي', 'mineral' => 'معدني'],
+    'battery_technology' => ['standard' => 'عادية', 'efb' => 'EFB', 'agm' => 'AGM'],
+    'filter_type' => ['oil' => 'زيت', 'air' => 'هواء', 'cabin' => 'مقصورة', 'fuel' => 'وقود'],
+    'used_tyre_origin' => ['supplier' => 'شراء من مورد', 'trade_in' => 'استرجاع من زبون', 'other' => 'أخرى'],
+    'transfer_status' => ['in_transit' => 'في الطريق', 'received' => 'مستلم', 'cancelled' => 'ملغى'],
+    'replenishment_status' => ['pending' => 'في الانتظار', 'converted' => 'تحوّل إلى تحويل', 'cancelled' => 'ملغى'],
+    'inventory_count_status' => ['draft' => 'قيد العد', 'submitted' => 'في انتظار المصادقة', 'approved' => 'مصادق عليه', 'cancelled' => 'ملغى'],
+    'approval_status' => ['pending' => 'في الانتظار', 'approved' => 'مقبول', 'rejected' => 'مرفوض', 'cancelled' => 'ملغى'],
+    'category_type' => [
+        'new_tyre' => 'إطارات جديدة', 'used_tyre' => 'إطارات مستعملة', 'rim' => 'جنوط', 'tyre_supply' => 'مستهلكات الإطارات',
+        'oil' => 'زيوت', 'fluid' => 'سوائل', 'filter' => 'فلاتر', 'battery' => 'بطاريات', 'lighting' => 'إنارة',
+        'wiper' => 'ماسحات', 'brake' => 'فرامل', 'accessory' => 'إكسسوارات', 'service' => 'خدمات', 'other' => 'أخرى',
+    ],
+    'used_tyre_status' => [
+        'pending_inspection' => 'في انتظار الفحص', 'in_stock' => 'في المخزون', 'reserved' => 'محجوز',
+        'sold' => 'مباع', 'unsellable' => 'غير صالح للبيع', 'scrapped' => 'متلف',
+    ],
+    'used_tyre_check' => [
+        'sidewalls' => 'الجوانب سليمة', 'cracks' => 'لا توجد شقوق', 'bulges' => 'لا يوجد انتفاخ',
+        'deformation' => 'لا يوجد تشوّه', 'bead' => 'الحافة سليمة', 'previous_repairs' => 'الإصلاحات السابقة مقبولة',
+        'irregular_wear' => 'تآكل منتظم', 'tread_depth' => 'عمق النقش كافٍ', 'age' => 'العمر مقبول',
+    ],
+    'stock_movement_type' => [
+        'purchase_receipt' => 'استلام', 'opening_stock' => 'مخزون افتتاحي', 'sale' => 'بيع',
+        'customer_return' => 'إرجاع من زبون', 'customer_exchange' => 'استبدال', 'supplier_return' => 'إرجاع إلى مورد',
+        'transfer_out' => 'تحويل خارج', 'transfer_in' => 'تحويل داخل', 'transfer_cancelled' => 'تحويل ملغى (إرجاع)',
+        'workshop_consumption' => 'استهلاك الورشة', 'inventory_adjustment' => 'تسوية جرد',
+        'damaged' => 'منتج تالف', 'trade_in' => 'استرجاع من زبون',
+    ],
+    'approval_type' => [
+        'stock_adjustment' => 'تسوية مخزون', 'damaged_stock' => 'منتج تالف', 'discount' => 'تخفيض',
+        'price_override' => 'تعديل السعر', 'below_cost' => 'بيع بأقل من التكلفة', 'credit_limit' => 'تجاوز سقف الدين',
+        'sale_cancellation' => 'إلغاء بيع', 'credit_note' => 'فاتورة مضادة', 'closed_day_edit' => 'تعديل يوم مغلق',
+        'cash_discrepancy' => 'فرق في الصندوق',
+    ],
+];

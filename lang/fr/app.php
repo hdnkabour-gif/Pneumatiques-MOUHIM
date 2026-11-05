@@ -11,6 +11,8 @@ return [
     'created_at' => 'Créé le',
     'updated_at' => 'Modifié le',
     'navigation' => [
+        'catalog' => 'Catalogue',
+        'stock' => 'Stock',
         'administration' => 'Administration',
         'settings' => 'Paramètres',
     ],

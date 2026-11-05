@@ -1,0 +1,70 @@
+<?php
+
+return [
+    'navigation' => 'Stock',
+    'levels' => [
+        'label' => 'Niveau de stock',
+        'plural' => 'Stock par site',
+    ],
+    'movements' => [
+        'label' => 'Mouvement',
+        'plural' => 'Mouvements de stock',
+    ],
+    'fields' => [
+        'product' => 'Produit',
+        'site' => 'Site',
+        'quantity' => 'Quantité',
+        'reserved' => 'Réservé',
+        'available' => 'Disponible',
+        'minimum' => 'Seuil minimum',
+        'value' => 'Valeur (CUMP)',
+        'unit_cost' => 'Coût unitaire',
+        'type' => 'Type',
+        'reason' => 'Motif',
+        'user' => 'Par',
+        'date' => 'Date',
+        'document' => 'Document',
+        'dot' => 'DOT',
+        'dot_week' => 'DOT – semaine',
+        'dot_year' => 'DOT – année',
+        'supplier' => 'Fournisseur',
+        'opening' => 'Stock d\'ouverture',
+        'delta' => 'Correction (+ / −)',
+        'damaged' => 'Produit endommagé',
+        'total' => 'Total',
+        'last_exit' => 'Dernière sortie',
+        'age_months' => 'Âge (mois)',
+    ],
+    'filters' => [
+        'below_minimum' => 'Sous le seuil',
+        'out_of_stock' => 'En rupture',
+        'dormant' => 'Sans sortie depuis :days jours',
+        'old_tyres' => 'Pneus de plus de :months mois',
+    ],
+    'actions' => [
+        'receive' => 'Réception / stock d\'ouverture',
+        'adjust' => 'Demander un ajustement',
+        'history' => 'Fiche de stock',
+    ],
+    'messages' => [
+        'received' => 'Stock enregistré.',
+        'adjustment_requested' => 'Demande envoyée au propriétaire pour approbation.',
+        'adjustment_done' => 'Ajustement effectué.',
+    ],
+    'old_tyres' => [
+        'label' => 'Lot de pneus',
+        'plural' => 'Pneus anciens',
+    ],
+    'errors' => [
+        'insufficient' => 'Stock insuffisant pour « :product » à :site : disponible : :available, demandé : :requested.',
+        'not_stocked' => '« :product » n\'est pas un article stocké.',
+        'quantity_positive' => 'La quantité doit être supérieure à zéro.',
+        'lots_inconsistent' => 'Les lots de « :product » ne correspondent pas au stock. Lancez la vérification du stock.',
+        'invalid_dot' => 'La semaine DOT doit être comprise entre 1 et 53.',
+        'invalid_adjustment' => 'Correction invalide : indiquez une quantité non nulle (négative pour un produit endommagé).',
+    ],
+    'verify' => [
+        'ok' => 'Stock cohérent : aucun écart entre le registre et les niveaux.',
+        'differences' => ':count écart(s) trouvé(s) entre le registre et les niveaux de stock.',
+    ],
+];

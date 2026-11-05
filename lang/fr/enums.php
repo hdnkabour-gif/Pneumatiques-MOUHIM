@@ -1,0 +1,43 @@
+<?php
+
+return [
+    'product_kind' => ['goods' => 'Article', 'service' => 'Prestation', 'bundle' => 'Forfait'],
+    'unit' => ['piece' => 'Pièce', 'can' => 'Bidon', 'kit' => 'Kit', 'set' => 'Jeu'],
+    'tyre_season' => ['summer' => 'Été', 'winter' => 'Hiver', 'all_season' => 'Toutes saisons'],
+    'tyre_usage' => ['car' => 'Tourisme', 'suv' => 'SUV / 4x4', 'van' => 'Utilitaire', 'truck' => 'Poids lourd', 'moto' => 'Moto'],
+    'oil_type' => ['synthetic' => 'Synthèse', 'semi_synthetic' => 'Semi-synthèse', 'mineral' => 'Minérale'],
+    'battery_technology' => ['standard' => 'Standard', 'efb' => 'EFB', 'agm' => 'AGM'],
+    'filter_type' => ['oil' => 'Huile', 'air' => 'Air', 'cabin' => 'Habitacle', 'fuel' => 'Carburant'],
+    'used_tyre_origin' => ['supplier' => 'Achat fournisseur', 'trade_in' => 'Reprise client', 'other' => 'Autre'],
+    'transfer_status' => ['in_transit' => 'En transit', 'received' => 'Reçu', 'cancelled' => 'Annulé'],
+    'replenishment_status' => ['pending' => 'En attente', 'converted' => 'Transformée en transfert', 'cancelled' => 'Annulée'],
+    'inventory_count_status' => ['draft' => 'En cours de comptage', 'submitted' => 'À valider', 'approved' => 'Validé', 'cancelled' => 'Annulé'],
+    'approval_status' => ['pending' => 'En attente', 'approved' => 'Approuvée', 'rejected' => 'Refusée', 'cancelled' => 'Annulée'],
+    'category_type' => [
+        'new_tyre' => 'Pneus neufs', 'used_tyre' => 'Pneus d\'occasion', 'rim' => 'Jantes', 'tyre_supply' => 'Consommables pneus',
+        'oil' => 'Huiles', 'fluid' => 'Liquides', 'filter' => 'Filtres', 'battery' => 'Batteries', 'lighting' => 'Éclairage',
+        'wiper' => 'Essuie-glace', 'brake' => 'Freinage', 'accessory' => 'Accessoires', 'service' => 'Prestations', 'other' => 'Autres',
+    ],
+    'used_tyre_status' => [
+        'pending_inspection' => 'En attente de contrôle', 'in_stock' => 'En stock', 'reserved' => 'Réservé',
+        'sold' => 'Vendu', 'unsellable' => 'Non vendable', 'scrapped' => 'Mis au rebut',
+    ],
+    'used_tyre_check' => [
+        'sidewalls' => 'Flancs en bon état', 'cracks' => 'Aucune fissure', 'bulges' => 'Aucune hernie',
+        'deformation' => 'Aucune déformation', 'bead' => 'Talon intact', 'previous_repairs' => 'Réparations antérieures acceptables',
+        'irregular_wear' => 'Usure régulière', 'tread_depth' => 'Profondeur suffisante', 'age' => 'Âge acceptable',
+    ],
+    'stock_movement_type' => [
+        'purchase_receipt' => 'Réception', 'opening_stock' => 'Stock d\'ouverture', 'sale' => 'Vente',
+        'customer_return' => 'Retour client', 'customer_exchange' => 'Échange client', 'supplier_return' => 'Retour fournisseur',
+        'transfer_out' => 'Transfert sortant', 'transfer_in' => 'Transfert entrant', 'transfer_cancelled' => 'Transfert annulé (retour)',
+        'workshop_consumption' => 'Consommation atelier', 'inventory_adjustment' => 'Ajustement d\'inventaire',
+        'damaged' => 'Produit endommagé', 'trade_in' => 'Reprise client',
+    ],
+    'approval_type' => [
+        'stock_adjustment' => 'Ajustement de stock', 'damaged_stock' => 'Produit endommagé', 'discount' => 'Remise',
+        'price_override' => 'Modification de prix', 'below_cost' => 'Vente sous le coût', 'credit_limit' => 'Dépassement de crédit',
+        'sale_cancellation' => 'Annulation de vente', 'credit_note' => 'Avoir', 'closed_day_edit' => 'Modification d\'une journée clôturée',
+        'cash_discrepancy' => 'Écart de caisse',
+    ],
+];
