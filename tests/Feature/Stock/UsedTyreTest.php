@@ -93,3 +93,13 @@ it('finds matching sets within 1 mm of tread (D-43)', function () {
     expect($fours->map(fn ($s) => $s->pluck('tread_depth_tenths')->all())->all())->toBe([[50, 52, 55, 58]]);
     expect($pairs->map(fn ($s) => $s->pluck('tread_depth_tenths')->all())->all())->toBe([[50, 52], [55, 58]]);
 });
+
+it('shows matching sets on the sets screen', function () {
+    foreach ([50, 52, 55, 58] as $depth) {
+        $tyre = ($this->register)(['tread_depth_tenths' => $depth]);
+        $this->actions->inspect($tyre, allChecksOk(), $this->seller, $depth);
+    }
+
+    $this->actingAs($this->seller)->get('/admin/used-tyres/sets')
+        ->assertOk()->assertSee('PO-000001')->assertSee('5.0 / 5.2 / 5.5 / 5.8');
+});
