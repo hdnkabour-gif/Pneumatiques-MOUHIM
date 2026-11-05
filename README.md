@@ -14,6 +14,7 @@ pneumatiques, services automobiles, stock, ventes, crédit, caisse, atelier.
 |---|---|---|
 | 1. Fondations | Docker, auth, rôles, sites, FR/AR, journal, paramètres, sauvegardes | ✅ Déployé (sauvegarde externe R2 à activer) |
 | 2. Catalogue et stock | Catalogue, pneus neufs (lots DOT), pneus d'occasion (contrôle, QR, jeux), prestations, forfaits, mouvements, transferts, réapprovisionnement, inventaire, approbations | ✅ Code et tests – en attente de validation |
+| Avancé (D-48) | Référentiel véhicules et compatibilités (phases 3 / 7) | ✅ Code et tests |
 | 3 → 7 | — | À venir |
 
 ## Versions (vérifiées le 4 novembre 2026)
@@ -88,6 +89,12 @@ docker/            entrypoint, php.ini
 - `php artisan stock:verify` compare le cache et le registre (code de sortie ≠ 0 en cas d'écart).
 - Les ajustements et produits endommagés passent par une **demande d'approbation** (`ApprovalService`).
 - Numéros de documents : `SequenceService` (une série par type et par année, D-14).
+
+### Référentiel véhicules et compatibilités (D-48)
+
+- Données de référence : `docs/data/PNEU_MOUHIM_Manager_Catalogue_Operations_V1_3.xlsx` (source de vérité unique).
+- Import : *Véhicules › Compatibilités pneus › Importer le classeur* (permission `compatibilities.manage`).
+- Statuts : Vérifié / Non vérifié / À contrôler / Obsolète ; l'import n'attribue jamais « Vérifié ».
 
 ### Ajouter une permission (phases suivantes)
 

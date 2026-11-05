@@ -34,6 +34,12 @@
 ## [Non publié]
 
 ### Ajouté
+- Référentiel véhicules (marques, modèles, générations, motorisations) et compatibilités pneus / huiles
+  avec source, date, auteur et statut (D-48) ; seules les compatibilités « Vérifié » sont présentées
+  comme compatibles ; validation réservée à la permission `compatibilities.verify` et journalisée.
+- Import du classeur de référence (`docs/data/…V1_3.xlsx`) : idempotent, aucun import en « Vérifié »,
+  jamais d'écrasement d'une compatibilité vérifiée dans l'application.
+- Page « Recherche par véhicule » : compatibilités vérifiées et produits correspondants avec le stock par site.
 - 57 marques de pneus et de lubrifiants issues du classeur de référence V1.2 (noms seuls, aucun produit créé).
 - Double authentification obligatoire pour le propriétaire (application Google / Microsoft Authenticator,
   codes de secours), configurée depuis la page « Profil » (D-47). Indisponible pour les autres rôles.
