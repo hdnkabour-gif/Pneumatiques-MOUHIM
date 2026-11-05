@@ -1,5 +1,36 @@
 # Changelog
 
+## [Phase 2 – Catalogue et stock] – 2026-11-05
+
+### Ajouté
+- Catalogue : catégories hiérarchiques (FR/AR, préfixe SKU, marge par défaut vide), marques, produits avec
+  SKU automatique (`PN-000123`), 3 niveaux de prix, prix d'achat de référence, CUMP, prix suggéré
+  (coût + marge, jamais calculé si une donnée manque), références alternatives, seuils minimum par site.
+- Caractéristiques par type : pneus (dimension en champs séparés, indices, saison, XL, Run Flat…), huiles
+  (viscosité, normes, contenance, vente au bidon), batteries, filtres, éclairage (culot).
+- Recherche tolérante : `205 55 16`, `2055516`, `205/55R16`, `205/55 R16 91V`, SKU, référence, `5W30`, `H7`.
+- Prestations (prix fixe ou selon le diamètre de jante, consommables automatiques, sites) et forfaits
+  (contrôle que la somme des lignes égale le prix du forfait).
+- Stock : registre des mouvements non modifiable, niveaux par site, réservé / disponible, valeur au CUMP
+  (propriétaire uniquement), sous le seuil, en rupture, produits dormants, fiche de stock par produit,
+  lots DOT avec sortie du plus ancien en premier et alerte « pneus anciens » (36 mois).
+- Réception simple / stock d'ouverture (en attendant les achats, phase 6).
+- Transferts : en transit → reçu / annulé, écarts avec motif obligatoire, lots DOT conservés, bon de
+  transfert imprimable, numérotation `TR-2026-000001`.
+- Demandes de réapprovisionnement avec suggestion automatique et transformation en transfert.
+- Inventaire : comptage sur téléphone / tablette (comptage à l'aveugle), validation par le propriétaire,
+  ajustements automatiques.
+- Module d'approbation : demande avec motif, notification au propriétaire (cloche), approbation / refus,
+  approbation sur place par code PIN (5 essais / minute), journalisation.
+- Pneus d'occasion : fiche individuelle, contrôle de sécurité en 9 points (un seul point dangereux =
+  non vendable), photos, étiquette QR imprimable, mise au rebut, jeux assortis de 2 ou 4 (±1 mm).
+- `php artisan stock:verify`.
+- 199 tests, dont le scénario de stock multi-sites du §21.
+
+### Corrigé
+- Déconnexion intempestive lors des requêtes Livewire en arrière-plan (phase 1).
+- Affichage des montants ≥ 1 000 MAD.
+
 ## [Non publié]
 
 ### Ajouté

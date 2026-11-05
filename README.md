@@ -12,8 +12,8 @@ pneumatiques, services automobiles, stock, ventes, crédit, caisse, atelier.
 
 | Phase | Contenu | État |
 |---|---|---|
-| 1. Fondations | Docker, auth, rôles, sites, FR/AR, journal, paramètres, sauvegardes | ✅ Code et tests (déploiement Railway à faire) |
-| 2. Catalogue et stock | — | À venir |
+| 1. Fondations | Docker, auth, rôles, sites, FR/AR, journal, paramètres, sauvegardes | ✅ Déployé (sauvegarde externe R2 à activer) |
+| 2. Catalogue et stock | Catalogue, pneus neufs (lots DOT), pneus d'occasion (contrôle, QR, jeux), prestations, forfaits, mouvements, transferts, réapprovisionnement, inventaire, approbations | ✅ Code et tests – en attente de validation |
 | 3 → 7 | — | À venir |
 
 ## Versions (vérifiées le 4 novembre 2026)
@@ -79,11 +79,23 @@ lang/fr, lang/ar   toutes les traductions de l'interface
 docker/            entrypoint, php.ini
 ```
 
+### Stock (phase 2) – règles techniques
+
+- `App\Services\Stock\StockService` est le **seul** code qui modifie le stock : il écrit le mouvement
+  (`stock_movements`, non modifiable), met à jour le cache `stock_levels` et les lots DOT dans la même
+  transaction, avec verrouillage du produit puis du niveau (pas de stock négatif, D-45).
+- CUMP au niveau de l'entreprise (D-09) ; coût inconnu = `NULL`, jamais deviné.
+- `php artisan stock:verify` compare le cache et le registre (code de sortie ≠ 0 en cas d'écart).
+- Les ajustements et produits endommagés passent par une **demande d'approbation** (`ApprovalService`).
+- Numéros de documents : `SequenceService` (une série par type et par année, D-14).
+
 ### Ajouter une permission (phases suivantes)
 
 1. Ajouter un cas dans `app/Enums/Permission.php`.
 2. Ajouter sa traduction dans `lang/fr/permissions.php` et `lang/ar/permissions.php`.
-3. Déployer : `db:seed` (lancé automatiquement au démarrage) crée la permission et l'ajoute au propriétaire.
+3. L'ajouter aux rôles concernés dans `RoleName::defaultPermissions()`.
+4. Déployer : `db:seed` (lancé automatiquement au démarrage) crée la permission et la donne au propriétaire
+   et aux rôles concernés, sans rétablir les permissions que le propriétaire a retirées.
 
 ## Déploiement Railway
 
