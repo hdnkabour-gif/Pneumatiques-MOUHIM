@@ -26,6 +26,9 @@ class ActivityResource extends Resource
 {
     protected static ?string $model = Activity::class;
 
+    /** French labels keep their own capitalisation ("Pneus d'occasion"). */
+    protected static bool $hasTitleCaseModelLabel = false;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
 
     protected static ?int $navigationSort = 95;
@@ -98,8 +101,8 @@ class ActivityResource extends Resource
                         DatePicker::make('until')->label(__('activity.fields.date').' ≤'),
                     ])
                     ->query(fn (Builder $query, array $data) => $query
-                        ->when($data['from'] ?? null, fn (Builder $q, $d) => $q->whereDate('created_at', '>=', $d))
-                        ->when($data['until'] ?? null, fn (Builder $q, $d) => $q->whereDate('created_at', '<=', $d))),
+                        ->when($data['from'] ?? null, fn (Builder $query, $d) => $query->whereDate('created_at', '>=', $d))
+                        ->when($data['until'] ?? null, fn (Builder $query, $d) => $query->whereDate('created_at', '<=', $d))),
             ])
             ->recordActions([
                 ViewAction::make(),

@@ -26,6 +26,9 @@ class RoleResource extends Resource
 {
     protected static ?string $model = Role::class;
 
+    /** French labels keep their own capitalisation ("Pneus d'occasion"). */
+    protected static bool $hasTitleCaseModelLabel = false;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedShieldCheck;
 
     protected static ?int $navigationSort = 30;
