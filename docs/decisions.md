@@ -116,3 +116,15 @@ Choix d'implémentation pris pendant la phase 1. Les points marqués **(à confi
 **D-46 – Pneus d'occasion hors registre quantitatif.** Chaque pneu d'occasion est une fiche individuelle dont le statut et le site font foi. Ses entrées et sorties sont tout de même tracées dans `stock_movements`, avec la fiche liée. Le transfert de pneus d'occasion entre sites viendra plus tard **(à confirmer)**.
 
 **D-47 – Double authentification.** Obligatoire pour les comptes propriétaire, indisponible pour les autres rôles. Elle utilise une application d'authentification sur le téléphone (Google Authenticator, Microsoft Authenticator…) et fournit des codes de secours à usage unique. Un propriétaire qui ne l'a pas encore configurée est redirigé vers son profil jusqu'à ce qu'il le fasse.
+
+## Décisions – Référentiel véhicules et compatibilités (6 novembre 2026)
+
+**D-48 – Référentiel véhicules et compatibilités avancés.** À la demande du responsable du projet, le référentiel véhicules (prévu en phase 3) et les compatibilités vérifiées (prévues en phase 7) sont réalisés dès maintenant, avant la phase 3. Ils comprennent les marques, les modèles, les générations, les motorisations, les sources, ainsi que les montes de pneus et d'huiles par véhicule, et ils s'importent depuis le classeur de référence `docs/data/PNEU_MOUHIM_Manager_Catalogue_Operations_V1_3.xlsx`.
+
+Les règles suivent D-24 :
+- Chaque compatibilité porte une source, une date, un auteur et l'un des statuts « Vérifié », « Non vérifié », « À contrôler » ou « Obsolète ».
+- Seules les compatibilités « Vérifié » sont présentées comme compatibles.
+- Le passage à « Vérifié » demande la permission `compatibilities.verify` et une source, et il est journalisé.
+- À l'import, les statuts du classeur sont traduits selon la feuille GUIDE_APP ; aucune ligne n'est importée comme « Vérifié ».
+
+L'écran de vente (phase 3) utilisera ce référentiel.
