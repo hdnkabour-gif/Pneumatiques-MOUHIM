@@ -40,6 +40,11 @@ return [
         'documents.legal_mentions' => null,
         'documents.number_pattern' => '{PREFIX}-{YEAR}-{NUMBER}',
         'documents.number_padding' => 6,
+
+        // Stock (phase 2)
+        'stock.tyre_age_alert_months' => 36,          // D-42
+        'stock.dormant_days' => 90,                   // no exit for X days = dormant (§6.2)
+        'used_tyres.set_tread_tolerance_tenths' => 10, // D-43: 1.0 mm
     ],
 
     'backup' => [
