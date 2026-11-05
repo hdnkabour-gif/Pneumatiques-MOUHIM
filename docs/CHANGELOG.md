@@ -7,6 +7,10 @@
   (`app:create-owner --from-env`), pour les hébergements sans console disponible. Sans effet si un
   propriétaire existe déjà ; un mot de passe trop faible est refusé sans bloquer le démarrage.
 
+### Modifié
+- Les tâches planifiées tournent dans le conteneur web (plus besoin d'un service `scheduler` séparé
+  sur Railway) ; désactivable avec `RUN_SCHEDULER=false`.
+
 ## [Phase 1 – Fondations] – 2026-11-04
 
 ### Ajouté

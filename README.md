@@ -87,14 +87,13 @@ docker/            entrypoint, php.ini
 
 ## Déploiement Railway
 
-Une seule image Docker (`Dockerfile`), deux services Railway :
+Une seule image Docker (`Dockerfile`) et un seul service applicatif Railway, plus PostgreSQL.
+Au démarrage, le service : applique les migrations, charge les données de référence, crée le
+propriétaire si `OWNER_*` est défini, lance les tâches planifiées (sauvegarde quotidienne) en
+arrière-plan, puis le serveur web.
 
-| Service | Commande de démarrage | Rôle |
-|---|---|---|
-| `web` | *(par défaut)* | migrations + données de référence + serveur web |
-| `scheduler` | `/usr/local/bin/entrypoint.sh scheduler` | tâches planifiées (sauvegarde quotidienne) |
-
-Plus un service PostgreSQL Railway.
+Option (montée en charge) : service séparé avec la commande `/usr/local/bin/entrypoint.sh scheduler`
+et `RUN_SCHEDULER=false` sur le service web.
 
 Variables d'environnement (les deux services) :
 
