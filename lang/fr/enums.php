@@ -40,4 +40,5 @@ return [
         'sale_cancellation' => 'Annulation de vente', 'credit_note' => 'Avoir', 'closed_day_edit' => 'Modification d\'une journée clôturée',
         'cash_discrepancy' => 'Écart de caisse',
     ],
+    'compatibility_status' => ['verified' => 'Vérifié', 'unverified' => 'Non vérifié', 'to_check' => 'À contrôler', 'obsolete' => 'Obsolète'],
 ];

@@ -40,4 +40,5 @@ return [
         'sale_cancellation' => 'إلغاء بيع', 'credit_note' => 'فاتورة مضادة', 'closed_day_edit' => 'تعديل يوم مغلق',
         'cash_discrepancy' => 'فرق في الصندوق',
     ],
+    'compatibility_status' => ['verified' => 'متحقق منه', 'unverified' => 'غير متحقق منه', 'to_check' => 'للمراجعة', 'obsolete' => 'متجاوز'],
 ];

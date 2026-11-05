@@ -14,6 +14,7 @@ return [
         'inventory' => 'الجرد',
         'used_tyres' => 'الإطارات المستعملة',
         'approvals' => 'الموافقات',
+        'compatibilities' => 'السيارات والتوافقات',
         'activity_log' => 'سجل النشاط',
     ],
     'sites.view' => 'رؤية مواقعه',
@@ -40,4 +41,7 @@ return [
     'used_tyres.manage' => 'إدارة الإطارات المستعملة',
     'used_tyres.inspect' => 'فحص الإطارات المستعملة',
     'approvals.decide' => 'قبول / رفض الطلبات',
+    'compatibilities.view' => 'الاطلاع على توافق السيارات',
+    'compatibilities.manage' => 'إدارة مرجع السيارات والتوافقات (إدخال، استيراد)',
+    'compatibilities.verify' => 'المصادقة على توافق («متحقق منه»)',
 ];

@@ -14,6 +14,7 @@ return [
         'inventory' => 'Inventaire',
         'used_tyres' => 'Pneus d\'occasion',
         'approvals' => 'Approbations',
+        'compatibilities' => 'Véhicules et compatibilités',
         'activity_log' => "Journal d'activité",
     ],
     'sites.view' => 'Voir ses sites',
@@ -40,4 +41,7 @@ return [
     'used_tyres.manage' => 'Gérer les pneus d\'occasion',
     'used_tyres.inspect' => 'Contrôler les pneus d\'occasion',
     'approvals.decide' => 'Approuver / refuser les demandes',
+    'compatibilities.view' => 'Consulter les compatibilités véhicules',
+    'compatibilities.manage' => 'Gérer le référentiel véhicules et les compatibilités (saisie, import)',
+    'compatibilities.verify' => 'Valider une compatibilité (« Vérifié »)',
 ];
