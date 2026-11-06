@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Vehicles\CompatibilitySources\Pages;
 
+use App\Filament\Actions\ImportVehicleWorkbookAction;
 use App\Filament\Resources\Vehicles\CompatibilitySources\CompatibilitySourceResource;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ManageRecords;
@@ -12,6 +13,6 @@ class ManageCompatibilitySources extends ManageRecords
 
     protected function getHeaderActions(): array
     {
-        return [CreateAction::make()];
+        return [ImportVehicleWorkbookAction::make(), CreateAction::make()];
     }
 }

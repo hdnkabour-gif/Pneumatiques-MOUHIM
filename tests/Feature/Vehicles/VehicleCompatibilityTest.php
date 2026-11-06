@@ -6,9 +6,13 @@ use App\Enums\CompatibilityStatus;
 use App\Enums\RoleName;
 use App\Exceptions\BusinessRuleException;
 use App\Filament\Pages\VehicleLookup;
+use App\Filament\Resources\Vehicles\CompatibilitySources\Pages\ManageCompatibilitySources;
+use App\Filament\Resources\Vehicles\OilFitments\Pages\ListOilFitments;
 use App\Filament\Resources\Vehicles\TyreFitments\Pages\EditTyreFitment;
 use App\Filament\Resources\Vehicles\TyreFitments\Pages\ListTyreFitments;
 use App\Filament\Resources\Vehicles\TyreFitments\Pages\ViewTyreFitment;
+use App\Filament\Resources\Vehicles\VehicleMakes\Pages\ManageVehicleMakes;
+use App\Filament\Resources\Vehicles\VehicleModels\Pages\ManageVehicleModels;
 use App\Models\Activity;
 use App\Models\CompatibilitySource;
 use App\Models\OilFitment;
@@ -17,6 +21,8 @@ use App\Models\TyreFitment;
 use App\Models\VehicleMake;
 use App\Models\VehicleModel;
 use App\Services\Stock\StockService;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
 function workbook(): string
@@ -172,4 +178,32 @@ it('renders the vehicle screens for the owner and denies the technician', functi
     foreach (['/admin/vehicle-lookup', '/admin/tyre-fitments', '/admin/vehicle-models'] as $url) {
         $this->get($url)->assertForbidden();
     }
+});
+
+it('offers the workbook import on every vehicle reference page, to managers only', function (string $page) {
+    $this->actingAs(owner());
+    Livewire::test($page)->assertActionVisible('importWorkbook');
+
+    $this->actingAs(userWithRole(RoleName::SiteManager, 'M01'));
+    Livewire::test($page)->assertActionHidden('importWorkbook');
+})->with([
+    ListTyreFitments::class,
+    ListOilFitments::class,
+    ManageCompatibilitySources::class,
+    ManageVehicleModels::class,
+    ManageVehicleMakes::class,
+]);
+
+it('imports the workbook through the screen', function () {
+    Storage::fake('local');
+    $file = UploadedFile::fake()->createWithContent('classeur.xlsx', file_get_contents(workbook()));
+
+    $this->actingAs(owner());
+    Livewire::test(ManageCompatibilitySources::class)
+        ->callAction('importWorkbook', ['file' => $file])
+        ->assertHasNoActionErrors()
+        ->assertNotified();
+
+    expect(CompatibilitySource::query()->count())->toBe(26)
+        ->and(TyreFitment::query()->count())->toBe(13);
 });

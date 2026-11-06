@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Vehicles\VehicleModels\Pages;
 
+use App\Filament\Actions\ImportVehicleWorkbookAction;
 use App\Filament\Resources\Vehicles\VehicleModels\VehicleModelResource;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ManageRecords;
@@ -12,6 +13,6 @@ class ManageVehicleModels extends ManageRecords
 
     protected function getHeaderActions(): array
     {
-        return [CreateAction::make()];
+        return [ImportVehicleWorkbookAction::make(), CreateAction::make()];
     }
 }
