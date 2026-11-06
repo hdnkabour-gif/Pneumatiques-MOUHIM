@@ -96,7 +96,7 @@ Quand le fichier XLSX est réellement lisible :
 - [x] Règles métier et périmètre initial documentés à partir des spécifications du dépôt.
 - [x] Première liste candidate de marques automobiles, pneus et huiles préparée.
 - [ ] Lecture réelle de toutes les feuilles du classeur V1_3.
-- [ ] Comparaison ligne بل ligne avec جداول التطبيق.
+- [ ] Comparaison ligne par ligne avec جداول التطبيق.
 - [ ] Extraction des modèles, générations, moteurs, dimensions et normes du classeر.
 - [ ] Vérification des compatibilités بمصادر رسمية.
 - [ ] Import تجريبي واختبارات.
