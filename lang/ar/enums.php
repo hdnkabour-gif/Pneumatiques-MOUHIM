@@ -41,4 +41,14 @@ return [
         'cash_discrepancy' => 'فرق في الصندوق',
     ],
     'compatibility_status' => ['verified' => 'متحقق منه', 'unverified' => 'غير متحقق منه', 'to_check' => 'للمراجعة', 'obsolete' => 'متجاوز'],
+    'customer_type' => ['individual' => 'شخص', 'company' => 'شركة'],
+    'price_level' => ['retail' => 'زبون عادي', 'pro' => 'مهني', 'reseller' => 'بائع بالجملة'],
+    'sale_status' => ['draft' => 'مسودة', 'confirmed' => 'مؤكدة', 'cancelled' => 'ملغاة'],
+    'payment_method' => ['cash' => 'نقدا', 'card' => 'بطاقة بنكية', 'cheque' => 'شيك', 'transfer' => 'تحويل', 'credit' => 'بالدين'],
+    'work_order_status' => ['pending' => 'في الانتظار', 'in_progress' => 'قيد الإنجاز', 'paused' => 'متوقف مؤقتا', 'done' => 'منتهي', 'delivered' => 'سُلّم للزبون', 'cancelled' => 'ملغى'],
+    'document_type' => [
+        'invoice' => 'فاتورة', 'quote' => 'عرض سعر', 'delivery_note' => 'وصل تسليم', 'work_note' => 'وصل أشغال',
+        'credit_note' => 'فاتورة مضادة', 'receipt' => 'وصل', 'work_order' => 'أمر عمل', 'transfer' => 'تحويل',
+        'replenishment' => 'طلب تموين', 'inventory' => 'جرد',
+    ],
 ];

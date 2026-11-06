@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\CategoryType;
 use App\Enums\ProductKind;
 use App\Enums\Unit;
 use App\Models\Category;

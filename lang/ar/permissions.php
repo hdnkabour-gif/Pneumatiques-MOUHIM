@@ -2,6 +2,9 @@
 
 return [
     'groups' => [
+        'customers' => 'الزبناء',
+        'sales' => 'المبيعات',
+        'work_orders' => 'الورشة',
         'sites' => 'المواقع',
         'users' => 'المستخدمون',
         'roles' => 'الأدوار',
@@ -44,4 +47,9 @@ return [
     'compatibilities.view' => 'الاطلاع على توافق السيارات',
     'compatibilities.manage' => 'إدارة مرجع السيارات والتوافقات (إدخال، استيراد)',
     'compatibilities.verify' => 'المصادقة على توافق («متحقق منه»)',
+    'customers.view' => 'الاطلاع على الزبناء',
+    'customers.manage' => 'إضافة وتعديل الزبناء',
+    'sales.create' => 'البيع (شاشة البيع، الاستخلاص)',
+    'sales.view' => 'الاطلاع على فواتير مواقعه',
+    'work_orders.manage' => 'تسيير أوامر العمل (التقنيون، الحالات)',
 ];

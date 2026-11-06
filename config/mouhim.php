@@ -40,6 +40,24 @@ return [
         'documents.legal_mentions' => null,
         'documents.number_pattern' => '{PREFIX}-{YEAR}-{NUMBER}',
         'documents.number_padding' => 6,
+        // D-49: prefix of each numbered document, editable by the owner.
+        'documents.prefix.invoice' => 'FA',
+        'documents.prefix.quote' => 'DV',
+        'documents.prefix.delivery_note' => 'BL',
+        'documents.prefix.work_note' => 'BT',
+        'documents.prefix.credit_note' => 'AV',
+        'documents.prefix.receipt' => 'RC',
+        'documents.prefix.work_order' => 'OT',
+        'documents.prefix.transfer' => 'TR',
+        'documents.prefix.replenishment' => 'DR',
+        'documents.prefix.inventory' => 'INV',
+
+        // Sales (phase 3): caps in basis points / cents; above them the owner approves (D-18, D-52).
+        'sales.discount_cap_bp.seller' => 500,
+        'sales.discount_cap_bp.site_manager' => 1000,
+        'sales.trade_in_cap_cents.tyre' => 20000,
+        'sales.trade_in_cap_cents.battery' => 15000,
+        'documents.invoice_footer' => null,
 
         // Stock (phase 2)
         'stock.tyre_age_alert_months' => 36,          // D-42

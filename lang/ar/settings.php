@@ -35,4 +35,15 @@ return [
         'document_number_pattern_help' => 'المتغيرات: {PREFIX}، {YEAR}، {NUMBER}',
         'document_number_padding' => 'عدد الأرقام',
     ],
+    'numbering' => [
+        'title' => 'ترقيم الوثائق',
+        'help' => 'لمتابعة ترقيمك القديم، أدخل الرقم التالي الذي سيُستعمل (مثال: آخر فاتورة ورقية رقم 1250 ← الرقم التالي 1251).',
+        'prefix' => 'البادئة',
+        'next_number' => 'الرقم التالي',
+        'preview' => 'مثال',
+        'year' => 'السنة',
+    ],
+    'errors' => [
+        'number_backwards' => 'غير ممكن: الرقم :last سبق استعماله في «:type». يجب أن يكون الرقم التالي أكبر.',
+    ],
 ];

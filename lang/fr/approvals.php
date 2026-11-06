@@ -36,6 +36,7 @@ return [
         'rejected' => 'Demande refusée.',
     ],
     'summaries' => [
+        'sale' => ':type – vente :total, client :customer (remise max :discount %, crédit :credit)',
         'stock_adjustment' => 'Ajustement :delta de « :product » à :site',
         'damaged_stock' => 'Produit endommagé :delta de « :product » à :site',
     ],

@@ -41,4 +41,14 @@ return [
         'cash_discrepancy' => 'Écart de caisse',
     ],
     'compatibility_status' => ['verified' => 'Vérifié', 'unverified' => 'Non vérifié', 'to_check' => 'À contrôler', 'obsolete' => 'Obsolète'],
+    'customer_type' => ['individual' => 'Particulier', 'company' => 'Société'],
+    'price_level' => ['retail' => 'Particulier', 'pro' => 'Professionnel', 'reseller' => 'Revendeur'],
+    'sale_status' => ['draft' => 'Brouillon', 'confirmed' => 'Validée', 'cancelled' => 'Annulée'],
+    'payment_method' => ['cash' => 'Espèces', 'card' => 'Carte bancaire', 'cheque' => 'Chèque', 'transfer' => 'Virement', 'credit' => 'À crédit'],
+    'work_order_status' => ['pending' => 'En attente', 'in_progress' => 'En cours', 'paused' => 'En pause', 'done' => 'Terminé', 'delivered' => 'Livré au client', 'cancelled' => 'Annulé'],
+    'document_type' => [
+        'invoice' => 'Facture', 'quote' => 'Devis', 'delivery_note' => 'Bon de livraison', 'work_note' => 'Bon de travail',
+        'credit_note' => 'Avoir', 'receipt' => 'Reçu', 'work_order' => 'Ordre de travail', 'transfer' => 'Transfert',
+        'replenishment' => 'Demande de réapprovisionnement', 'inventory' => 'Inventaire',
+    ],
 ];

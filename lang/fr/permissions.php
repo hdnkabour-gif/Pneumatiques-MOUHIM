@@ -2,6 +2,9 @@
 
 return [
     'groups' => [
+        'customers' => 'Clients',
+        'sales' => 'Ventes',
+        'work_orders' => 'Atelier',
         'sites' => 'Sites',
         'users' => 'Utilisateurs',
         'roles' => 'Rôles',
@@ -44,4 +47,9 @@ return [
     'compatibilities.view' => 'Consulter les compatibilités véhicules',
     'compatibilities.manage' => 'Gérer le référentiel véhicules et les compatibilités (saisie, import)',
     'compatibilities.verify' => 'Valider une compatibilité (« Vérifié »)',
+    'customers.view' => 'Voir les clients',
+    'customers.manage' => 'Créer et modifier les clients',
+    'sales.create' => 'Vendre (écran de vente, encaissement)',
+    'sales.view' => 'Voir les factures de ses sites',
+    'work_orders.manage' => 'Gérer les ordres de travail (techniciens, statuts)',
 ];

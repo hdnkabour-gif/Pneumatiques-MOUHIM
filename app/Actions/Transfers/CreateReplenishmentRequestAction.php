@@ -2,6 +2,7 @@
 
 namespace App\Actions\Transfers;
 
+use App\Enums\DocumentType;
 use App\Enums\Permission;
 use App\Enums\ReplenishmentStatus;
 use App\Exceptions\BusinessRuleException;
@@ -34,7 +35,7 @@ class CreateReplenishmentRequestAction
 
         return DB::transaction(function () use ($site, $source, $lines, $user, $notes) {
             $request = ReplenishmentRequest::query()->create([
-                'number' => $this->sequences->nextDocumentNumber('DR'),
+                'number' => $this->sequences->nextDocumentNumber(DocumentType::Replenishment),
                 'site_id' => $site->id,
                 'source_site_id' => $source->id,
                 'status' => ReplenishmentStatus::Pending,

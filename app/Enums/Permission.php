@@ -49,6 +49,13 @@ enum Permission: string
     case CompatibilitiesManage = 'compatibilities.manage';   // reference data, manual entry, import
     case CompatibilitiesVerify = 'compatibilities.verify';   // mark a compatibility as verified
 
+    // Sales (phase 3)
+    case CustomersView = 'customers.view';
+    case CustomersManage = 'customers.manage';
+    case SalesCreate = 'sales.create';       // sale screen, confirm a sale, take the payment
+    case SalesView = 'sales.view';           // invoices of his sites
+    case WorkOrdersManage = 'work_orders.manage'; // create, assign technicians, move statuses (D-53)
+
     public function label(): string
     {
         return __('permissions.'.$this->value);

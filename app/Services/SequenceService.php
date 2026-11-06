@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Enums\DocumentType;
+use App\Exceptions\BusinessRuleException;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -33,18 +35,52 @@ class SequenceService
 
     /**
      * Document number: one series per document type and year for the whole
-     * company (D-14), formatted with the configurable pattern (D-30).
+     * company (D-14), with the owner's prefix and pattern (D-30, D-49).
      */
-    public function nextDocumentNumber(string $prefix, ?int $year = null): string
+    public function nextDocumentNumber(DocumentType $type, ?int $year = null): string
     {
         $year ??= (int) now()->format('Y');
+
+        return $this->format($type, $year, $this->next($type->sequenceKey($year)));
+    }
+
+    public function format(DocumentType $type, int $year, int $number): string
+    {
         $settings = app(SettingsService::class);
-        $number = $this->next("doc:{$prefix}:{$year}");
 
         return strtr((string) $settings->get('documents.number_pattern'), [
-            '{PREFIX}' => $prefix,
+            '{PREFIX}' => (string) ($settings->get($type->prefixSetting()) ?: $type->defaultPrefix()),
             '{YEAR}' => (string) $year,
             '{NUMBER}' => str_pad((string) $number, (int) $settings->get('documents.number_padding'), '0', STR_PAD_LEFT),
         ]);
+    }
+
+    public function lastNumber(DocumentType $type, int $year): int
+    {
+        return (int) DB::table('sequences')->where('key', $type->sequenceKey($year))->value('last_value');
+    }
+
+    /**
+     * Continue the numbering of the company's previous system (D-49): the next
+     * document of the year will carry $nextNumber. Going back is refused, so a
+     * number can never be issued twice.
+     */
+    public function setNextNumber(DocumentType $type, int $year, int $nextNumber): void
+    {
+        DB::transaction(function () use ($type, $year, $nextNumber) {
+            DB::statement(
+                'INSERT INTO sequences (key, last_value, created_at, updated_at) VALUES (?, 0, now(), now()) ON CONFLICT (key) DO NOTHING',
+                [$type->sequenceKey($year)],
+            );
+            $current = (int) DB::table('sequences')->where('key', $type->sequenceKey($year))->lockForUpdate()->value('last_value');
+
+            if ($nextNumber <= $current) {
+                throw BusinessRuleException::make('settings.errors.number_backwards', [
+                    'type' => $type->label(), 'last' => $current,
+                ]);
+            }
+
+            DB::table('sequences')->where('key', $type->sequenceKey($year))->update(['last_value' => $nextNumber - 1, 'updated_at' => now()]);
+        });
     }
 }

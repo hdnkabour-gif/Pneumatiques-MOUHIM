@@ -2,6 +2,7 @@
 
 namespace App\Actions\Transfers;
 
+use App\Enums\DocumentType;
 use App\Enums\Permission;
 use App\Enums\StockMovementType;
 use App\Enums\TransferStatus;
@@ -43,7 +44,7 @@ class SendTransferAction
 
         return DB::transaction(function () use ($from, $to, $lines, $user, $notes, $request) {
             $transfer = Transfer::query()->create([
-                'number' => $this->sequences->nextDocumentNumber('TR'),
+                'number' => $this->sequences->nextDocumentNumber(DocumentType::Transfer),
                 'from_site_id' => $from->id,
                 'to_site_id' => $to->id,
                 'status' => TransferStatus::InTransit,

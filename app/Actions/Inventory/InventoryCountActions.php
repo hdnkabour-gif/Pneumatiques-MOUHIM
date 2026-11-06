@@ -2,6 +2,7 @@
 
 namespace App\Actions\Inventory;
 
+use App\Enums\DocumentType;
 use App\Enums\InventoryCountStatus;
 use App\Enums\Permission;
 use App\Enums\ProductKind;
@@ -31,7 +32,7 @@ class InventoryCountActions
 
         return DB::transaction(function () use ($site, $user, $category, $notes) {
             $count = InventoryCount::query()->create([
-                'number' => $this->sequences->nextDocumentNumber('INV'),
+                'number' => $this->sequences->nextDocumentNumber(DocumentType::Inventory),
                 'site_id' => $site->id,
                 'category_id' => $category?->id,
                 'status' => InventoryCountStatus::Draft,

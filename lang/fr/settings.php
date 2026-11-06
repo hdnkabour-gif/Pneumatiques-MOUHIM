@@ -35,4 +35,15 @@ return [
         'document_number_pattern_help' => 'Variables : {PREFIX}, {YEAR}, {NUMBER}',
         'document_number_padding' => 'Nombre de chiffres',
     ],
+    'numbering' => [
+        'title' => 'Numérotation des documents',
+        'help' => 'Pour continuer votre ancienne numérotation, indiquez le prochain numéro à utiliser (ex. : dernière facture papier n° 1250 → prochain numéro 1251).',
+        'prefix' => 'Préfixe',
+        'next_number' => 'Prochain numéro',
+        'preview' => 'Exemple',
+        'year' => 'Année',
+    ],
+    'errors' => [
+        'number_backwards' => 'Impossible : le numéro :last a déjà été utilisé pour « :type ». Le prochain numéro doit être supérieur.',
+    ],
 ];
