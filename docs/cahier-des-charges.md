@@ -1,6 +1,6 @@
 # PNEU MOUHIM Manager – Cahier des charges
 
-**Version :** 1.1 – 4 novembre 2026
+**Version :** 1.2 – 6 novembre 2026 (ajouts : §10.1, §11, §12, §14, §16.1, §20 ; décisions D-48 à D-53)
 **Activité :** pneumatiques neufs et d'occasion, jantes, huiles, filtres, batteries, éclairage et services automobiles liés
 **Pays :** Maroc – **Devise :** MAD – **Langues :** français / arabe (LTR et RTL)
 **Supports :** PC, tablette, smartphone
@@ -272,13 +272,14 @@ Raison sociale, ICE, IF, RC, adresse, contacts, téléphone, email, niveau de pr
 ### 10.1 Écran de vente (Livewire dédié)
 Un seul écran :
 1. Site (par défaut celui de l'utilisateur).
-2. Client et véhicule (recherche par immatriculation ou téléphone ; création rapide en ligne).
-3. Ajout de produits, services, forfaits ; propositions issues de l'historique du véhicule.
+2. Client et véhicule (recherche par immatriculation ou téléphone ; **création rapide : téléphone + nom seulement**, le reste facultatif).
+3. Ajout de produits, services, forfaits (un bouton par forfait) ; propositions issues de l'historique du véhicule et des **compatibilités vérifiées** (§7.3), avec le stock de chaque site.
+   - Produit absent du site mais disponible au dépôt : bouton **« Demander au dépôt »** qui crée la demande de réapprovisionnement.
 4. **Reprise** : pneus / batterie laissés par le client → déduction sur le total et création des fiches occasion « en attente de contrôle ».
 5. Remise (dans la limite du rôle, sinon demande d'approbation).
-6. Paiement : un ou plusieurs moyens, paiement partiel, reste à crédit.
-7. Validation → document, sortie de stock, ordre de travail si services, encaissement en caisse.
-8. Impression (A4 ou ticket thermique 80 mm) et envoi WhatsApp.
+6. Paiement : espèces par défaut, carte, chèque (numéro, banque, tireur, échéance), plusieurs moyens, paiement partiel, reste à crédit (D-50).
+7. Validation → document, sortie de stock, ordre de travail si services (techniciens affectés par le vendeur, D-53), encaissement.
+8. Impression **A4 uniquement** (D-51) et envoi WhatsApp en un clic (lien `wa.me` avec message pré-rempli et lien du document).
 
 Statuts d'une vente : Brouillon, Validée, Annulée (par avoir).
 
@@ -318,6 +319,7 @@ Statuts d'une vente : Brouillon, Validée, Annulée (par avoir).
 - **Balance âgée** : 0–30, 31–60, 61–90, > 90 jours.
 - Relevé de compte PDF + envoi WhatsApp.
 - Relance : message pré-rempli (FR / AR) avec le solde et les factures dues.
+- **Page « Ce qui reste »** (propriétaire, mobile) : créances par client et ancienneté (relance WhatsApp en un clic), chèques / LCN non encaissés, devis non convertis, véhicules encore à l'atelier, transferts en transit, demandes de réapprovisionnement en attente.
 
 Moyens de paiement : espèces, carte, virement, chèque, LCN / effet, autres configurables.
 
@@ -337,7 +339,7 @@ Caisse par site :
 - Après clôture, la journée est verrouillée (D-29).
 - Rapport journalier imprimable.
 
-Dépenses : catégories configurables (loyer, électricité, eau, carburant, transport, fournitures, maintenance, divers), site, justificatif photo, auteur. Les dépenses ne sont jamais confondues avec les achats de marchandises.
+Dépenses : catégories configurables (loyer, électricité, eau, carburant, transport, fournitures, maintenance, divers), site, **justificatif photo pris avec le téléphone**, auteur. Les dépenses ne sont jamais confondues avec les achats de marchandises.
 
 ---
 
@@ -356,7 +358,8 @@ Dépenses : catégories configurables (loyer, électricité, eau, carburant, tra
 - Une vente (ou un BT) contenant des services génère un ordre de travail.
 - Contenu : numéro, site, client, véhicule, kilométrage, prestations, produits à utiliser, technicien(s), heures début / fin, observations, photos avant / après, statut.
 - Statuts : En attente, En cours, En pause, Terminé, Livré, Annulé (utilisateur autorisé).
-- **Écran technicien** (mobile, arabe par défaut, gros boutons) : mes travaux, démarrer / pause / terminer, signaler un produit manquant, ajouter une observation ou une photo, signaler un problème constaté sur le véhicule (proposé ensuite au client par le vendeur sous forme de devis).
+- **Saisie par le vendeur (D-53)** : le technicien n'a pas à utiliser de téléphone ni d'ordinateur. Le vendeur affecte les techniciens (gros boutons avec leurs noms), fait avancer les statuts et saisit les observations.
+- **Écran technicien** (facultatif) : mobile, arabe par défaut, gros boutons. Il affiche les travaux du technicien et permet de démarrer / mettre en pause / terminer, de signaler un produit manquant, d'ajouter une observation ou une photo, et de signaler un problème constaté sur le véhicule (proposé ensuite au client par le vendeur sous forme de devis).
 - **Tableau atelier** (écran TV ou tablette) : véhicules par statut, mise à jour en temps réel.
 - Temps passé et nombre d'interventions par technicien (rapport).
 - Prochaine vidange (km / date) enregistrée sur la fiche véhicule.
@@ -378,6 +381,13 @@ Maintenance : plan préventif (périodicité), historique (entretien, panne, ré
 ## 16. Tableau de bord et rapports
 
 ### 16.1 Tableau de bord du propriétaire
+
+**Page « Aujourd'hui » (téléphone d'abord)**, première page du propriétaire :
+- Par site et au total : chiffre d'affaires du jour, encaissements par moyen (espèces, carte, chèques), ventes à crédit, dépenses, marge (signalée incomplète si des coûts manquent), comparaison avec la veille et le même mois précédent.
+- **Objectifs mensuels par site** fixés par le propriétaire, avec une barre de progression.
+- Fil « en direct » des dernières opérations (ventes, clôtures, transferts), filtrable par site.
+- Application installable sur l'écran d'accueil (PWA) avec **notifications push** (approbations, écarts de caisse, résumé du soir).
+
 En haut, les **alertes à traiter** (3 à 5 maximum) : approbations en attente, clients en retard importants, chèques / LCN à échéance, ruptures dans un magasin avec stock disponible au dépôt, écarts de caisse.
 
 Ensuite, filtrables par période et par site (ou tous) :
@@ -389,7 +399,7 @@ Ensuite, filtrables par période et par site (ou tous) :
 - Comparaison des trois sites.
 
 ### 16.2 Résumé quotidien
-Chaque soir, résumé automatique au propriétaire (notification + email en V1) : CA par site, encaissements, crédits accordés, règlements reçus, écarts de caisse, ruptures, approbations effectuées.
+Chaque soir (heure configurable, 20 h par défaut), résumé automatique au propriétaire (notification push + email en V1) : CA par site, encaissements, crédits accordés, règlements reçus, écarts de caisse, ruptures, approbations effectuées.
 
 ### 16.3 Rapports
 Ventes (par site, vendeur, catégorie, marque, client, période), produits les plus vendus, marges par produit / catégorie / service, stock et valorisation, mouvements, transferts, balance âgée, chèques / LCN, caisse, dépenses, achats et fournisseurs, atelier et techniciens, devis et conversion, équipements.
@@ -440,9 +450,9 @@ Chaque phase se termine par des tests verts, une démonstration et la mise à jo
 |---|---|---|
 | 1. Fondations | Docker, Laravel, Filament, PostgreSQL, authentification, rôles et permissions, sites, langues FR / AR, journal d'activité, paramètres société, sauvegardes, déploiement Railway | Connexion par rôle, interface FR / AR, déploiement fonctionnel, sauvegarde restaurée avec succès |
 | 2. Catalogue et stock | Catégories, produits, pneus neufs (lots, DOT), pneus d'occasion (contrôle, QR), services, forfaits, mouvements, transferts, réapprovisionnement, inventaire, approbations (socle) | Scénarios de stock multi-sites (voir 21) |
-| 3. Ventes et documents | Clients, véhicules, recherche unique, écran de vente, reprises, devis, BL / BT, factures, factures récapitulatives, avoirs, retours, échanges, PDF, WhatsApp, ordres de travail (création) | Vente complète < 1 minute, documents conformes |
-| 4. Argent | Comptes clients, paiements, affectation, crédit et plafonds, chèques / LCN, balance âgée, relevés, caisse par site, clôture, verrouillage, dépenses | Scénarios de crédit et de caisse (voir 21) |
-| 5. Démarrage | Imports Excel, soldes et stocks d'ouverture, tableau de bord, résumé quotidien, `DemoSeeder` | **Mise à l'essai chez le client** |
+| 3. Ventes et documents | Clients (création rapide), véhicules, recherche unique, écran de vente, « Demander au dépôt », reprises (plafond vendeur), devis, BL / BT, factures, factures récapitulatives, avoirs, retours, échanges, PDF A4, WhatsApp, paiement à la vente (espèces, carte, chèque, crédit), numérotation paramétrable, ordres de travail saisis par le vendeur | Vente complète < 1 minute, documents conformes |
+| 4. Argent | Comptes clients, paiements, affectation, crédit et plafonds, chèques / LCN, balance âgée, relevés, caisse par site, clôture, verrouillage, dépenses avec photo, page « Ce qui reste » | Scénarios de crédit et de caisse (voir 21) |
+| 5. Démarrage | Imports Excel, soldes et stocks d'ouverture, page « Aujourd'hui » sur mobile, objectifs par site, résumé du soir, PWA et notifications push, `DemoSeeder` | **Mise à l'essai chez le client** |
 | 6. Achats et atelier | Fournisseurs, commandes, réceptions, dettes, comparaison des prix, écran technicien, tableau atelier | Cycle achat → stock → paiement complet |
 | 7. Compléments | Compatibilités vérifiées (saisie manuelle, import Excel, données fournies), historique d'utilisation, rapports avancés, rapports flottes, équipements et maintenance, exports comptables, garanties | Rapports validés par le propriétaire |
 
