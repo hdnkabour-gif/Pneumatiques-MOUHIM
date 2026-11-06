@@ -17,10 +17,17 @@ use Filament\Resources\Pages\ViewRecord;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Database\Eloquent\Model;
 
 class ViewTransfer extends ViewRecord
 {
     protected static string $resource = TransferResource::class;
+
+    /** Lines with their product, sender and receiver (no lazy loading). */
+    protected function resolveRecord(int|string $key): Model
+    {
+        return parent::resolveRecord($key)->load(['lines.product', 'sender', 'receiver']);
+    }
 
     protected function getHeaderActions(): array
     {

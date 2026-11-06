@@ -1,12 +1,16 @@
 <?php
 
 use App\Actions\Inventory\InventoryCountActions;
+use App\Actions\Sales\ConfirmSaleAction;
+use App\Actions\Sales\SaveSaleDraftAction;
 use App\Actions\Stock\RequestStockAdjustmentAction;
 use App\Actions\Transfers\CreateReplenishmentRequestAction;
 use App\Actions\Transfers\SendTransferAction;
 use App\Actions\UsedTyres\UsedTyreActions;
 use App\Enums\RoleName;
 use App\Enums\UsedTyreOrigin;
+use App\Filament\Resources\Sales\SaleResource;
+use App\Filament\Resources\Transfers\TransferResource;
 use App\Models\Product;
 use App\Models\UsedTyre;
 use App\Services\Stock\StockService;
@@ -49,4 +53,17 @@ it('renders the main phase 2 pages in Arabic', function () {
     foreach (['/admin/products', '/admin/stock-levels', "/admin/transfers/{$this->transfer->id}", "/admin/used-tyres/{$this->tyre->id}", '/admin/approval-requests'] as $url) {
         $this->get($url)->assertOk()->assertSee('dir="rtl"', false);
     }
+});
+
+it('opens transfer and document detail pages without lazy loading (crawl regression)', function () {
+    $owner = owner();
+    $this->actingAs($owner);
+    $product = Product::factory()->create();
+    app(StockService::class)->receive($product, site('DEP'), 5, 1000);
+    $transfer = app(SendTransferAction::class)->execute(site('DEP'), site('M01'), [$product->id => 2], $owner);
+    $this->get(TransferResource::getUrl('view', ['record' => $transfer]))->assertOk();
+
+    $draft = app(SaveSaleDraftAction::class)->execute(['site_id' => site('DEP')->id, 'lines' => [['product_id' => $product->id, 'quantity' => 1]]], $owner);
+    $sale = app(ConfirmSaleAction::class)->execute($draft, [['method' => 'cash', 'amount_cents' => $draft->total_ttc_cents]], $owner);
+    $this->get(SaleResource::getUrl('view', ['record' => $sale]))->assertOk();
 });
