@@ -33,6 +33,14 @@
 
 ## [Non publié]
 
+### Revue complète de la plateforme (6 novembre 2026)
+- Parcours automatique de toutes les pages pour chaque rôle (propriétaire, responsable, vendeurs FR/AR, magasinier,
+  technicien) sur un écran de téléphone : 189 pages, aucun débordement horizontal, aucune erreur JavaScript.
+- Corrigé : la fiche d'un transfert provoquait une erreur serveur (chargement des lignes) ; test de non-régression ajouté.
+- Simplifié : les pages de configuration (catégories, marques, prestations, forfaits, référentiel véhicules,
+  sources, mouvements, sites) n'apparaissent dans le menu que pour ceux qui les gèrent. Menu du vendeur :
+  Nouvelle vente, Documents, Clients, Atelier, Produits, Stock, Pneus d'occasion, Réapprovisionnement, Recherche par véhicule.
+
 ### Ajouté – Phase 3b (documents)
 - Devis depuis l'écran de vente (bouton Facture / Devis / Bon), validité, PDF et WhatsApp, « Transformer en vente »
   en un clic (prix du devis conservé, jamais au-dessus du prix du jour), « Refusé », expiration automatique ;
