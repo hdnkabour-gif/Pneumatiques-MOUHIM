@@ -9,6 +9,7 @@ use App\Actions\Sales\SaveSaleDraftAction;
 use App\Actions\Transfers\CreateReplenishmentRequestAction;
 use App\Enums\ApprovalType;
 use App\Enums\CompatibilityStatus;
+use App\Enums\CustomerType;
 use App\Enums\PaymentMethod;
 use App\Enums\Permission;
 use App\Enums\PriceLevel;
@@ -64,6 +65,10 @@ class SaleScreen extends Page
     #[Url]
     public ?int $draft = null;
 
+    /** Opened from a customer's page: customer already chosen. */
+    #[Url]
+    public ?int $customer = null;
+
     public ?int $siteId = null;
 
     public string $customerSearch = '';
@@ -109,6 +114,12 @@ class SaleScreen extends Page
 
     public bool $approvalSent = false;
 
+    /** invoice | quote | delivery_note (§10.1, §10.3, D-16). */
+    public string $kind = 'invoice';
+
+    /** Quote holding the stock (owner only, D-13). */
+    public bool $reserve = false;
+
     public ?int $doneSaleId = null;
 
     public static function canAccess(): bool
@@ -147,7 +158,11 @@ class SaleScreen extends Page
             $this->loadDraft($sale);
         } else {
             $this->draft = null;
+            if ($this->customer && Customer::query()->whereKey($this->customer)->exists()) {
+                $this->selectCustomer($this->customer);
+            }
         }
+        $this->customer = null;
     }
 
     // ---------------------------------------------------------------- customer
@@ -172,6 +187,9 @@ class SaleScreen extends Page
     {
         $this->customerId = null;
         $this->vehicleId = null;
+        if ($this->kind === 'delivery_note') {
+            $this->setKind('invoice');
+        }
         $this->resetApproval();
     }
 
@@ -259,9 +277,48 @@ class SaleScreen extends Page
         $this->afterCartChange();
     }
 
-    public function updatedCart(): void
+    public function updatedCart(mixed $value = null, ?string $key = null): void
     {
+        // Typing a discount on a line coming from a quote replaces the quote price.
+        if ($key && str_ends_with($key, '.discount')) {
+            unset($this->cart[(int) explode('.', $key)[0]]['price']);
+        }
         $this->afterCartChange();
+    }
+
+    public function setKind(string $kind): void
+    {
+        $this->kind = in_array($kind, ['invoice', 'quote', 'delivery_note'], true) ? $kind : 'invoice';
+        $this->reserve = false;
+        $this->resetApproval();
+        // A delivery note is usually paid on the recap invoice: nothing to pay now.
+        $this->kind === 'delivery_note' ? $this->payOnCredit() : $this->payAllCash();
+    }
+
+    /** Trade-in (D-52): tyre or battery left by the customer. */
+    public function addTradeIn(string $type): void
+    {
+        if (! in_array($type, ['tyre', 'battery'], true)) {
+            return;
+        }
+        $size = $type === 'tyre' ? ($this->vehicle()?->tyre_size_front ?? '') : null;
+        $this->cart[] = ['trade_in' => $type, 'value' => null, 'size' => $size, 'tread' => null, 'quantity' => 1];
+        $this->afterCartChange();
+    }
+
+    public function useVoucher(int $id): void
+    {
+        $voucher = $this->customer()?->vouchers()->firstWhere('id', $id);
+        if (! $voucher || collect($this->payments)->contains(fn ($p) => (int) ($p['credit_note_id'] ?? 0) === $id)) {
+            return;
+        }
+        $this->syncPayments();
+        $amount = min($voucher->voucherBalanceCents(), $this->total());
+        if (count($this->payments) === 1 && $this->payments[0]['method'] === PaymentMethod::Cash->value && ! $this->paymentsTouched) {
+            $this->payments[0]['amount'] = Decimal::fromCents(max(0, $this->total() - $amount));
+        }
+        $this->payments[] = [...$this->paymentRow(PaymentMethod::CreditNote, $amount), 'credit_note_id' => $voucher->id, 'label' => $voucher->number];
+        $this->paymentsTouched = true;
     }
 
     public function updatedPayments(): void
@@ -345,7 +402,8 @@ class SaleScreen extends Page
 
         try {
             $sale = $this->saveDraft($save);
-            $sale = $confirm->execute($sale, $this->paymentInput(), $this->user(), $this->technicianIds);
+            $sale = $confirm->execute($sale, $this->kind === 'quote' ? [] : $this->paymentInput(), $this->user(),
+                $this->technicianIds, $this->reserve && $this->canReserve());
         } catch (ApprovalRequiredException $e) {
             $this->neededApprovals = array_map(fn (ApprovalType $t) => $t->value, $e->types);
 
@@ -365,7 +423,7 @@ class SaleScreen extends Page
         $this->validate(['approvalReason' => 'required|string|min:3|max:500'], [], ['approvalReason' => __('sales.screen.approval_reason')]);
 
         $sale = $this->saveDraft($save);
-        $request->execute($sale, $this->approvalTypes(), $this->approvalReason, $this->user(), $this->creditCents());
+        $request->execute($sale, $this->approvalTypes(), $this->approvalReason, $this->user(), $this->kind === 'quote' ? 0 : $this->creditCents());
         $this->approvalSent = true;
 
         Notification::make()->success()->title(__('sales.screen.approval_sent'))
@@ -379,7 +437,7 @@ class SaleScreen extends Page
 
         try {
             $sale = $this->saveDraft($save);
-            foreach ($request->execute($sale, $this->approvalTypes(), $reason, $this->user(), $this->creditCents()) as $approval) {
+            foreach ($request->execute($sale, $this->approvalTypes(), $reason, $this->user(), $this->kind === 'quote' ? 0 : $this->creditCents()) as $approval) {
                 if ($approval->isPending()) {
                     $approvals->decideWithPin($approval, $this->pin);
                 }
@@ -599,6 +657,22 @@ class SaleScreen extends Page
         return $this->user()->can(Permission::ReplenishmentRequest->value);
     }
 
+    public function canReserve(): bool
+    {
+        return $this->user()->can(Permission::ApprovalsDecide->value);
+    }
+
+    /** Delivery notes are for registered professional customers (D-16). */
+    public function canDeliveryNote(): bool
+    {
+        return $this->customer()?->type === CustomerType::Company;
+    }
+
+    public function vouchers(): Collection
+    {
+        return $this->customer()?->vouchers() ?? collect();
+    }
+
     public function doneSale(): ?Sale
     {
         return $this->doneSaleId ? Sale::query()->with(['customer', 'workOrder'])->find($this->doneSaleId) : null;
@@ -670,6 +744,7 @@ class SaleScreen extends Page
             'mileage' => filled($this->mileage) ? (int) preg_replace('/\D/', '', $this->mileage) : null,
             'po_number' => $this->poNumber,
             'notes' => $this->notes,
+            'kind' => $this->kind,
             'lines' => $this->lineInput(),
         ], $this->user(), $existing?->isDraft() ? $existing : null);
         $this->draft = $sale->id;
@@ -685,9 +760,19 @@ class SaleScreen extends Page
         $this->mileage = $sale->mileage ? (string) $sale->mileage : null;
         $this->poNumber = $sale->po_number;
         $this->notes = $sale->notes;
+        $this->kind = $sale->kind->value;
+        $fromQuote = (bool) $sale->quote_id;
 
         $cart = [];
         foreach ($sale->lines as $line) {
+            if ($line->kind === 'trade_in') {
+                $m = $line->meta ?? [];
+                $cart[] = ['trade_in' => $line->trade_in_type, 'value' => Decimal::fromCents(-$line->unit_price_ttc_cents), 'quantity' => 1,
+                    'size' => $m ? TyreSize::format($m['width'], $m['aspect_ratio'], (string) $m['rim_diameter']) : null,
+                    'tread' => isset($m['tread_depth_tenths']) ? (string) ($m['tread_depth_tenths'] / 10) : null];
+
+                continue;
+            }
             if ($line->bundle_id) {
                 if (! collect($cart)->contains(fn ($c) => ($c['product_id'] ?? null) === $line->bundle_id)) {
                     $cart[] = ['product_id' => $line->bundle_id, 'used_tyre_id' => null, 'quantity' => 1, 'discount' => $line->discount_bp ? Decimal::basisPointsToPercent($line->discount_bp) : null];
@@ -700,15 +785,23 @@ class SaleScreen extends Page
                 'used_tyre_id' => $line->used_tyre_id,
                 'quantity' => $line->quantity,
                 'discount' => $line->discount_bp ? Decimal::basisPointsToPercent($line->discount_bp) : null,
+                // Quote price kept, never above today's catalogue price (QuoteActions::toDraft).
+                'price' => $fromQuote ? $line->unit_price_ttc_cents : null,
             ];
         }
         $this->cart = $cart;
-        $this->payAllCash();
+        $this->kind === 'delivery_note' ? $this->payOnCredit() : $this->payAllCash();
     }
 
     private function lineInput(): array
     {
-        return array_map(fn (array $item) => array_filter([
+        return array_map(fn (array $item) => ! empty($item['trade_in']) ? [
+            'trade_in' => $item['trade_in'],
+            'value_cents' => $this->cents($item['value'] ?? null),
+            'meta' => ['size' => $item['size'] ?? null, 'tread_mm' => $item['tread'] ?? null],
+        ] : array_filter([
+            'unit_price_ttc_cents' => isset($item['price']) && empty($item['used_tyre_id'])
+                ? min((int) $item['price'], $this->currentListPrice((int) $item['product_id'])) : null,
             'product_id' => $item['product_id'] ?? null,
             'used_tyre_id' => $item['used_tyre_id'] ?? null,
             'quantity' => (int) ($item['quantity'] ?? 1),
@@ -726,7 +819,15 @@ class SaleScreen extends Page
             'bank' => $p['bank'] ?? null,
             'drawer' => $p['drawer'] ?? null,
             'due_date' => filled($p['due_date'] ?? null) ? $p['due_date'] : null,
+            'credit_note_id' => $p['credit_note_id'] ?? null,
         ], $this->payments);
+    }
+
+    private function currentListPrice(int $productId): int
+    {
+        $product = Product::query()->with('priceTiers')->find($productId);
+
+        return $product ? app(SaleCalculator::class)->listPrice($product, $this->customer()?->price_level ?? PriceLevel::Retail) : 0;
     }
 
     private function paymentRow(PaymentMethod $method, int $cents): array

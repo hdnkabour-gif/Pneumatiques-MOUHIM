@@ -44,6 +44,12 @@ class SaleCalculator
                 throw BusinessRuleException::make('sales.errors.quantity');
             }
 
+            if (! empty($item['trade_in'])) {
+                $rows[] = $this->tradeInLine((string) $item['trade_in'], (int) ($item['value_cents'] ?? 0), (array) ($item['meta'] ?? []));
+
+                continue;
+            }
+
             if (! empty($item['used_tyre_id'])) {
                 $rows[] = $this->usedTyreLine((int) $item['used_tyre_id'], $site, $discount, $item['unit_price_ttc_cents'] ?? null);
 
@@ -95,6 +101,12 @@ class SaleCalculator
     /** @return array{ht: int, vat: int, ttc: int} */
     public static function split(int $ttc, int $vatBp): array
     {
+        if ($ttc < 0) { // trade-in lines: same rounding as the positive amount
+            $positive = self::split(-$ttc, $vatBp);
+
+            return ['ht' => -$positive['ht'], 'vat' => -$positive['vat'], 'ttc' => $ttc];
+        }
+
         $ht = intdiv($ttc * 10000 * 2 + (10000 + $vatBp), (10000 + $vatBp) * 2);
 
         return ['ht' => $ht, 'vat' => $ttc - $ht, 'ttc' => $ttc];
@@ -115,6 +127,8 @@ class SaleCalculator
             'used_tyre_id' => null,
             'bundle_id' => $bundleId,
             'kind' => $product->kind === ProductKind::Service ? 'service' : 'goods',
+            'trade_in_type' => null,
+            'meta' => null,
             'description' => $product->name,
             'quantity' => $quantity,
             'list_price_ttc_cents' => $list,
@@ -147,11 +161,55 @@ class SaleCalculator
             'used_tyre_id' => $tyre->id,
             'bundle_id' => null,
             'kind' => 'used_tyre',
+            'trade_in_type' => null,
+            'meta' => null,
             'description' => trim(__('sales.lines.used_tyre', ['size' => $tyre->sizeLabel(), 'code' => $tyre->code], 'fr').' '.($tyre->brand?->name ?? '')),
             'quantity' => 1,
             'list_price_ttc_cents' => $list,
             'unit_price_ttc_cents' => $unit,
             'discount_bp' => $discount,
+            'vat_rate_bp' => $vat,
+            'total_ht_cents' => $totals['ht'],
+            'total_vat_cents' => $totals['vat'],
+            'total_ttc_cents' => $totals['ttc'],
+        ];
+    }
+
+    /**
+     * Trade-in (§10.1 step 4, D-52): tyre or battery left by the customer,
+     * deducted from the total as a negative line. The value is the seller's
+     * choice, capped by a setting (above it the owner approves).
+     */
+    private function tradeInLine(string $type, int $value, array $meta): array
+    {
+        if (! in_array($type, ['tyre', 'battery'], true) || $value <= 0) {
+            throw BusinessRuleException::make('sales.errors.trade_in_value');
+        }
+
+        $size = $type === 'tyre' && filled($meta['size'] ?? null) ? TyreSize::parse((string) $meta['size']) : null;
+        if ($type === 'tyre' && ! $size) {
+            throw BusinessRuleException::make('customers.errors.tyre_size');
+        }
+
+        $vat = $this->settings->get('tax.trade_in_vat_enabled') ? $this->settings->vatRateBasisPoints() : 0;
+        $totals = self::split(-$value, $vat);
+        $label = $type === 'tyre'
+            ? __('sales.lines.trade_in_tyre', ['size' => TyreSize::format($size['width'], $size['aspect_ratio'], $size['rim_diameter'])], 'fr')
+            : __('sales.lines.trade_in_battery', [], 'fr');
+
+        return [
+            'product_id' => null,
+            'used_tyre_id' => null,
+            'bundle_id' => null,
+            'kind' => 'trade_in',
+            'trade_in_type' => $type,
+            'meta' => $size ? ['width' => $size['width'], 'aspect_ratio' => $size['aspect_ratio'], 'rim_diameter' => $size['rim_diameter'],
+                'tread_depth_tenths' => isset($meta['tread_mm']) && is_numeric(str_replace(',', '.', (string) $meta['tread_mm'])) ? (int) round(((float) str_replace(',', '.', (string) $meta['tread_mm'])) * 10) : null] : null,
+            'description' => $label,
+            'quantity' => 1,
+            'list_price_ttc_cents' => -$value,
+            'unit_price_ttc_cents' => -$value,
+            'discount_bp' => 0,
             'vat_rate_bp' => $vat,
             'total_ht_cents' => $totals['ht'],
             'total_vat_cents' => $totals['vat'],

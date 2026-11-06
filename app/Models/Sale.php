@@ -2,7 +2,11 @@
 
 namespace App\Models;
 
+use App\Enums\DocumentType;
 use App\Enums\PriceLevel;
+use App\Enums\QuoteStatus;
+use App\Enums\RefundMethod;
+use App\Enums\SaleKind;
 use App\Enums\SaleStatus;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
@@ -26,6 +30,11 @@ class Sale extends Model
     {
         return [
             'status' => SaleStatus::class,
+            'kind' => SaleKind::class,
+            'quote_status' => QuoteStatus::class,
+            'refund_method' => RefundMethod::class,
+            'valid_until' => 'date',
+            'reserved' => 'boolean',
             'price_level' => PriceLevel::class,
             'confirmed_at' => 'datetime',
             'approvals' => 'array',
@@ -50,6 +59,59 @@ class Sale extends Model
     public function isDraft(): bool
     {
         return $this->status === SaleStatus::Draft;
+    }
+
+    public function isKind(SaleKind $kind): bool
+    {
+        return $this->kind === $kind;
+    }
+
+    /** BL for goods only, BT when the note includes services (§10.2). */
+    public function documentType(): DocumentType
+    {
+        return match ($this->kind) {
+            SaleKind::Quote => DocumentType::Quote,
+            SaleKind::CreditNote => DocumentType::CreditNote,
+            SaleKind::DeliveryNote => $this->lines->contains(fn ($l) => $l->kind === 'service')
+                ? DocumentType::WorkNote : DocumentType::DeliveryNote,
+            default => DocumentType::Invoice,
+        };
+    }
+
+    public function quote(): BelongsTo
+    {
+        return $this->belongsTo(Sale::class, 'quote_id');
+    }
+
+    public function recapInvoice(): BelongsTo
+    {
+        return $this->belongsTo(Sale::class, 'recap_invoice_id');
+    }
+
+    /** Delivery / work notes grouped in this recap invoice. */
+    public function deliveryNotes(): HasMany
+    {
+        return $this->hasMany(Sale::class, 'recap_invoice_id');
+    }
+
+    public function originalSale(): BelongsTo
+    {
+        return $this->belongsTo(Sale::class, 'original_sale_id');
+    }
+
+    public function creditNotes(): HasMany
+    {
+        return $this->hasMany(Sale::class, 'original_sale_id');
+    }
+
+    /** Exchange voucher still available (credit note refunded as a voucher). */
+    public function voucherBalanceCents(): int
+    {
+        if ($this->kind !== SaleKind::CreditNote || $this->refund_method !== RefundMethod::Voucher) {
+            return 0;
+        }
+
+        return $this->total_ttc_cents - (int) Payment::query()->where('credit_note_id', $this->id)->sum('amount_cents');
     }
 
     public function site(): BelongsTo
@@ -100,7 +162,9 @@ class Sale extends Model
     {
         $margin = 0;
         foreach ($this->lines as $line) {
-            if ($line->kind === 'goods') {
+            if ($line->kind === 'trade_in') {
+                $margin += $line->total_ht_cents;
+            } elseif ($line->kind === 'goods') {
                 if ($line->unit_cost_cents === null) {
                     return null;
                 }

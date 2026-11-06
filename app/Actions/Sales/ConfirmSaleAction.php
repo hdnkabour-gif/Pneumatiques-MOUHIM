@@ -2,11 +2,16 @@
 
 namespace App\Actions\Sales;
 
+use App\Actions\UsedTyres\UsedTyreActions;
+use App\Enums\ApprovalType;
 use App\Enums\DocumentType;
 use App\Enums\PaymentMethod;
 use App\Enums\Permission;
+use App\Enums\QuoteStatus;
+use App\Enums\SaleKind;
 use App\Enums\SaleStatus;
 use App\Enums\StockMovementType;
+use App\Enums\UsedTyreOrigin;
 use App\Enums\UsedTyreStatus;
 use App\Enums\WorkOrderStatus;
 use App\Exceptions\ApprovalRequiredException;
@@ -20,6 +25,7 @@ use App\Models\User;
 use App\Models\WorkOrder;
 use App\Services\Sales\SaleRules;
 use App\Services\SequenceService;
+use App\Services\SettingsService;
 use App\Services\Stock\StockService;
 use Illuminate\Support\Facades\DB;
 
@@ -41,11 +47,11 @@ class ConfirmSaleAction
      * @param  list<array{method: string, amount_cents: int, cheque_number?: ?string, bank?: ?string, drawer?: ?string, due_date?: ?string}>  $payments
      * @param  list<int>  $technicianIds
      */
-    public function execute(Sale $sale, array $payments, User $user, array $technicianIds = []): Sale
+    public function execute(Sale $sale, array $payments, User $user, array $technicianIds = [], bool $reserve = false): Sale
     {
         $payments = $this->cleanPayments($payments);
 
-        return DB::transaction(function () use ($sale, $payments, $user, $technicianIds) {
+        return DB::transaction(function () use ($sale, $payments, $user, $technicianIds, $reserve) {
             $sale = Sale::query()->with(['lines', 'customer', 'site', 'vehicle'])->lockForUpdate()->findOrFail($sale->id);
 
             if (! $user->can(Permission::SalesCreate->value) || ! $user->canAccessSite($sale->site)) {
@@ -58,11 +64,20 @@ class ConfirmSaleAction
                 throw BusinessRuleException::make('sales.errors.empty');
             }
 
+            if ($sale->kind === SaleKind::Quote) {
+                return $this->issueQuote($sale, $user, $reserve);
+            }
+
             $paid = array_sum(array_column($payments, 'amount_cents'));
             if ($paid > $sale->total_ttc_cents) {
                 throw BusinessRuleException::make('sales.errors.overpaid');
             }
             $credit = $sale->total_ttc_cents - $paid;
+            foreach ($payments as $p) {
+                if ($p['method'] === PaymentMethod::CreditNote) {
+                    $this->checkVoucher($sale, $p);
+                }
+            }
 
             if ($credit > 0 && ! $sale->customer) {
                 throw BusinessRuleException::make('sales.errors.credit_needs_customer');
@@ -82,6 +97,7 @@ class ConfirmSaleAction
                 throw ApprovalRequiredException::for($missing);
             }
 
+            $this->convertQuote($sale);
             $this->takeStock($sale, $user);
 
             foreach ($payments as $p) {
@@ -101,7 +117,7 @@ class ConfirmSaleAction
 
             // Number last: the counter row stays locked only for the end of the transaction.
             $sale->forceFill([
-                'number' => $this->sequences->nextDocumentNumber(DocumentType::Invoice),
+                'number' => $this->sequences->nextDocumentNumber($sale->documentType()),
                 'status' => SaleStatus::Confirmed,
                 'paid_cents' => $paid,
                 'credit_cents' => $credit,
@@ -144,6 +160,16 @@ class ConfirmSaleAction
                     $unit = $consumable->product->refresh()->average_cost_cents;
                     $cost = $cost === null || $unit === null ? null : $cost + $unit * $consumable->quantity;
                 }
+            } elseif ($line->kind === 'trade_in') {
+                // Tyres left by the customer await the safety check before any resale (§5.4).
+                if ($line->trade_in_type === 'tyre' && $line->meta) {
+                    app(UsedTyreActions::class)->register([...$line->meta, 'cost_cents' => -$line->unit_price_ttc_cents],
+                        $sale->site, UsedTyreOrigin::TradeIn, $user, $sale);
+                }
+                $cost = null;
+                $line->forceFill(['unit_cost_cents' => $line->unit_price_ttc_cents])->save();
+
+                continue;
             } else {
                 $tyre = UsedTyre::query()->lockForUpdate()->findOrFail($line->used_tyre_id);
                 if ($tyre->status !== UsedTyreStatus::InStock || $tyre->site_id !== $sale->site_id) {
@@ -161,6 +187,70 @@ class ConfirmSaleAction
 
             // Cost snapshot for the margin; NULL when unknown, never guessed (CLAUDE.md §4).
             $line->forceFill(['unit_cost_cents' => $cost])->save();
+        }
+    }
+
+    /** D-13 / §10.3: a quote has a number and a validity; it takes no stock nor money. */
+    private function issueQuote(Sale $sale, User $user, bool $reserve): Sale
+    {
+        $missing = array_values(array_filter($this->rules->required($sale, $user, 0), fn ($t) => $t !== ApprovalType::CreditLimit));
+        if ($missing !== [] && $user->can(Permission::ApprovalsDecide->value)) {
+            app(RequestSaleApprovalAction::class)->execute($sale, $missing, __('sales.self_approved'), $user);
+            $sale->refresh()->load(['lines', 'customer', 'site']);
+            $missing = array_values(array_filter($this->rules->required($sale, $user, 0), fn ($t) => $t !== ApprovalType::CreditLimit));
+        }
+        if ($missing !== []) {
+            throw ApprovalRequiredException::for($missing);
+        }
+
+        // Reserving stock is kept for the owner (decision of 2026-11-05 on D-13).
+        $reserve = $reserve && $user->can(Permission::ApprovalsDecide->value);
+        if ($reserve) {
+            foreach ($sale->lines->where('kind', 'goods') as $line) {
+                $this->stock->reserve($line->product, $sale->site, $line->quantity);
+            }
+        }
+
+        $sale->forceFill([
+            'number' => $this->sequences->nextDocumentNumber(DocumentType::Quote),
+            'status' => SaleStatus::Confirmed,
+            'quote_status' => QuoteStatus::Sent,
+            'valid_until' => today()->addDays((int) app(SettingsService::class)->get('sales.quote_validity_days')),
+            'reserved' => $reserve,
+            'confirmed_by' => $user->id,
+            'confirmed_at' => now(),
+        ])->save();
+
+        activity('sales')->causedBy($user)->performedOn($sale)->event('quote_issued')
+            ->withProperties(['number' => $sale->number, 'total_ttc_cents' => $sale->total_ttc_cents, 'reserved' => $reserve])
+            ->tap(fn ($a) => $a->site_id = $sale->site_id)->log('quote_issued');
+
+        return $sale->refresh()->load('lines');
+    }
+
+    /** The sale made from a quote frees the quote's reservation before taking the stock. */
+    private function convertQuote(Sale $sale): void
+    {
+        if (! $sale->quote_id) {
+            return;
+        }
+
+        $quote = Sale::query()->with('lines.product')->lockForUpdate()->find($sale->quote_id);
+        if (! $quote || $quote->quote_status !== QuoteStatus::Sent) {
+            throw BusinessRuleException::make('sales.errors.quote_not_open');
+        }
+
+        app(QuoteActions::class)->releaseReservation($quote);
+        $quote->forceFill(['quote_status' => QuoteStatus::Converted])->save();
+    }
+
+    /** Exchange voucher (credit note) of the same customer, with enough left on it. */
+    private function checkVoucher(Sale $sale, array $payment): void
+    {
+        $voucher = Sale::query()->lockForUpdate()->find($payment['credit_note_id']);
+
+        if (! $voucher || $voucher->customer_id !== $sale->customer_id || $voucher->voucherBalanceCents() < $payment['amount_cents']) {
+            throw BusinessRuleException::make('sales.errors.voucher_invalid');
         }
     }
 
@@ -196,6 +286,9 @@ class ConfirmSaleAction
             if (! $method) {
                 throw BusinessRuleException::make('sales.errors.payment_method');
             }
+            if ($method === PaymentMethod::CreditNote && blank($p['credit_note_id'] ?? null)) {
+                throw BusinessRuleException::make('sales.errors.voucher_invalid');
+            }
             if ($method === PaymentMethod::Cheque && (blank($p['cheque_number'] ?? null) || blank($p['bank'] ?? null))) {
                 throw BusinessRuleException::make('sales.errors.cheque_details');
             }
@@ -206,6 +299,7 @@ class ConfirmSaleAction
                 'bank' => $method === PaymentMethod::Cheque ? trim($p['bank']) : null,
                 'drawer' => $method === PaymentMethod::Cheque ? ($p['drawer'] ?? null) : null,
                 'due_date' => $method === PaymentMethod::Cheque ? ($p['due_date'] ?? null) : null,
+                'credit_note_id' => $method === PaymentMethod::CreditNote ? (int) $p['credit_note_id'] : null,
             ];
         }
 

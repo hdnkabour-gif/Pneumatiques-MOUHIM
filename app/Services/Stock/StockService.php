@@ -272,6 +272,39 @@ class StockService
         return $movement;
     }
 
+    /**
+     * Holds stock for a quote (D-13): no movement, only the "reserved" part
+     * of the level, so other sales cannot take it. Released on conversion,
+     * refusal or expiry; the real exit happens when the sale is confirmed.
+     */
+    public function reserve(Product $product, Site $site, int $quantity): void
+    {
+        $this->assertStockable($product);
+        $this->assertPositive($quantity);
+
+        DB::transaction(function () use ($product, $site, $quantity) {
+            $product = $this->lockProduct($product);
+            $level = $this->lockLevel($product, $site);
+
+            if ($level->quantity - $level->reserved < $quantity) {
+                throw InsufficientStockException::make('stock.errors.insufficient', [
+                    'product' => $product->name, 'site' => $site->name,
+                    'available' => max(0, $level->quantity - $level->reserved), 'requested' => $quantity,
+                ]);
+            }
+
+            $level->increment('reserved', $quantity);
+        });
+    }
+
+    public function release(Product $product, Site $site, int $quantity): void
+    {
+        DB::transaction(function () use ($product, $site, $quantity) {
+            $level = $this->lockLevel($this->lockProduct($product), $site);
+            $level->forceFill(['reserved' => max(0, $level->reserved - $quantity)])->save();
+        });
+    }
+
     private function lockProduct(Product $product): Product
     {
         return Product::query()->with('category')->lockForUpdate()->findOrFail($product->getKey());

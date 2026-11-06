@@ -29,7 +29,8 @@ class ApprovalService
         return match ($type) {
             ApprovalType::StockAdjustment => new StockAdjustmentHandler(app(StockService::class)),
             ApprovalType::DamagedStock => new StockAdjustmentHandler(app(StockService::class), damaged: true),
-            ApprovalType::Discount, ApprovalType::PriceOverride, ApprovalType::BelowCost, ApprovalType::CreditLimit => new SaleApprovalHandler($type),
+            ApprovalType::Discount, ApprovalType::PriceOverride, ApprovalType::BelowCost, ApprovalType::CreditLimit, ApprovalType::TradeIn => new SaleApprovalHandler($type),
+            ApprovalType::CreditNote => new CreditNoteHandler,
             default => throw new \LogicException("No handler for {$type->value} yet."),
         };
     }

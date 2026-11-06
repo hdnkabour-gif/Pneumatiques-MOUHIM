@@ -2,6 +2,7 @@
 
 namespace App\Services\Sales;
 
+use App\Enums\SaleKind;
 use App\Models\Sale;
 use App\Services\SettingsService;
 use App\Support\Money;
@@ -21,7 +22,7 @@ class SaleDocuments
         app()->setLocale('fr'); // commercial documents in French by default (§5)
 
         try {
-            $sale->loadMissing(['lines', 'customer', 'vehicle.vehicleModel.make', 'site', 'seller', 'payments']);
+            $sale->loadMissing(['lines', 'customer', 'vehicle.vehicleModel.make', 'site', 'seller', 'payments', 'originalSale']);
             $company = $this->settings->all();
             $logo = filled($company['company.logo'] ?? null) && Storage::disk('public')->exists($company['company.logo'])
                 ? Storage::disk('public')->path($company['company.logo']) : null;
@@ -67,12 +68,14 @@ class SaleDocuments
             return null;
         }
 
-        $message = __('sales.whatsapp.invoice', [
+        $message = __('sales.whatsapp.'.($sale->isKind(SaleKind::Quote) ? 'quote' : 'invoice'), [
             'name' => $sale->customer->name,
             'company' => $this->settings->get('company.name'),
             'number' => $sale->number,
             'total' => Money::format($sale->total_ttc_cents),
             'url' => $this->publicUrl($sale),
+            'until' => $sale->valid_until?->format('d/m/Y'),
+            'document' => mb_strtolower($sale->documentType()->label()),
         ], 'fr');
 
         return Normalize::whatsappUrl($sale->customer->phone, $message);

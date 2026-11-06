@@ -21,4 +21,5 @@ enum ApprovalType: string implements HasLabel
     case CreditNote = 'credit_note';
     case ClosedDayEdit = 'closed_day_edit';
     case CashDiscrepancy = 'cash_discrepancy';
+    case TradeIn = 'trade_in';
 }

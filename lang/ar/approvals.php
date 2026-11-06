@@ -36,6 +36,7 @@ return [
         'rejected' => 'تم رفض الطلب.',
     ],
     'summaries' => [
+        'credit_note' => 'فاتورة مضادة على :invoice: :total (:refund)',
         'sale' => ':type – بيع :total، الزبون :customer (أقصى تخفيض :discount %، دين :credit)',
         'stock_adjustment' => 'تسوية :delta لـ « :product » في :site',
         'damaged_stock' => 'منتج تالف :delta لـ « :product » في :site',

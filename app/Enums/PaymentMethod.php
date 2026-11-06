@@ -15,4 +15,5 @@ enum PaymentMethod: string implements HasLabel
     case Card = 'card';
     case Cheque = 'cheque';
     case Transfer = 'transfer';
+    case CreditNote = 'credit_note'; // voucher from a return (exchange)
 }

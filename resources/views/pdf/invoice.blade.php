@@ -10,6 +10,8 @@
         $c('legal.cnss') ? 'CNSS : '.$c('legal.cnss') : null,
     ]);
     $customer = $sale->customer;
+    $docType = $sale->documentType()->value;
+    $kind = $sale->kind->value;
 @endphp
 <html>
 <head>
@@ -39,9 +41,11 @@
             <span class="muted">{{ __('sales.pdf.site') }} : {{ $sale->site->name }}</span>
         </td>
         <td style="width: 45%; vertical-align: top; text-align: right;">
-            <span class="title">{{ __('sales.pdf.invoice') }}</span><br>
+            <span class="title">{{ __('sales.pdf.title_'.$docType) }}</span><br>
             <b>N° {{ $sale->number }}</b><br>
             {{ __('sales.pdf.date') }} : {{ $sale->confirmed_at?->timezone(config('mouhim.timezone'))->format('d/m/Y') }}<br>
+            @if ($kind === 'quote' && $sale->valid_until){{ __('sales.pdf.valid_until', ['date' => $sale->valid_until->format('d/m/Y')]) }}<br>@endif
+            @if ($kind === 'credit_note' && $sale->originalSale){{ __('sales.pdf.original', ['number' => $sale->originalSale->number]) }}<br>@endif
             @if ($sale->po_number){{ __('sales.fields.po_number') }} : {{ $sale->po_number }}<br>@endif
         </td>
     </tr>
@@ -82,7 +86,7 @@
     <tbody>
         @foreach ($sale->lines as $line)
             <tr>
-                <td>{{ $line->description }}</td>
+                <td>{{ $line->description }}@if ($kind === 'credit_note' && $line->restock === false) <i>({{ __('sales.pdf.damaged') }})</i>@endif</td>
                 <td class="num">{{ $line->quantity }}</td>
                 <td class="num">{{ Money::format($line->list_price_ttc_cents, false) }}</td>
                 <td class="num">{{ $line->discount_bp ? number_format($line->discount_bp / 100, 1, ',', ' ').' %' : '' }}</td>
@@ -107,7 +111,7 @@
                     </tr>
                 @endforeach
             </table>
-            @if ($sale->payments->isNotEmpty() || $sale->credit_cents > 0)
+            @if ($sale->kind->movesStock() && ($sale->payments->isNotEmpty() || $sale->credit_cents > 0))
                 <p style="margin-top: 8px;">
                     <b>{{ __('sales.fields.payments') }} :</b>
                     @foreach ($sale->payments as $p)
@@ -132,8 +136,18 @@
 </table>
 
 <div class="words">
-    {{ __('sales.pdf.words', ['amount' => AmountInWords::french($sale->total_ttc_cents)]) }}
+    {{ __($kind === 'invoice' ? 'sales.pdf.words' : 'sales.pdf.words_'.$kind, ['amount' => AmountInWords::french($sale->total_ttc_cents)]) }}
 </div>
+
+@if ($kind === 'delivery_note')
+    <table style="margin-top: 24px;">
+        <tr>
+            <td class="box" style="width: 48%; height: 70px; vertical-align: top;">{{ __('sales.pdf.signature_customer') }}</td>
+            <td style="width: 4%;"></td>
+            <td class="box" style="width: 48%; height: 70px; vertical-align: top;">{{ __('sales.pdf.signature_company') }}</td>
+        </tr>
+    </table>
+@endif
 
 <div class="footer">
     {{ implode(' · ', $legal) }}

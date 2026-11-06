@@ -18,7 +18,7 @@ class SalesRelationManager extends RelationManager
 
     public static function getTitle(Model $ownerRecord, string $pageClass): string
     {
-        return __('sales.plural');
+        return __('sales.documents');
     }
 
     public function table(Table $table): Table
@@ -28,6 +28,7 @@ class SalesRelationManager extends RelationManager
             ->defaultSort('confirmed_at', 'desc')
             ->columns([
                 TextColumn::make('number')->label(__('sales.fields.number'))->weight('bold'),
+                TextColumn::make('kind')->label(__('sales.fields.kind'))->badge(),
                 TextColumn::make('confirmed_at')->label(__('sales.fields.date'))->dateTime('d/m/Y H:i'),
                 TextColumn::make('site.code')->label(__('sales.fields.site'))->badge(),
                 Fields::moneyColumn('total_ttc_cents', __('sales.fields.total_ttc')),

@@ -4,11 +4,14 @@ namespace App\Models;
 
 use App\Enums\CustomerType;
 use App\Enums\PriceLevel;
+use App\Enums\RefundMethod;
+use App\Enums\SaleKind;
 use App\Enums\SaleStatus;
 use App\Support\Normalize;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
@@ -53,7 +56,23 @@ class Customer extends Model
      */
     public function outstandingCents(): int
     {
-        return (int) $this->sales()->where('status', SaleStatus::Confirmed->value)->sum('credit_cents');
+        $owed = (int) $this->sales()->where('status', SaleStatus::Confirmed->value)
+            ->whereIn('kind', [SaleKind::Invoice->value, SaleKind::DeliveryNote->value])
+            ->whereNull('recap_invoice_id') // a note grouped in a recap invoice is counted there
+            ->sum('credit_cents');
+        $credited = (int) $this->sales()->where('status', SaleStatus::Confirmed->value)
+            ->where('kind', SaleKind::CreditNote->value)->where('refund_method', RefundMethod::Account->value)
+            ->sum('total_ttc_cents');
+
+        return $owed - $credited;
+    }
+
+    /** Exchange vouchers of this customer with money left on them. */
+    public function vouchers(): Collection
+    {
+        return $this->sales()->where('status', SaleStatus::Confirmed->value)->where('kind', SaleKind::CreditNote->value)
+            ->where('refund_method', RefundMethod::Voucher->value)->get()
+            ->filter(fn (Sale $s) => $s->voucherBalanceCents() > 0)->values();
     }
 
     public function getActivitylogOptions(): LogOptions

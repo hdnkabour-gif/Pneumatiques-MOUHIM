@@ -4,6 +4,7 @@ namespace App\Actions\Sales;
 
 use App\Enums\Permission;
 use App\Enums\PriceLevel;
+use App\Enums\SaleKind;
 use App\Enums\SaleStatus;
 use App\Exceptions\BusinessRuleException;
 use App\Models\Customer;
@@ -44,8 +45,22 @@ class SaveSaleDraftAction
         $level = $customer?->price_level ?? PriceLevel::Retail;
 
         $rows = $this->calculator->lines($data['lines'], $site, $level, $vehicle);
+        $kind = SaleKind::tryFrom((string) ($data['kind'] ?? 'invoice')) ?? SaleKind::Invoice;
 
-        return DB::transaction(function () use ($data, $user, $draft, $site, $customer, $vehicle, $level, $rows) {
+        if (array_sum(array_column($rows, 'total_ttc_cents')) < 0) {
+            throw BusinessRuleException::make('sales.errors.trade_in_exceeds');
+        }
+        if ($kind === SaleKind::CreditNote) {
+            throw BusinessRuleException::make('app.errors.forbidden');
+        }
+        if ($kind === SaleKind::DeliveryNote && ! $customer) {
+            throw BusinessRuleException::make('sales.errors.note_needs_customer');
+        }
+        if ($kind === SaleKind::Quote && collect($rows)->contains(fn ($r) => $r['kind'] === 'trade_in')) {
+            throw BusinessRuleException::make('sales.errors.quote_trade_in');
+        }
+
+        return DB::transaction(function () use ($data, $user, $draft, $site, $customer, $vehicle, $level, $rows, $kind) {
             if ($draft) {
                 $draft = Sale::query()->lockForUpdate()->findOrFail($draft->id);
                 if (! $draft->isDraft()) {
@@ -58,6 +73,7 @@ class SaveSaleDraftAction
 
             $draft->fill([
                 'site_id' => $site->id,
+                'kind' => $kind,
                 'customer_id' => $customer?->id,
                 'customer_vehicle_id' => $vehicle?->id,
                 'mileage' => $data['mileage'] ?? null,
@@ -68,6 +84,7 @@ class SaveSaleDraftAction
                 'total_vat_cents' => array_sum(array_column($rows, 'total_vat_cents')),
                 'total_ttc_cents' => array_sum(array_column($rows, 'total_ttc_cents')),
                 'discount_cents' => array_sum(array_map(fn ($r) => $r['list_price_ttc_cents'] * $r['quantity'] - $r['total_ttc_cents'], $rows)),
+                'quote_id' => $draft->quote_id ?? null,
             ])->save();
 
             $draft->lines()->createMany($rows);

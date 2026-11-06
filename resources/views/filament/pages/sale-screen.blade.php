@@ -53,7 +53,7 @@
 @if ($done)
     {{-- ------------------------------------------------------------ done --}}
     <div class="pm-good">
-        <div style="font-size: 1.4rem; font-weight: 800;">✓ {{ __('sales.screen.done', ['number' => $done->number]) }}</div>
+        <div style="font-size: 1.4rem; font-weight: 800;">✓ {{ __('sales.screen.done_'.$done->kind->value, ['number' => $done->number]) }}</div>
         <div>{{ __('sales.fields.total_ttc') }} : <b>{{ $this->money($done->total_ttc_cents) }}</b>
             @if ($done->credit_cents > 0) · <span style="color: var(--danger-600)">{{ __('sales.fields.credit') }} : <b>{{ $this->money($done->credit_cents) }}</b></span>@endif
         </div>
@@ -198,10 +198,33 @@
     <div class="pm">
         <div class="pm-card">
             <div class="pm-h">{{ __('sales.screen.cart') }} <span class="pm-badge">{{ count($cart) }}</span></div>
+            <div class="pm-chips" role="tablist">
+                @foreach (['invoice', 'quote', 'delivery_note'] as $k)
+                    @if ($k !== 'delivery_note' || $this->canDeliveryNote())
+                        <button type="button" class="pm-btn {{ $kind === $k ? 'on' : '' }}" style="min-height: 40px; padding: 4px 14px;" wire:click="setKind('{{ $k }}')">{{ __('sales.screen.kind_'.$k) }}</button>
+                    @endif
+                @endforeach
+            </div>
 
             @if ($preview['error'])<div class="pm-alert">{{ $preview['error'] }}</div>@endif
 
             @forelse ($cart as $i => $item)
+                @if (! empty($item['trade_in']))
+                    @php $row = collect($lines)->where('kind', 'trade_in')->values()->get(collect($cart)->take($i)->filter(fn ($c) => ! empty($c['trade_in']))->count()); @endphp
+                    <div class="pm-line" wire:key="line-{{ $i }}-ti">
+                        <div style="font-weight: 600;">↩ {{ $item['trade_in'] === 'tyre' ? __('sales.screen.trade_in_tyre') : __('sales.screen.trade_in_battery') }}</div>
+                        <div class="pm-end" style="font-weight: 700; color: var(--success-600);">{{ $row ? $this->money($row['total_ttc_cents']) : '' }}</div>
+                        <div class="pm-row" style="grid-column: 1 / -1;">
+                            @if ($item['trade_in'] === 'tyre')
+                                <input class="pm-input sm pm-grow" wire:model.blur="cart.{{ $i }}.size" placeholder="{{ __('sales.screen.size') }} (205/55 R16)">
+                                <input class="pm-input sm" style="width: 6em;" inputmode="decimal" wire:model.blur="cart.{{ $i }}.tread" placeholder="mm">
+                            @endif
+                            <input class="pm-input sm" style="width: 8em;" inputmode="decimal" wire:model.blur="cart.{{ $i }}.value" placeholder="{{ __('sales.screen.trade_in_value') }}">
+                            <button type="button" class="pm-btn danger" style="min-height: 44px; padding: 4px 12px;" wire:click="removeLine({{ $i }})">✕</button>
+                        </div>
+                    </div>
+                    @continue
+                @endif
                 @php $rows = collect($lines)->filter(fn ($l) => ($item['used_tyre_id'] ?? null) ? $l['used_tyre_id'] === $item['used_tyre_id'] : ($l['product_id'] === $item['product_id'] || $l['bundle_id'] === $item['product_id'])); @endphp
                 <div class="pm-line" wire:key="line-{{ $i }}-{{ $item['product_id'] ?? 'u'.$item['used_tyre_id'] }}">
                     <div>
@@ -241,9 +264,22 @@
                     <span class="pm-total">{{ $this->money($total) }}</span>
                 </div>
             @endif
+            @if ($cart && $kind !== 'quote')
+                <details>
+                    <summary>↩ {{ __('sales.screen.trade_in') }}</summary>
+                    <div class="pm-chips" style="margin-top: 6px;">
+                        <button type="button" class="pm-btn" wire:click="addTradeIn('tyre')">+ {{ __('sales.screen.trade_in_tyre') }}</button>
+                        <button type="button" class="pm-btn" wire:click="addTradeIn('battery')">+ {{ __('sales.screen.trade_in_battery') }}</button>
+                    </div>
+                </details>
+            @endif
+            @if ($kind === 'quote' && $this->canReserve() && $lines)
+                <label class="pm-row" style="cursor: pointer;"><input type="checkbox" wire:model="reserve" style="width: 22px; height: 22px;"> {{ __('sales.screen.reserve') }}</label>
+            @endif
         </div>
 
         @if ($lines)
+            @if ($kind !== 'quote')
             {{-- ------------------------------------------------ payment --}}
             <div class="pm-card">
                 <div class="pm-h">{{ __('sales.screen.payment') }}</div>
@@ -253,12 +289,15 @@
                     <button type="button" class="pm-btn" wire:click="addPayment('cheque')">🧾 + {{ \App\Enums\PaymentMethod::Cheque->label() }}</button>
                     <button type="button" class="pm-btn" wire:click="addPayment('cash')">💵 + {{ \App\Enums\PaymentMethod::Cash->label() }}</button>
                     <button type="button" class="pm-btn" wire:click="payOnCredit">📒 {{ __('sales.screen.all_credit') }}</button>
+                    @foreach ($this->vouchers() as $v)
+                        <button type="button" class="pm-btn" wire:click="useVoucher({{ $v->id }})">🎟 {{ $v->number }} ({{ $this->money($v->voucherBalanceCents()) }})</button>
+                    @endforeach
                 </div>
 
                 @foreach ($payments as $j => $pay)
                     <div class="pm-list" wire:key="pay-{{ $j }}" style="border-top: 1px dashed var(--gray-300); padding-top: 8px;">
                         <div class="pm-row" style="flex-wrap: nowrap;">
-                            <span class="pm-badge" style="min-width: 6em; text-align: center;">{{ \App\Enums\PaymentMethod::from($pay['method'])->label() }}</span>
+                            <span class="pm-badge" style="min-width: 6em; text-align: center;">{{ \App\Enums\PaymentMethod::from($pay['method'])->label() }}{{ isset($pay['label']) ? ' '.$pay['label'] : '' }}</span>
                             <input class="pm-input sm pm-grow" style="width: 0;" inputmode="decimal" wire:model.blur="payments.{{ $j }}.amount" placeholder="0.00">
                             <span class="pm-muted">MAD</span>
                             <button type="button" class="pm-btn danger" style="min-height: 40px; padding: 2px 10px;" wire:click="removePayment({{ $j }})">✕</button>
@@ -292,7 +331,9 @@
                 @if ($credit > 0 && ! $customer)<div class="pm-alert">{{ __('sales.errors.credit_needs_customer') }}</div>@endif
             </div>
 
-            @if ($this->hasServices())
+            @endif
+
+            @if ($kind !== 'quote' && $this->hasServices())
                 <div class="pm-card">
                     <div class="pm-h">{{ __('sales.screen.technicians') }}</div>
                     <div class="pm-chips">
@@ -336,7 +377,7 @@
                 </div>
             @else
                 <button type="button" class="pm-btn success big" wire:click="confirm" wire:loading.attr="disabled" @disabled($preview['error'])>
-                    <span wire:loading.remove wire:target="confirm">✓ {{ __('sales.screen.confirm', ['total' => $this->money($total)]) }}</span>
+                    <span wire:loading.remove wire:target="confirm">✓ {{ __('sales.screen.confirm_'.$kind, ['total' => $this->money($total)]) }}</span>
                     <span wire:loading wire:target="confirm">…</span>
                 </button>
             @endif

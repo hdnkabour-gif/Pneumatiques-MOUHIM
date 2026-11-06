@@ -48,11 +48,15 @@ class SaleRules
             $types[] = ApprovalType::PriceOverride;
         }
 
+        if ($this->tradeInAboveCap($sale, $user)) {
+            $types[] = ApprovalType::TradeIn;
+        }
+
         if ($this->belowCost($sale)) {
             $types[] = ApprovalType::BelowCost;
         }
 
-        if ($creditCents > 0 && $this->creditAboveLimit($sale, $creditCents)) {
+        if ($creditCents > 0 && $sale->customer && $this->creditAboveLimit($sale, $creditCents)) {
             $types[] = ApprovalType::CreditLimit;
         }
 
@@ -78,6 +82,17 @@ class SaleRules
         }
 
         return $type !== ApprovalType::CreditLimit || $creditCents <= (int) ($granted['credit_cents'] ?? 0);
+    }
+
+    /** D-52: trade-in value above the cap per item (tyre / battery). */
+    private function tradeInAboveCap(Sale $sale, User $user): bool
+    {
+        if ($user->can(Permission::ApprovalsDecide->value)) {
+            return false;
+        }
+
+        return $sale->lines->contains(fn ($l) => $l->kind === 'trade_in'
+            && -$l->unit_price_ttc_cents > (int) $this->settings->get('sales.trade_in_cap_cents.'.$l->trade_in_type));
     }
 
     /** Unit price HT under the average cost. Unknown cost = cannot be checked, never guessed. */

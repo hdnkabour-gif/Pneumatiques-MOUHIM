@@ -58,6 +58,7 @@ return [
         'sales.trade_in_cap_cents.tyre' => 20000,
         'sales.trade_in_cap_cents.battery' => 15000,
         'documents.invoice_footer' => null,
+        'sales.quote_validity_days' => 15,
 
         // Stock (phase 2)
         'stock.tyre_age_alert_months' => 36,          // D-42
