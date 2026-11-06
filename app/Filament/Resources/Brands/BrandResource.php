@@ -26,8 +26,12 @@ class BrandResource extends Resource
     }
 
     protected static ?string $model = Brand::class;
+
+    /** French labels keep their own capitalisation ("Pneus d'occasion"). */
     protected static bool $hasTitleCaseModelLabel = false;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTag;
+
     protected static ?int $navigationSort = 50;
 
     public static function getModelLabel(): string
