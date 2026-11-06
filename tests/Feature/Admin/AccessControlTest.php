@@ -1,6 +1,8 @@
 <?php
 
 use App\Enums\RoleName;
+use App\Filament\Resources\Categories\CategoryResource;
+use App\Filament\Resources\StockMovements\StockMovementResource;
 
 /*
 | Every admin page is protected server-side: typing the URL directly must
@@ -68,4 +70,18 @@ it('redirects the home page to the application', function () {
 
 it('reports the health check', function () {
     $this->get('/up')->assertOk();
+});
+
+it('keeps the seller menu short: setup pages only for those who manage them (§5)', function () {
+    $this->actingAs(userWithRole(RoleName::Seller, 'M01'));
+    $html = $this->get('/admin')->assertOk()->getContent();
+
+    expect($html)->toContain('/admin/vente')
+        ->not->toContain(CategoryResource::getUrl())
+        ->not->toContain(StockMovementResource::getUrl());
+});
+
+it('shows stock movements in the storekeeper menu', function () {
+    $this->actingAs(userWithRole(RoleName::Storekeeper, 'DEP'));
+    expect($this->get('/admin')->getContent())->toContain(StockMovementResource::getUrl());
 });

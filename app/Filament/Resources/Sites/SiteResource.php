@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Sites;
 
+use App\Enums\Permission;
 use App\Filament\Resources\Sites\Pages\CreateSite;
 use App\Filament\Resources\Sites\Pages\EditSite;
 use App\Filament\Resources\Sites\Pages\ListSites;
@@ -17,6 +18,12 @@ use Illuminate\Database\Eloquent\Builder;
 
 class SiteResource extends Resource
 {
+    /** Simplicity (§5): setup pages appear in the menu only for those who manage them. */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return parent::shouldRegisterNavigation() && (auth()->user()?->canAny([Permission::SitesManage->value]) ?? false);
+    }
+
     protected static ?string $model = Site::class;
 
     /** French labels keep their own capitalisation ("Pneus d'occasion"). */

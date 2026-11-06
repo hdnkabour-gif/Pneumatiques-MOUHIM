@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Services;
 
 use App\Enums\CategoryType;
+use App\Enums\Permission;
 use App\Enums\ProductKind;
 use App\Filament\Resources\Services\Pages\CreateService;
 use App\Filament\Resources\Services\Pages\EditService;
@@ -29,6 +30,12 @@ use Illuminate\Database\Eloquent\Builder;
 /** Workshop services (§5.9): price fixed or by rim diameter, automatic consumables. */
 class ServiceResource extends Resource
 {
+    /** Simplicity (§5): setup pages appear in the menu only for those who manage them. */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return parent::shouldRegisterNavigation() && (auth()->user()?->canAny([Permission::ProductsManage->value]) ?? false);
+    }
+
     protected static ?string $model = Product::class;
 
     /** French labels keep their own capitalisation ("Pneus d'occasion"). */

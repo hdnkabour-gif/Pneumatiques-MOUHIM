@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Vehicles\VehicleGenerations;
 
+use App\Enums\Permission;
 use App\Filament\Resources\Vehicles\VehicleGenerations\Pages\ManageVehicleGenerations;
 use App\Filament\Support\VehicleFields;
 use App\Models\VehicleGeneration;
@@ -18,6 +19,12 @@ use Illuminate\Database\Eloquent\Builder;
 
 class VehicleGenerationResource extends Resource
 {
+    /** Simplicity (§5): setup pages appear in the menu only for those who manage them. */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return parent::shouldRegisterNavigation() && (auth()->user()?->canAny([Permission::CompatibilitiesManage->value]) ?? false);
+    }
+
     protected static ?string $model = VehicleGeneration::class;
 
     /** French labels keep their own capitalisation. */

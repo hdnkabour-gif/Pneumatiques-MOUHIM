@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\TyreLots;
 
+use App\Enums\Permission;
 use App\Filament\Resources\TyreLots\Pages\ListTyreLots;
 use App\Models\Site;
 use App\Models\TyreLot;
@@ -18,6 +19,12 @@ use Illuminate\Database\Eloquent\Builder;
 /** New tyres in stock by DOT lot, oldest first, with the age alert (§5.3, D-42). */
 class TyreLotResource extends Resource
 {
+    /** Simplicity (§5): setup pages appear in the menu only for those who manage them. */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return parent::shouldRegisterNavigation() && (auth()->user()?->canAny([Permission::StockReceive->value, Permission::StockAdjust->value]) ?? false);
+    }
+
     protected static ?string $model = TyreLot::class;
 
     /** French labels keep their own capitalisation ("Pneus d'occasion"). */

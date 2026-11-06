@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\StockMovements;
 
+use App\Enums\Permission;
 use App\Enums\StockMovementType;
 use App\Filament\Resources\StockMovements\Pages\ListStockMovements;
 use App\Filament\Support\Fields;
@@ -21,6 +22,12 @@ use Illuminate\Database\Eloquent\Builder;
 /** Read-only stock ledger; filtered on one product it is the product's stock card (§6.2). */
 class StockMovementResource extends Resource
 {
+    /** Simplicity (§5): setup pages appear in the menu only for those who manage them. */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return parent::shouldRegisterNavigation() && (auth()->user()?->canAny([Permission::StockReceive->value, Permission::StockAdjust->value]) ?? false);
+    }
+
     protected static ?string $model = StockMovement::class;
 
     /** French labels keep their own capitalisation ("Pneus d'occasion"). */

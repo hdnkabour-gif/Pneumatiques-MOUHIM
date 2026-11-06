@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Bundles;
 
 use App\Enums\CategoryType;
+use App\Enums\Permission;
 use App\Enums\ProductKind;
 use App\Filament\Resources\Bundles\Pages\CreateBundle;
 use App\Filament\Resources\Bundles\Pages\EditBundle;
@@ -34,6 +35,12 @@ use Illuminate\Database\Eloquent\Builder;
 /** Bundles (§5.9): products + services at a global price, decomposed on invoices and in stock. */
 class BundleResource extends Resource
 {
+    /** Simplicity (§5): setup pages appear in the menu only for those who manage them. */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return parent::shouldRegisterNavigation() && (auth()->user()?->canAny([Permission::ProductsManage->value]) ?? false);
+    }
+
     protected static ?string $model = Product::class;
 
     /** French labels keep their own capitalisation ("Pneus d'occasion"). */

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Categories;
 
 use App\Enums\CategoryType;
+use App\Enums\Permission;
 use App\Filament\Resources\Categories\Pages\ManageCategories;
 use App\Filament\Support\Fields;
 use App\Models\Category;
@@ -22,6 +23,12 @@ use Filament\Tables\Table;
 
 class CategoryResource extends Resource
 {
+    /** Simplicity (§5): setup pages appear in the menu only for those who manage them. */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return parent::shouldRegisterNavigation() && (auth()->user()?->canAny([Permission::ProductsManage->value]) ?? false);
+    }
+
     protected static ?string $model = Category::class;
 
     /** French labels keep their own capitalisation ("Pneus d'occasion"). */

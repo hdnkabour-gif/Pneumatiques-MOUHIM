@@ -10,7 +10,7 @@ it('renders the interface in Arabic, right-to-left, for an Arabic user', functio
         ->assertOk()
         ->assertSee('lang="ar"', false)
         ->assertSee('dir="rtl"', false)
-        ->assertSee('مواقع', false);
+        ->assertSee('بيع جديد', false);
 });
 
 it('renders the interface in French, left-to-right, by default', function () {

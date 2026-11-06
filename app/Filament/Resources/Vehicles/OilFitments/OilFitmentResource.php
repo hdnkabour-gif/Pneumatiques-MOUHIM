@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Vehicles\OilFitments;
 
 use App\Enums\CompatibilityStatus;
+use App\Enums\Permission;
 use App\Filament\Resources\Vehicles\OilFitments\Pages\CreateOilFitment;
 use App\Filament\Resources\Vehicles\OilFitments\Pages\EditOilFitment;
 use App\Filament\Resources\Vehicles\OilFitments\Pages\ListOilFitments;
@@ -28,6 +29,12 @@ use Illuminate\Database\Eloquent\Builder;
 /** Compatibilities (§7.3): only "verified" rows are shown to users without management rights. */
 class OilFitmentResource extends Resource
 {
+    /** Simplicity (§5): setup pages appear in the menu only for those who manage them. */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return parent::shouldRegisterNavigation() && (auth()->user()?->canAny([Permission::CompatibilitiesManage->value, Permission::CompatibilitiesVerify->value]) ?? false);
+    }
+
     protected static ?string $model = OilFitment::class;
 
     protected static bool $hasTitleCaseModelLabel = false;

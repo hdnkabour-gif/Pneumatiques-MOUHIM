@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Vehicles\VehicleModels;
 
+use App\Enums\Permission;
 use App\Filament\Resources\Vehicles\VehicleModels\Pages\ManageVehicleModels;
 use App\Models\VehicleModel;
 use BackedEnum;
@@ -21,6 +22,12 @@ use Illuminate\Database\Eloquent\Builder;
 
 class VehicleModelResource extends Resource
 {
+    /** Simplicity (§5): setup pages appear in the menu only for those who manage them. */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return parent::shouldRegisterNavigation() && (auth()->user()?->canAny([Permission::CompatibilitiesManage->value]) ?? false);
+    }
+
     protected static ?string $model = VehicleModel::class;
 
     /** French labels keep their own capitalisation. */
