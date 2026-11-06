@@ -27,9 +27,14 @@ class VehicleMakeResource extends Resource
     }
 
     protected static ?string $model = VehicleMake::class;
+
+    /** French labels keep their own capitalisation. */
     protected static bool $hasTitleCaseModelLabel = false;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTag;
+
     protected static ?int $navigationSort = 50;
+
     protected static ?string $slug = 'vehicle-makes';
 
     public static function getModelLabel(): string
