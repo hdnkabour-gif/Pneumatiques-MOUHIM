@@ -71,6 +71,12 @@ class ImportReferenceWorkbookAction
     private function read(string $path): array
     {
         $headerKeys = ['Marque', 'Source_ID', 'Generation_ID', 'Engine_ID', 'Fitment_ID', 'Oil_Fitment_ID'];
+        $zip = new \ZipArchive;
+        if ($zip->open($path) !== true || $zip->locateName('xl/workbook.xml') === false) {
+            throw BusinessRuleException::make('vehicles.import.not_a_workbook');
+        }
+        $zip->close();
+
         $reader = new Reader;
         $reader->open($path);
         $out = [];

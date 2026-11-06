@@ -21,7 +21,11 @@ final class ImportVehicleWorkbookAction
             ->modalDescription(__('vehicles.import.help'))
             ->schema([
                 FileUpload::make('file')->label(__('vehicles.fields.file'))->disk('local')->directory('imports')
-                    ->acceptedFileTypes(['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'])->maxSize(20480)->required(),
+                    // Phones sometimes label an .xlsx (itself a zip archive) as a .zip: accept both, the importer checks the content.
+                    ->acceptedFileTypes([
+                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                        'application/zip', 'application/x-zip-compressed', 'application/octet-stream',
+                    ])->maxSize(20480)->required(),
             ])
             ->action(function (array $data) {
                 $path = Storage::disk('local')->path($data['file']);

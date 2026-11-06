@@ -94,6 +94,7 @@ return [
         'source_required' => 'المصدر إلزامي لوضع توافق «متحقق منه».',
     ],
     'import' => [
+        'not_a_workbook' => 'هذا الملف ليس ملف Excel (.xlsx). أرسل الملف PNEU_MOUHIM_Manager_Catalogue_Operations_V1_3.xlsx كما هو، دون فك ضغطه.',
         'missing_sheet' => 'الورقة « :sheet » غير موجودة في الملف.',
         'missing_vehicle' => ':sheet السطر :line: العلامة أو الطراز ناقص.',
         'bad_size' => 'VEHICLE_TIRE_FITMENTS السطر :line: المقاس « :size » غير مفهوم.',

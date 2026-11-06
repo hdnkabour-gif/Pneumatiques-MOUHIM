@@ -207,3 +207,21 @@ it('imports the workbook through the screen', function () {
     expect(CompatibilitySource::query()->count())->toBe(26)
         ->and(TyreFitment::query()->count())->toBe(13);
 });
+
+it('accepts the workbook even when the phone renamed it .zip, and rejects other archives clearly', function () {
+    Storage::fake('local');
+    $this->actingAs(owner());
+
+    $renamed = UploadedFile::fake()->createWithContent('classeur.zip', file_get_contents(workbook()));
+    Livewire::test(ManageCompatibilitySources::class)
+        ->callAction('importWorkbook', ['file' => $renamed])->assertHasNoActionErrors();
+    expect(TyreFitment::query()->count())->toBe(13);
+
+    $tmp = tempnam(sys_get_temp_dir(), 'zip');
+    $zip = new ZipArchive;
+    $zip->open($tmp, ZipArchive::OVERWRITE);
+    $zip->addFromString('readme.txt', 'pas un classeur');
+    $zip->close();
+    expect(fn () => app(ImportReferenceWorkbookAction::class)->execute($tmp, owner()))
+        ->toThrow(BusinessRuleException::class, 'classeur Excel');
+});

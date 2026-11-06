@@ -94,6 +94,7 @@ return [
         'source_required' => 'Une source est obligatoire pour marquer une compatibilité « Vérifié ».',
     ],
     'import' => [
+        'not_a_workbook' => 'Ce fichier n\'est pas un classeur Excel (.xlsx). Envoyez le fichier PNEU_MOUHIM_Manager_Catalogue_Operations_V1_3.xlsx tel quel, sans l\'extraire.',
         'missing_sheet' => 'La feuille « :sheet » est absente du classeur.',
         'missing_vehicle' => ':sheet ligne :line : marque ou modèle manquant.',
         'bad_size' => 'VEHICLE_TIRE_FITMENTS ligne :line : dimension « :size » non reconnue.',
