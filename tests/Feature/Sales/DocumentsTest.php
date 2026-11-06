@@ -10,6 +10,7 @@ use App\Enums\ApprovalType;
 use App\Enums\QuoteStatus;
 use App\Enums\RefundMethod;
 use App\Enums\RoleName;
+use App\Enums\StockMovementType;
 use App\Enums\UsedTyreStatus;
 use App\Exceptions\ApprovalRequiredException;
 use App\Exceptions\BusinessRuleException;
@@ -20,8 +21,10 @@ use App\Models\Product;
 use App\Models\Sale;
 use App\Models\StockLevel;
 use App\Models\StockMovement;
+use App\Models\TyreLot;
 use App\Models\UsedTyre;
 use App\Services\Approvals\ApprovalService;
+use App\Services\Stock\LotInput;
 use App\Services\Stock\StockService;
 
 beforeEach(function () {
@@ -214,4 +217,18 @@ it('deducts trade-ins, creates used tyres awaiting inspection, caps the value (D
 
     expect(fn () => ($this->draft)([['product_id' => $this->tyre->id, 'quantity' => 1], ['trade_in' => 'battery', 'value_cents' => 90000]]))
         ->toThrow(BusinessRuleException::class, __('sales.errors.trade_in_exceeds'));
+});
+
+it('puts a returned new tyre back with its original DOT (audit)', function () {
+    $tyre = Product::factory()->tyre(195, 65, '15')->create();
+    $this->stock->receive($tyre, site('M01'), 2, 40000, StockMovementType::PurchaseReceipt, null, null, null, new LotInput(12, 2024));
+    $invoice = ($this->confirm)(($this->draft)([['product_id' => $tyre->id, 'quantity' => 2]], ['customer_id' => Customer::factory()->create()->id]));
+
+    $owner = owner();
+    app(CreateCreditNoteAction::class)->request($invoice, [$invoice->lines->first()->id => ['quantity' => 1]], RefundMethod::Cash, 'Retour', $owner);
+    app(CreateCreditNoteAction::class)->request($invoice, [$invoice->lines->first()->id => ['quantity' => 1]], RefundMethod::Cash, 'Retour 2', $owner);
+
+    $lots = TyreLot::query()->where('product_id', $tyre->id)->where('quantity', '>', 0)->get();
+    expect($lots->sum('quantity'))->toBe(2)
+        ->and($lots->every(fn ($l) => $l->dot_week === 12 && $l->dot_year === 2024))->toBeTrue();
 });

@@ -20,6 +20,7 @@ use App\Models\User;
 use App\Services\Approvals\ApprovalService;
 use App\Services\Sales\SaleCalculator;
 use App\Services\SequenceService;
+use App\Services\Stock\LotInput;
 use App\Services\Stock\StockService;
 use Illuminate\Support\Facades\DB;
 
@@ -135,8 +136,9 @@ class CreateCreditNoteAction
     private function backInStock(Sale $note, SaleLine $line, User $user): void
     {
         if ($line->kind === 'goods') {
+            [$lots, $quantities] = $this->originalLots($note, $line);
             $this->stock->restock($line->product, $note->site, $line->quantity, StockMovementType::CustomerReturn,
-                $line->unit_cost_cents, $user, $note->reason, $note);
+                $line->unit_cost_cents, $user, $note->reason, $note, $lots, $quantities);
             if (! $line->restock) {
                 $this->stock->issue($line->product, $note->site, $line->quantity, StockMovementType::Damaged, $user, $note->reason, $note, respectReservations: false);
             }
@@ -152,6 +154,53 @@ class CreateCreditNoteAction
                 $m->save();
             }
         }
+    }
+
+    /**
+     * New tyres come back with the DOT they left with (§5.3): the lots of the
+     * original sale's exits, minus what earlier credit notes already returned.
+     *
+     * @return array{0: list<LotInput>, 1: list<int>}
+     */
+    private function originalLots(Sale $note, SaleLine $line): array
+    {
+        if (! $line->product->isNewTyre()) {
+            return [[], []];
+        }
+
+        $exits = StockMovement::query()->with('lot')
+            ->where('document_type', (new Sale)->getMorphClass())->where('document_id', $note->original_sale_id)
+            ->where('product_id', $line->product_id)->where('type', StockMovementType::Sale->value)->whereNotNull('tyre_lot_id')
+            ->orderByDesc('id')->get();
+        $alreadyBack = (int) StockMovement::query()->where('document_type', (new Sale)->getMorphClass())
+            ->whereIn('document_id', Sale::query()->where('original_sale_id', $note->original_sale_id)->where('id', '!=', $note->id)->select('id'))
+            ->where('product_id', $line->product_id)->where('type', StockMovementType::CustomerReturn->value)->sum('quantity');
+
+        $lots = [];
+        $quantities = [];
+        $left = $line->quantity;
+        foreach ($exits as $exit) {
+            $available = -$exit->quantity;
+            $skip = min($alreadyBack, $available);
+            $alreadyBack -= $skip;
+            $take = min($left, $available - $skip);
+            if ($take <= 0) {
+                continue;
+            }
+            $lots[] = new LotInput($exit->lot?->dot_week, $exit->lot?->dot_year, $exit->lot?->supplier, $exit->tyre_lot_id, $exit->unit_cost_cents);
+            $quantities[] = $take;
+            $left -= $take;
+            if ($left === 0) {
+                break;
+            }
+        }
+
+        if ($left > 0) { // exit without lot (should not happen): unknown DOT, never invented
+            $lots[] = new LotInput(unitCostCents: $line->unit_cost_cents);
+            $quantities[] = $left;
+        }
+
+        return [$lots, $quantities];
     }
 
     /** @param  ReturnLines  $lines */
