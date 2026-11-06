@@ -52,3 +52,6 @@ jobs:
 
       - name: Tests
         run: vendor/bin/pest
+
+      - name: Export every reference workbook sheet (read-only)
+        run: php artisan vehicles:export-reference-workbook --pretty
