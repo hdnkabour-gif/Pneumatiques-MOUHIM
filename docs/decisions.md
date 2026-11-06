@@ -128,3 +128,15 @@ Les règles suivent D-24 :
 - À l'import, les statuts du classeur sont traduits selon la feuille GUIDE_APP ; aucune ligne n'est importée comme « Vérifié ».
 
 L'écran de vente (phase 3) utilisera ce référentiel.
+
+## Décisions – Préparation de la phase 3 (6 novembre 2026)
+
+**D-49 – Numérotation paramétrable.** Le propriétaire choisit le préfixe de chaque type de document. Préfixes proposés : DV (devis), BL (bon de livraison), BT (bon de travail), FA (facture), AV (avoir), RC (reçu). Il fixe aussi le numéro de départ de l'année, pour continuer la numérotation de sa dernière facture réelle. Le numéro de départ ne peut pas être inférieur ou égal à un numéro déjà attribué dans l'application : ni doublon ni retour en arrière. Chaque changement est journalisé. Complète D-14.
+
+**D-50 – Paiement dès la phase 3.** Une vente peut être payée en espèces (par défaut), par carte, par chèque (numéro, banque, tireur, échéance), avec plusieurs moyens à la fois et un reste à crédit. Les comptes clients, l'affectation des paiements, le suivi des chèques (encaissement, rejet), la caisse et la clôture restent en phase 4.
+
+**D-51 – Impression A4 uniquement.** Tous les documents sont imprimés en A4. Le ticket thermique 80 mm du §10.1 n'est pas réalisé.
+
+**D-52 – Valeur de reprise.** Le vendeur fixe la valeur d'un pneu ou d'une batterie repris, dans la limite d'un plafond paramétrable. Au-delà, il faut l'approbation du propriétaire.
+
+**D-53 – Saisie du travail atelier par le vendeur.** Le technicien n'a pas à utiliser de téléphone ni d'ordinateur. Le vendeur crée l'ordre de travail, affecte le ou les techniciens et en suit les statuts. L'écran technicien du §14 devient facultatif.
