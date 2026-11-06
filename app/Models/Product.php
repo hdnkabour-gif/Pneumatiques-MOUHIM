@@ -25,7 +25,7 @@ class Product extends Model
     use HasFactory, LogsActivity;
 
     protected $fillable = [
-        'sku', 'kind', 'category_id', 'brand_id', 'name', 'name_ar', 'manufacturer_ref', 'unit',
+        'sku', 'kind', 'category_id', 'brand_id', 'name', 'name_ar', 'manufacturer_ref', 'image_path', 'unit',
         'price_retail_cents', 'price_pro_cents', 'price_reseller_cents', 'reference_cost_cents',
         'duration_minutes', 'description', 'is_active',
     ];

@@ -13,6 +13,7 @@ use App\Filament\Support\Fields;
 use App\Models\Category;
 use App\Models\Product;
 use App\Support\Money;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -41,6 +42,10 @@ class ProductForm
                     ->relationship('brand', 'name')->searchable()->preload()
                     ->createOptionForm([TextInput::make('name')->label(__('catalog.brands.fields.name'))->required()->unique('brands', 'name')]),
                 TextInput::make('manufacturer_ref')->label(__('catalog.fields.manufacturer_ref'))->maxLength(100),
+                FileUpload::make('image_path')->label(__('catalog.fields.image'))->image()
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                    ->disk('public')->directory('catalog/products')->visibility('public')
+                    ->imageEditor()->maxSize(5120)->helperText(__('catalog.fields.image_help'))->columnSpanFull(),
             ]),
 
             Section::make(__('catalog.sections.prices'))->columns(3)->schema([

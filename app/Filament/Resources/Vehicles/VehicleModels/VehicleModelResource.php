@@ -7,6 +7,7 @@ use App\Filament\Resources\Vehicles\VehicleModels\Pages\ManageVehicleModels;
 use App\Models\VehicleModel;
 use BackedEnum;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -15,6 +16,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -61,6 +63,10 @@ class VehicleModelResource extends Resource
                 ->createOptionForm([TextInput::make('name')->label(__('vehicles.fields.name'))->required()->unique('vehicle_makes', 'name')]),
             TextInput::make('name')->label(__('vehicles.fields.name'))->required()->maxLength(100),
             TextInput::make('body_type')->label(__('vehicles.fields.body_type'))->maxLength(100),
+            FileUpload::make('image_path')->label(__('vehicles.fields.image'))->image()
+                ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                ->disk('public')->directory('catalog/vehicle-models')->visibility('public')
+                ->imageEditor()->maxSize(5120)->helperText(__('vehicles.fields.image_help')),
             Toggle::make('is_active')->label(__('app.active'))->default(true),
             Textarea::make('notes')->label(__('vehicles.fields.notes'))->columnSpanFull(),
         ]);
@@ -72,6 +78,7 @@ class VehicleModelResource extends Resource
             ->modifyQueryUsing(fn (Builder $query) => $query->with('make')->withCount(['tyreFitments', 'oilFitments']))
             ->defaultSort('name')
             ->columns([
+                ImageColumn::make('image_path')->label(__('vehicles.fields.image'))->disk('public')->square()->size(52),
                 TextColumn::make('make.name')->label(__('vehicles.fields.make'))->searchable()->sortable(),
                 TextColumn::make('name')->label(__('vehicles.fields.name'))->searchable()->sortable()->weight('bold'),
                 TextColumn::make('tyre_fitments_count')->label(__('vehicles.tyre_fitments.plural'))->badge(),
