@@ -162,16 +162,15 @@ class Sale extends Model
     {
         $margin = 0;
         foreach ($this->lines as $line) {
+            // A trade-in is a purchase (the item comes back at its value), not a loss of margin.
             if ($line->kind === 'trade_in') {
-                $margin += $line->total_ht_cents;
-            } elseif ($line->kind === 'goods') {
-                if ($line->unit_cost_cents === null) {
-                    return null;
-                }
-                $margin += $line->total_ht_cents - $line->unit_cost_cents * $line->quantity;
-            } else {
-                $margin += $line->total_ht_cents;
+                continue;
             }
+            // Goods, used tyres and services (cost of their consumables) all need a known cost.
+            if ($line->unit_cost_cents === null) {
+                return null;
+            }
+            $margin += $line->total_ht_cents - $line->unit_cost_cents * $line->quantity;
         }
 
         return $margin;

@@ -101,14 +101,39 @@ class SaleRules
         $costs = Product::query()->whereKey($sale->lines->pluck('product_id')->filter())->pluck('average_cost_cents', 'id');
         $usedCosts = UsedTyre::query()->whereKey($sale->lines->pluck('used_tyre_id')->filter())->pluck('cost_cents', 'id');
 
+        $services = Product::query()->with('consumables.product')
+            ->whereKey($sale->lines->where('kind', 'service')->pluck('product_id'))->get()->keyBy('id');
+
         foreach ($sale->lines as $line) {
-            $cost = $line->used_tyre_id ? $usedCosts[$line->used_tyre_id] ?? null : ($line->kind === 'goods' ? $costs[$line->product_id] ?? null : null);
+            $cost = match ($line->kind) {
+                'used_tyre' => $usedCosts[$line->used_tyre_id] ?? null,
+                'goods' => $costs[$line->product_id] ?? null,
+                'service' => $this->consumablesCost($services[$line->product_id] ?? null),
+                default => null,
+            };
             if ($cost !== null && $line->total_ht_cents < $cost * $line->quantity) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    /** Cost of the consumables of one service; null when one cost is unknown (never guessed). */
+    private function consumablesCost(?Product $service): ?int
+    {
+        if (! $service || $service->consumables->isEmpty()) {
+            return null;
+        }
+        $total = 0;
+        foreach ($service->consumables as $c) {
+            if ($c->product->average_cost_cents === null) {
+                return null;
+            }
+            $total += $c->product->average_cost_cents * $c->quantity;
+        }
+
+        return $total;
     }
 
     /**

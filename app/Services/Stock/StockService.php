@@ -202,7 +202,16 @@ class StockService
         }
 
         if ($delta < 0) {
-            return $this->issue($product, $site, -$delta, $type, $user, $reason, $document, respectReservations: false);
+            return DB::transaction(function () use ($product, $site, $delta, $type, $user, $reason, $document) {
+                $movements = $this->issue($product, $site, -$delta, $type, $user, $reason, $document, respectReservations: false);
+                // Approved count below what quotes hold: the reservation cannot exceed the real stock.
+                $level = $this->lockLevel($product, $site);
+                if ($level->reserved > $level->quantity) {
+                    $level->forceFill(['reserved' => $level->quantity])->save();
+                }
+
+                return $movements;
+            });
         }
 
         if ($type !== StockMovementType::InventoryAdjustment) {

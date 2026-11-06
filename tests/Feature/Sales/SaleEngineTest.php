@@ -287,3 +287,30 @@ it('uses the owner prefix for new numbers', function () {
 
     expect($sale->number)->toBe('F-'.now()->year.'-000001');
 });
+
+it('counts the cost of service consumables and used tyres in the margin and the below-cost check (audit)', function () {
+    $weights = Product::factory()->create(['name' => 'Masses']);
+    $this->stock->receive($weights, site('M01'), 100, 2000); // 20 MAD each
+    $balancing = Product::factory()->service()->create(['price_retail_cents' => 6000]); // 60 TTC = 50 HT
+    $balancing->consumables()->create(['product_id' => $weights->id, 'quantity' => 2]); // 40 MAD of weights
+
+    $sale = ($this->confirm)(($this->draft)([['product_id' => $balancing->id, 'quantity' => 1]]));
+    expect($sale->marginCents())->toBe(5000 - 4000);
+
+    // 36 TTC = 30 HT < 40 of weights: below cost needs the owner.
+    $cheap = ($this->draft)([['product_id' => $balancing->id, 'quantity' => 1, 'discount_bp' => 4000]], [], userWithRole(RoleName::SiteManager, 'M01'));
+    try {
+        ($this->confirm)($cheap, null, $cheap->seller);
+        $this->fail('approval expected');
+    } catch (ApprovalRequiredException $e) {
+        expect($e->types)->toContain(ApprovalType::BelowCost);
+    }
+});
+
+it('never leaves more reserved than in stock after an approved adjustment (audit)', function () {
+    $this->stock->reserve($this->tyre, site('M01'), 15);
+    $this->stock->adjust($this->tyre, site('M01'), -10, owner(), 'Inventaire');
+
+    $level = StockLevel::query()->where(['product_id' => $this->tyre->id, 'site_id' => site('M01')->id])->first();
+    expect($level->quantity)->toBe(10)->and($level->reserved)->toBe(10);
+});
