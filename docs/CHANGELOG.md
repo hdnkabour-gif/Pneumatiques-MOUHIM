@@ -33,6 +33,18 @@
 
 ## [Non publié]
 
+### Ajouté – Phase 3b (documents)
+- Devis depuis l'écran de vente (bouton Facture / Devis / Bon), validité, PDF et WhatsApp, « Transformer en vente »
+  en un clic (prix du devis conservé, jamais au-dessus du prix du jour), « Refusé », expiration automatique ;
+  réservation du stock réservée au propriétaire (D-13).
+- Bons de livraison (BL) et bons de travail (BT) pour les clients société, signature sur le PDF ;
+  facture récapitulative depuis la fiche client (stock et crédit comptés une seule fois).
+- Retour / avoir depuis la facture : quantités par ligne, remise en stock ou « endommagé », remboursement en espèces,
+  déduction du crédit ou bon d'achat utilisable comme paiement (échange) ; accord du propriétaire pour les vendeurs.
+- Reprises pneu / batterie déduites de la facture, valeur plafonnée (D-52), pneus créés « en attente de contrôle ».
+- Page « Documents » unique avec onglets Factures / Devis / Bons / Avoirs / Brouillons.
+- Crédit : seul le propriétaire fixe le plafond et décide qui achète à crédit (D-54 validée).
+
 ### Ajouté – Phase 3a (vente au quotidien)
 - Clients (particuliers / sociétés, ICE, IF, RC, bon de commande exigé) et leurs véhicules ; recherche unique
   par téléphone (06…, +212…), immatriculation (`12345-أ-6`, `12345 أ 6`), nom ou ICE, aussi dans la recherche globale.

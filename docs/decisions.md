@@ -141,6 +141,9 @@ L'écran de vente (phase 3) utilisera ce référentiel.
 
 **D-53 – Saisie du travail atelier par le vendeur.** Le technicien n'a pas à utiliser de téléphone ni d'ordinateur. Le vendeur crée l'ordre de travail, affecte le ou les techniciens et en suit les statuts. L'écran technicien du §14 devient facultatif.
 
-**D-54 – Crédit sans plafond (proposée, à confirmer par le propriétaire).** Un client sans plafond de crédit a un plafond de zéro : toute vente avec un reste à crédit demande l'accord du propriétaire (code sur place ou demande sur son téléphone), jusqu'à ce que le propriétaire fixe un plafond sur la fiche du client. Le plafond, le niveau de prix et le délai de paiement ne sont modifiables que par le propriétaire.
+**D-54 – Crédit décidé par le propriétaire seul (validée le 6 novembre 2026).** Un client sans plafond de crédit a un plafond de zéro : toute vente avec un reste à crédit demande l'accord du propriétaire (code sur place ou demande sur son téléphone), jusqu'à ce que le propriétaire fixe un plafond sur la fiche du client. Le plafond, le niveau de prix et le délai de paiement ne sont modifiables que par le propriétaire.
 
 **D-55 – Remises par défaut (paramétrables).** Vendeur 5 %, responsable de site 10 %, propriétaire sans limite. Modifiables dans « Paramètres société → Ventes ». Une approbation est liée au contenu exact de la vente : si le panier change après l'accord, un nouvel accord est demandé. Les décisions du propriétaire lui-même sont journalisées comme demandes « auto-approuvées ».
+
+
+**D-56 – Documents de la phase 3b.** Devis (validité 15 jours paramétrable, réservation du stock par le propriétaire seul), bons de livraison / de travail pour les clients société regroupés en facture récapitulative, avoirs (retour en stock ou endommagé ; remboursement en espèces, déduction du crédit ou bon d'achat pour un échange ; accord du propriétaire pour les autres utilisateurs), reprises déduites de la facture et créant des pneus d'occasion « en attente de contrôle ». Une seule page « Documents » avec onglets.

@@ -16,7 +16,7 @@ pneumatiques, services automobiles, stock, ventes, crédit, caisse, atelier.
 | 2. Catalogue et stock | Catalogue, pneus neufs (lots DOT), pneus d'occasion (contrôle, QR, jeux), prestations, forfaits, mouvements, transferts, réapprovisionnement, inventaire, approbations | ✅ Code et tests – en attente de validation |
 | Avancé (D-48) | Référentiel véhicules et compatibilités (phases 3 / 7) | ✅ Code et tests |
 | 3a. Vente au quotidien | Clients et véhicules, écran de vente unique, facture A4 (mPDF), WhatsApp, paiement espèces / carte / chèque / crédit, approbations (remise, prix, sous le coût, crédit), « Demander au dépôt », atelier saisi par le vendeur, numérotation paramétrable | ✅ Code et tests – en attente de validation |
-| 3b | Devis, BL / BT, factures récapitulatives, avoirs, retours, échanges, reprises | À venir |
+| 3b. Documents | Devis (réservation propriétaire), BL / BT + facture récapitulative, avoirs, retours, échanges (bon d'achat), reprises | ✅ Code et tests – en attente de validation |
 | 4 → 7 | — | À venir |
 
 ## Versions (vérifiées le 4 novembre 2026)
