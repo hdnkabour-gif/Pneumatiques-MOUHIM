@@ -1,10 +1,10 @@
 <?php
 
-namespace App\\Console\\Commands;
+namespace App\Console\Commands;
 
 use DateTimeInterface;
-use Illuminate\\Console\\Command;
-use OpenSpout\\Reader\\XLSX\\Reader;
+use Illuminate\Console\Command;
+use OpenSpout\Reader\XLSX\Reader;
 use ZipArchive;
 
 final class ExportReferenceWorkbookCommand extends Command
