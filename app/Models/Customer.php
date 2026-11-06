@@ -18,7 +18,7 @@ class Customer extends Model
 
     protected $fillable = [
         'type', 'name', 'phone', 'email', 'ice', 'tax_id', 'trade_register', 'address', 'city', 'price_level',
-        'credit_limit_cents', 'payment_terms_days', 'requires_po_number', 'notes', 'is_active',
+        'credit_limit_cents', 'payment_terms_days', 'requires_po_number', 'notes', 'is_active', 'created_by',
     ];
 
     protected function casts(): array

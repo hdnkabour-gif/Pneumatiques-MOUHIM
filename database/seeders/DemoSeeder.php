@@ -5,12 +5,15 @@ namespace Database\Seeders;
 use App\Actions\Transfers\ReceiveTransferAction;
 use App\Actions\Transfers\SendTransferAction;
 use App\Actions\UsedTyres\UsedTyreActions;
+use App\Enums\CustomerType;
+use App\Enums\PriceLevel;
 use App\Enums\ProductKind;
 use App\Enums\RoleName;
 use App\Enums\UsedTyreCheck;
 use App\Enums\UsedTyreOrigin;
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Site;
 use App\Models\User;
@@ -59,6 +62,26 @@ class DemoSeeder extends Seeder
         }
 
         $this->demoCatalogue($dep, $m01, $m02);
+        $this->demoCustomers();
+    }
+
+    /** Demo customers (clearly marked) with vehicles, for the sale screen. */
+    private function demoCustomers(): void
+    {
+        if (Customer::query()->where('name', 'like', '[DEMO]%')->exists()) {
+            return;
+        }
+
+        $karim = Customer::query()->create(['name' => '[DEMO] Karim Alaoui', 'phone' => '0600000001']);
+        $karim->vehicles()->create(['plate' => '12345-أ-6', 'description' => 'Dacia Logan', 'mileage' => 84000, 'tyre_size_front' => '185/65 R15']);
+
+        $fleet = Customer::query()->create([
+            'type' => CustomerType::Company, 'name' => '[DEMO] Transport Atlas SARL', 'phone' => '0522000002',
+            'ice' => '000000000000001', 'price_level' => PriceLevel::Pro, 'credit_limit_cents' => 1000000,
+            'payment_terms_days' => 30, 'city' => 'Casablanca',
+        ]);
+        $fleet->vehicles()->create(['plate' => '67890-ب-1', 'description' => 'Renault Kangoo', 'tyre_size_front' => '195/65 R15']);
+        $fleet->vehicles()->create(['plate' => '67891-ب-1', 'description' => 'Renault Kangoo', 'tyre_size_front' => '195/65 R15']);
     }
 
     /** A handful of demo products with stock, a transfer and used tyres. */

@@ -1,0 +1,48 @@
+<?php
+
+return [
+    'label' => 'client',
+    'plural' => 'Clients',
+    'days' => 'jours',
+    'no_limit' => 'Aucun plafond (crédit soumis à accord)',
+    'sections' => [
+        'company' => 'Société',
+        'credit' => 'Prix et crédit',
+        'credit_help' => 'Réservé au propriétaire. Sans plafond, toute vente à crédit demande son accord.',
+    ],
+    'fields' => [
+        'name' => 'Nom / raison sociale',
+        'phone' => 'Téléphone',
+        'type' => 'Type',
+        'ice' => 'ICE',
+        'tax_id' => 'IF',
+        'trade_register' => 'RC',
+        'requires_po_number' => 'Exige un n° de bon de commande',
+        'price_level' => 'Niveau de prix',
+        'credit_limit' => 'Plafond de crédit',
+        'payment_terms_days' => 'Délai de paiement',
+        'email' => 'Email',
+        'city' => 'Ville',
+        'address' => 'Adresse',
+        'notes' => 'Remarques',
+        'plates' => 'Véhicules',
+        'outstanding' => 'Reste à payer',
+    ],
+    'vehicles' => [
+        'title' => 'Véhicules',
+        'plate' => 'Immatriculation',
+        'description' => 'Véhicule (texte libre)',
+        'description_help' => 'Si le modèle n\'est pas dans la liste.',
+        'year' => 'Année',
+        'mileage' => 'Kilométrage',
+        'tyre_size_front' => 'Dimension pneus avant',
+        'tyre_size_rear' => 'Dimension pneus arrière',
+        'next_oil_change_km' => 'Prochaine vidange (km)',
+        'next_oil_change_on' => 'Prochaine vidange (date)',
+    ],
+    'errors' => [
+        'quick_required' => 'Indiquez le nom et un numéro de téléphone complet.',
+        'ice_format' => 'L\'ICE comporte 15 chiffres.',
+        'tyre_size' => 'Dimension non reconnue (exemple : 205/55 R16).',
+    ],
+];

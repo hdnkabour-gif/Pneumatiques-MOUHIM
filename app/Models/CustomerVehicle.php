@@ -51,6 +51,6 @@ class CustomerVehicle extends Model
     {
         $vehicle = $this->vehicleModel ? $this->vehicleModel->fullName() : $this->description;
 
-        return trim($this->plate.($vehicle ? ' – '.$vehicle : ''));
+        return trim(Normalize::plateDisplay($this->plate).($vehicle ? ' – '.$vehicle : ''));
     }
 }

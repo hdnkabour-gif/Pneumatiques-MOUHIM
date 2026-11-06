@@ -4,6 +4,8 @@ return [
     'title' => 'Paramètres société',
     'saved' => 'Paramètres enregistrés.',
     'sections' => [
+        'sales' => 'Ventes',
+        'sales_help' => 'Au-delà de ces remises, l\'accord du propriétaire est demandé (D-18).',
         'company' => 'Société',
         'legal' => 'Identifiants légaux',
         'bank' => 'Banque',
@@ -11,6 +13,8 @@ return [
         'tax_help' => 'Paramètres provisoires à faire valider par le comptable (D-30).',
     ],
     'fields' => [
+        'discount_cap_seller' => 'Remise maximale du vendeur',
+        'discount_cap_site_manager' => 'Remise maximale du responsable de site',
         'company_name' => 'Raison sociale',
         'company_address' => 'Adresse',
         'company_city' => 'Ville',
@@ -41,7 +45,7 @@ return [
         'prefix' => 'Préfixe',
         'next_number' => 'Prochain numéro',
         'preview' => 'Exemple',
-        'year' => 'Année',
+        'year' => 'Année :year',
     ],
     'errors' => [
         'number_backwards' => 'Impossible : le numéro :last a déjà été utilisé pour « :type ». Le prochain numéro doit être supérieur.',

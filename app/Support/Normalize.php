@@ -30,6 +30,16 @@ final class Normalize
         return $key === '' ? null : $key;
     }
 
+    /**
+     * Plate for display: Moroccan plates read left to right ("12345-أ-6"); a
+     * left-to-right mark around the Arabic letter stops the bidi algorithm
+     * from showing "12345-6-أ". The stored value is untouched.
+     */
+    public static function plateDisplay(?string $plate): string
+    {
+        return (string) preg_replace('/(\p{Arabic}+)/u', "\u{200E}$1\u{200E}", (string) $plate);
+    }
+
     /** wa.me link (D-26): Moroccan numbers without "+"; null when the number is unusable. */
     public static function whatsappUrl(?string $phone, string $message): ?string
     {

@@ -50,6 +50,7 @@ class AdminPanelProvider extends PanelProvider
             ->databaseNotifications()
             ->databaseNotificationsPolling('30s')
             ->navigationGroups([
+                NavigationGroup::make(fn () => __('app.navigation.sales')),
                 NavigationGroup::make(fn () => __('app.navigation.catalog')),
                 NavigationGroup::make(fn () => __('app.navigation.stock')),
                 NavigationGroup::make(fn () => __('app.navigation.vehicles')),

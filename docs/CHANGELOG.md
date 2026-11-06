@@ -33,6 +33,29 @@
 
 ## [Non publié]
 
+### Ajouté – Phase 3a (vente au quotidien)
+- Clients (particuliers / sociétés, ICE, IF, RC, bon de commande exigé) et leurs véhicules ; recherche unique
+  par téléphone (06…, +212…), immatriculation (`12345-أ-6`, `12345 أ 6`), nom ou ICE, aussi dans la recherche globale.
+- Écran « Nouvelle vente » sur un seul écran, utilisable au téléphone : client rapide (téléphone + nom),
+  recherche produit par dimension / référence / code PO, stock du site et des autres sites, produits des
+  compatibilités vérifiées du véhicule, boutons prestations et forfaits, quantités ×2 / ×4, remise en %,
+  espèces par défaut, carte, chèque (numéro, banque, tireur, échéance), plusieurs moyens, reste à crédit,
+  monnaie à rendre, techniciens en gros boutons, « Demander au dépôt ».
+- Validation dans une transaction : sortie de stock (pneus neufs par lot, occasions contrôlées uniquement,
+  consommables des prestations), numéro de facture à la validation, paiements, ordre de travail si prestations,
+  coût figé par ligne (marge « incomplète » si un coût manque).
+- Approbations : remise au-delà du plafond du rôle, prix modifié, vente sous le coût, crédit au-delà du plafond
+  (D-54, D-55) ; code du propriétaire sur place ou demande sur son téléphone ; brouillon repris ensuite.
+- Facture validée figée : ni modification ni suppression, y compris en SQL (déclencheurs PostgreSQL).
+- Facture A4 PDF (mPDF) : en-tête société, ICE client, détail HT / TVA par taux / TTC, montant en toutes lettres.
+- WhatsApp : lien `wa.me` avec la facture (lien signé valable 30 jours) ; « véhicule prêt » depuis l'atelier.
+- Page « Atelier » : ordres de travail par statut, techniciens, Démarrer / Pause / Terminé / Livré, observations,
+  prochaine vidange sur la fiche véhicule (D-53).
+- Numérotation : préfixe de chaque document et prochain numéro de l'année pour continuer la numérotation papier,
+  sans retour en arrière ni doublon (D-49) ; remises maximales paramétrables.
+- Permissions `customers.view`, `customers.manage`, `sales.create`, `sales.view`, `work_orders.manage`
+  (vendeur et responsable de site) ; technicien et magasinier sans accès aux ventes, même par URL.
+
 ### Ajouté
 - Référentiel véhicules (marques, modèles, générations, motorisations) et compatibilités pneus / huiles
   avec source, date, auteur et statut (D-48) ; seules les compatibilités « Vérifié » sont présentées

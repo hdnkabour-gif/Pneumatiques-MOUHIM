@@ -16,6 +16,7 @@ return [
         'required_body' => 'Votre compte propriétaire doit être protégé par un code sur votre téléphone. Installez Google Authenticator (ou équivalent), puis cliquez sur « Configurer » ci-dessous et scannez le QR code. Conservez les codes de secours en lieu sûr.',
     ],
     'navigation' => [
+        'sales' => 'Ventes',
         'vehicles' => 'Véhicules',
         'catalog' => 'Catalogue',
         'stock' => 'Stock',

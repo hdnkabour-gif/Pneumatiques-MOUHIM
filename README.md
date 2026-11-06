@@ -15,7 +15,9 @@ pneumatiques, services automobiles, stock, ventes, crédit, caisse, atelier.
 | 1. Fondations | Docker, auth, rôles, sites, FR/AR, journal, paramètres, sauvegardes | ✅ Déployé (sauvegarde externe R2 à activer) |
 | 2. Catalogue et stock | Catalogue, pneus neufs (lots DOT), pneus d'occasion (contrôle, QR, jeux), prestations, forfaits, mouvements, transferts, réapprovisionnement, inventaire, approbations | ✅ Code et tests – en attente de validation |
 | Avancé (D-48) | Référentiel véhicules et compatibilités (phases 3 / 7) | ✅ Code et tests |
-| 3 → 7 | — | À venir |
+| 3a. Vente au quotidien | Clients et véhicules, écran de vente unique, facture A4 (mPDF), WhatsApp, paiement espèces / carte / chèque / crédit, approbations (remise, prix, sous le coût, crédit), « Demander au dépôt », atelier saisi par le vendeur, numérotation paramétrable | ✅ Code et tests – en attente de validation |
+| 3b | Devis, BL / BT, factures récapitulatives, avoirs, retours, échanges, reprises | À venir |
+| 4 → 7 | — | À venir |
 
 ## Versions (vérifiées le 4 novembre 2026)
 
@@ -30,6 +32,7 @@ pneumatiques, services automobiles, stock, ventes, crédit, caisse, atelier.
 | spatie/laravel-permission | 8.3 |
 | spatie/laravel-activitylog | 5.1 |
 | spatie/laravel-backup | 10.3 |
+| mpdf/mpdf | 8.3 (PDF A4, arabe) |
 
 Toutes les dépendances sont gratuites et open source.
 

@@ -4,6 +4,8 @@ return [
     'title' => 'إعدادات الشركة',
     'saved' => 'تم حفظ الإعدادات.',
     'sections' => [
+        'sales' => 'المبيعات',
+        'sales_help' => 'فوق هذه التخفيضات، تُطلب موافقة المالك (D-18).',
         'company' => 'الشركة',
         'legal' => 'المعرّفات القانونية',
         'bank' => 'البنك',
@@ -11,6 +13,8 @@ return [
         'tax_help' => 'إعدادات مؤقتة في انتظار تأكيد المحاسب (D-30).',
     ],
     'fields' => [
+        'discount_cap_seller' => 'أقصى تخفيض للبائع',
+        'discount_cap_site_manager' => 'أقصى تخفيض لمسؤول الموقع',
         'company_name' => 'الاسم التجاري',
         'company_address' => 'العنوان',
         'company_city' => 'المدينة',
@@ -41,7 +45,7 @@ return [
         'prefix' => 'البادئة',
         'next_number' => 'الرقم التالي',
         'preview' => 'مثال',
-        'year' => 'السنة',
+        'year' => 'سنة :year',
     ],
     'errors' => [
         'number_backwards' => 'غير ممكن: الرقم :last سبق استعماله في «:type». يجب أن يكون الرقم التالي أكبر.',

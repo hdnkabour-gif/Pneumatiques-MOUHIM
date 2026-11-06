@@ -83,6 +83,8 @@ class CompanySettings extends Page
             'legal_mentions' => $s['documents.legal_mentions'],
             'document_number_pattern' => $s['documents.number_pattern'],
             'document_number_padding' => (int) $s['documents.number_padding'],
+            'discount_cap_seller' => Decimal::basisPointsToPercent((int) $s['sales.discount_cap_bp.seller']),
+            'discount_cap_site_manager' => Decimal::basisPointsToPercent((int) $s['sales.discount_cap_bp.site_manager']),
         ]);
     }
 
@@ -120,6 +122,14 @@ class CompanySettings extends Page
                     ->schema([
                         TextInput::make('bank_name')->label(__('settings.fields.bank_name'))->maxLength(100),
                         TextInput::make('rib')->label(__('settings.fields.rib'))->maxLength(34),
+                    ]),
+                Section::make(__('settings.sections.sales'))
+                    ->description(__('settings.sections.sales_help'))
+                    ->columns(2)
+                    ->collapsible()
+                    ->schema([
+                        TextInput::make('discount_cap_seller')->label(__('settings.fields.discount_cap_seller'))->suffix('%')->required()->rules($decimal),
+                        TextInput::make('discount_cap_site_manager')->label(__('settings.fields.discount_cap_site_manager'))->suffix('%')->required()->rules($decimal),
                     ]),
                 Section::make(__('settings.sections.tax'))
                     ->description(__('settings.sections.tax_help'))
@@ -187,6 +197,8 @@ class CompanySettings extends Page
             'documents.legal_mentions' => $d['legal_mentions'] ?? null,
             'documents.number_pattern' => $d['document_number_pattern'],
             'documents.number_padding' => (int) $d['document_number_padding'],
+            'sales.discount_cap_bp.seller' => min(10000, Decimal::percentToBasisPoints($d['discount_cap_seller'])),
+            'sales.discount_cap_bp.site_manager' => min(10000, Decimal::percentToBasisPoints($d['discount_cap_site_manager'])),
         ], auth()->user());
 
         Notification::make()->success()->title(__('settings.saved'))->send();
