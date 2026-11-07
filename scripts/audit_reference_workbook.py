@@ -31,7 +31,7 @@ REFERENCES = [
 
 def norm(value):
     value = unicodedata.normalize("NFKC", str(value or "")).strip().casefold()
-    return re.sub(r"\\s+", " ", value)
+    return re.sub(r"\s+", " ", value)
 
 def records(sheet):
     rows = sheet.get("rows", [])
@@ -135,7 +135,8 @@ def audit(payload):
         "empty_templates": [name for name in ["VEHICLE_FITMENTS", "PRODUCTS_IMPORT", "STOCK_OPENING", "USED_TYRES_IMPORT"]
                             if name in sheets and not parsed.get(name)],
     }
-    return {"file": payload.get("file"), "summary": summary, "issues": issues}
+    return {"file": payload.get("file"), "summary": summary,
+            "sheet_counts": {name: len(rows) for name, rows in parsed.items()}, "issues": issues}
 
 def main():
     parser = argparse.ArgumentParser()
@@ -144,7 +145,7 @@ def main():
     args = parser.parse_args()
     report = audit(json.loads(args.input.read_text(encoding="utf-8")))
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+    args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(report["summary"], ensure_ascii=False))
     return 1 if report["summary"]["error_count"] else 0
 
