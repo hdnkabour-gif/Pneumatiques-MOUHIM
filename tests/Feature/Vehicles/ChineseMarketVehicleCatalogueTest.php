@@ -10,7 +10,7 @@ it('adds only confirmed Chinese-market makes and models without invented fitment
     app(ChineseMarketVehicleCatalogueSeeder::class)->run();
 
     expect(VehicleMake::query()->where('name', 'AVATR')->exists())->toBeTrue()
-        ->and(VehicleModel::query()->whereHas('make', fn ($q) => $q->where('name', 'AVATR'))->pluck('name')->all())
+        ->and(VehicleModel::query()->whereHas('make', fn ($q) => $q->where('name', 'AVATR'))->orderBy('name')->pluck('name')->all())
         ->toBe(['07', '11', '12'])
         ->and(VehicleModel::query()->whereHas('make', fn ($q) => $q->where('name', 'XPeng'))->whereIn('name', ['G6', 'G9'])->count())
         ->toBe(2)
