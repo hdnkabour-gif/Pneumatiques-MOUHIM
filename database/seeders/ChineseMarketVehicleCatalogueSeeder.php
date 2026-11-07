@@ -7,8 +7,8 @@ use App\Models\VehicleModel;
 use Illuminate\Database\Seeder;
 
 /**
- * Confirmed Chinese-group vehicle marques/models introduced or actively
- * marketed in Morocco during 2024-2026.
+ * Chinese and China-group-backed marques/models confirmed in the Moroccan
+ * market in the 2024-2026 expansion wave.
  *
  * Catalogue only: no generations, engines, tyre/oil fitments, prices, SKUs,
  * stock, or verified mechanical compatibility are created.
@@ -25,7 +25,7 @@ class ChineseMarketVehicleCatalogueSeeder extends Seeder
             'models' => ['07', '11', '12'],
         ],
         'GAC' => [
-            'source' => 'https://autonews.ma/actualite-auto/actualite-nationale/24874-gac-maroc-prix-et-equipements-des-emzoom-emkoo-et-s7',
+            'source' => 'https://medias24.com/2026/09/29/gac-passe-a-loffensive-au-maroc-avec-trois-nouveaux-modeles-1767009/',
             'models' => ['Emzoom', 'Emkoo', 'S7', 'GN8', 'HYPTEC HT', 'HYPTEC Hyper SSR'],
         ],
         'XPeng' => [
@@ -37,7 +37,7 @@ class ChineseMarketVehicleCatalogueSeeder extends Seeder
             'models' => ['Dashing', 'T1', 'T2', 'G700'],
         ],
         'Soueast' => [
-            'source' => 'https://medias24.com/2026/06/10/soueast-lance-le-s08-dm-au-maroc-un-suv-de-7-places-1696729/',
+            'source' => 'https://medias24.com/guide_voiture_au_maroc/marque/soueast/',
             'models' => ['S06', 'S07', 'S08 DM', 'S09'],
         ],
         'Lynk & Co' => [
@@ -45,7 +45,7 @@ class ChineseMarketVehicleCatalogueSeeder extends Seeder
             'models' => ['01', '02', '06', '08'],
         ],
         'OMODA' => [
-            'source' => 'https://www.cfaogroup.com/cfao-mobility-au-maroc-distribution-des-marques-omoda-et-jaecoo/',
+            'source' => 'https://www.infomediaire.net/cfao-motors-commercialise-les-marques-chinoises-omoda-jaecoo-au-maroc/',
             'models' => ['C5'],
         ],
         'JAECOO' => [
@@ -55,6 +55,38 @@ class ChineseMarketVehicleCatalogueSeeder extends Seeder
         'DEEPAL' => [
             'source' => 'https://deepal.ma/',
             'models' => ['S05', 'S07', 'G318'],
+        ],
+        'BAIC' => [
+            'source' => 'https://www.baicmaroc.ma/',
+            'models' => ['U5 PLUS', 'X35', 'X55', 'X7', 'BJ30e'],
+        ],
+        'Dongfeng' => [
+            'source' => 'https://chinauto.ma/fr/guide/prix-voitures-chinoises',
+            'models' => ['BOX', 'SHINE'],
+        ],
+        'EXEED' => [
+            'source' => 'https://www.moteur.ma/fr/autonews/actualites-maroc/jetour-simplante-au-maroc-et-devoile-son-suv-t2-1444.html',
+            'models' => ['RX'],
+        ],
+        'JAC' => [
+            'source' => 'https://chinauto.ma/fr/guide/prix-voitures-chinoises',
+            'models' => ['E30X'],
+        ],
+        'Leapmotor' => [
+            'source' => 'https://www.leapmotor.net/fr-ma/modeles',
+            'models' => ['T03', 'C10'],
+        ],
+        'Seres' => [
+            'source' => 'https://lematin.ma/automobile/les-raisons-de-la-ruee-des-marques-de-voitures-chinoises-vers-le-maroc/348075',
+            'models' => ['3'],
+        ],
+        'Zeekr' => [
+            'source' => 'https://www.bornerecharge.ma/wp-content/uploads/2025/09/SUPP-VOITURES-1.pdf',
+            'models' => ['001', 'X'],
+        ],
+        'ROX' => [
+            'source' => 'https://roxmotors.ma/',
+            'models' => ['01', 'ADAMAS'],
         ],
     ];
 
