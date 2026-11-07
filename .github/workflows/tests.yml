@@ -54,4 +54,12 @@ jobs:
         run: vendor/bin/pest
 
       - name: Export every reference workbook sheet (read-only)
-        run: php artisan vehicles:export-reference-workbook --pretty
+        run: php artisan vehicles:export-reference-workbook --output=storage/app/reference-workbook-export.json --pretty
+
+      - name: Upload extracted workbook for audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: reference-workbook-extraction
+          path: storage/app/reference-workbook-export.json
+          if-no-files-found: error
+          retention-days: 7
