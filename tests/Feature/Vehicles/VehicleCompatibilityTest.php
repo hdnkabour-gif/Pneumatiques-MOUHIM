@@ -39,8 +39,8 @@ it('imports the reference workbook V1.3', function () {
     $report = importWorkbook();
 
     expect($report['errors'])->toBe([])
-        ->and(VehicleMake::query()->count())->toBe(39)
-        ->and(VehicleModel::query()->count())->toBe(263)
+        ->and(VehicleMake::query()->count())->toBe(48) // 39 workbook makes + 9 confirmed Chinese-market makes
+        ->and(VehicleModel::query()->count())->toBe(291) // 263 workbook models + 28 confirmed Chinese-market models
         ->and(CompatibilitySource::query()->count())->toBe(26)
         ->and(TyreFitment::query()->count())->toBe(13)
         ->and(OilFitment::query()->count())->toBe(11);
