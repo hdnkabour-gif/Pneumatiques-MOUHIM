@@ -20,7 +20,7 @@ final class ExportReferenceWorkbookCommand extends Command
     {
         $path = $this->argument('path') ?: base_path('docs/data/PNEU_MOUHIM_Manager_Catalogue_Operations_V1_3.xlsx');
 
-        if (! is_file($path)) {
+        if (!is_file($path)) {
             $this->components->error("Classeur introuvable : {$path}");
 
             return self::FAILURE;
@@ -87,7 +87,7 @@ final class ExportReferenceWorkbookCommand extends Command
         $output = $this->option('output');
         if ($output) {
             $directory = dirname($output);
-            if (! is_dir($directory) && ! mkdir($directory, 0775, true) && ! is_dir($directory)) {
+            if (!is_dir($directory) && !mkdir($directory, 0775, true) && !is_dir($directory)) {
                 $this->components->error("Impossible de créer le dossier : {$directory}");
 
                 return self::FAILURE;
