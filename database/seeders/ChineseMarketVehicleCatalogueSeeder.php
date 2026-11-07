@@ -65,7 +65,7 @@ class ChineseMarketVehicleCatalogueSeeder extends Seeder
             'models' => ['BOX', 'SHINE'],
         ],
         'EXEED' => [
-            'source' => 'https://www.moteur.ma/fr/autonews/actualites-maroc/jetour-simplante-au-maroc-et-devoile-son-suv-t2-1444.html',
+            'source' => 'https://chinauto.ma/fr/guide/prix-voitures-chinoises',
             'models' => ['RX'],
         ],
         'JAC' => [
