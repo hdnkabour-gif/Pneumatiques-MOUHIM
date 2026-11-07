@@ -33,7 +33,7 @@ class ChineseMarketVehicleCatalogueSeeder extends Seeder
             'models' => ['G6', 'G9'],
         ],
         'Jetour' => [
-            'source' => 'https://medias24.com/2026/04/15/jetour-officialise-son-arrivee-au-maroc-avec-deux-nouveaux-suv-le-t1-et-le-g700-1660153/',
+            'source' => 'https://www.moteur.ma/fr/sp/neuf/ww-maroc/jetour/',
             'models' => ['Dashing', 'T1', 'T2', 'G700'],
         ],
         'Soueast' => [
@@ -77,7 +77,7 @@ class ChineseMarketVehicleCatalogueSeeder extends Seeder
             'models' => ['T03', 'C10'],
         ],
         'Seres' => [
-            'source' => 'https://lematin.ma/automobile/les-raisons-de-la-ruee-des-marques-de-voitures-chinoises-vers-le-maroc/348075',
+            'source' => 'https://chinauto.ma/fr/guide/prix-voitures-chinoises',
             'models' => ['3'],
         ],
         'Zeekr' => [
