@@ -74,7 +74,7 @@ it('is idempotent and never overwrites a compatibility verified in the app', fun
     $second = importWorkbook();
 
     expect(TyreFitment::query()->count())->toBe(13)
-        ->and(VehicleModel::query()->count())->toBe(263)
+        ->and(VehicleModel::query()->count())->toBe(307)
         ->and($second['counts']['VEHICLE_TIRE_FITMENTS']['created'])->toBe(0)
         ->and($fitment->fresh()->status)->toBe(CompatibilityStatus::Verified);
 });
