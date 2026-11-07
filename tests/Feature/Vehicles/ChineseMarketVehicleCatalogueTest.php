@@ -21,15 +21,14 @@ it('adds only confirmed Chinese-market makes and models without invented fitment
 });
 
 it('is idempotent and preserves existing model notes', function () {
-    $make = VehicleMake::query()->create(['name' => 'AVATR']);
-    $model = VehicleModel::query()->create([
-        'make_id' => $make->id,
-        'name' => '07',
-        'notes' => 'Note saisie par le responsable',
-    ]);
+    $model = VehicleModel::query()
+        ->whereHas('make', fn ($q) => $q->where('name', 'AVATR'))
+        ->where('name', '07')
+        ->firstOrFail();
+    $model->update(['notes' => 'Note saisie par le responsable']);
 
-    app(ChineseMarketVehicleCatalogueSeeder::class)->run();
     $count = VehicleModel::query()->count();
+    app(ChineseMarketVehicleCatalogueSeeder::class)->run();
     app(ChineseMarketVehicleCatalogueSeeder::class)->run();
 
     expect(VehicleModel::query()->count())->toBe($count)
