@@ -26,7 +26,7 @@ final class ExportReferenceWorkbookCommand extends Command
             return self::FAILURE;
         }
 
-        $zip = new \\ZipArchive;
+        $zip = new ZipArchive;
         if ($zip->open($path) !== true || $zip->locateName('xl/workbook.xml') === false) {
             $this->components->error('Le fichier fourni ne semble pas être un classeur XLSX valide.');
 
