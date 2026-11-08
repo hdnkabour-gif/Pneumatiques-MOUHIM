@@ -1,22 +1,22 @@
 <?php
 
-namespace App\\Filament\\Resources\\TyreCatalogueReferences;
+namespace App\Filament\Resources\TyreCatalogueReferences;
 
-use App\\Enums\\Permission;
-use App\\Filament\\Resources\\TyreCatalogueReferences\\Pages\\ListTyreCatalogueReferences;
-use App\\Models\\TyreCatalogueReference;
+use App\Enums\Permission;
+use App\Filament\Resources\TyreCatalogueReferences\Pages\ListTyreCatalogueReferences;
+use App\Models\TyreCatalogueReference;
 use BackedEnum;
-use Filament\\Resources\\Resource;
-use Filament\\Tables\\Columns\\TextColumn;
-use Filament\\Tables\\Filters\\SelectFilter;
-use Filament\\Tables\\Table;
-use Illuminate\\Database\\Eloquent\\Builder;
+use Filament\Resources\Resource;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class TyreCatalogueReferenceResource extends Resource
 {
     protected static ?string $model = TyreCatalogueReference::class;
     protected static bool $hasTitleCaseModelLabel = false;
-    protected static string|BackedEnum|null $navigationIcon = \\Filament\\Support\\Icons\\Heroicon::OutlinedTruck;
+    protected static string|BackedEnum|null $navigationIcon = \Filament\Support\Icons\Heroicon::OutlinedTruck;
     protected static ?int $navigationSort = 20;
     protected static ?string $slug = 'tyre-reference-catalogue';
 
