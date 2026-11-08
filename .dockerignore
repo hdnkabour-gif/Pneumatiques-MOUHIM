@@ -8,4 +8,10 @@ storage/logs/*
 storage/framework/cache/*
 storage/framework/sessions/*
 storage/framework/views/*
+# Keep documentation out of the production image except the source workbook required by the catalogue importer.
 docs
+!docs/
+docs/*
+!docs/data/
+docs/data/*
+!docs/data/PNEU_MOUHIM_Manager_Catalogue_Operations_V1_3.xlsx
