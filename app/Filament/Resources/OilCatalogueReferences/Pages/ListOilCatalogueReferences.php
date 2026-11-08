@@ -1,9 +1,9 @@
 <?php
 
-namespace App\\Filament\\Resources\\OilCatalogueReferences\\Pages;
+namespace App\Filament\Resources\OilCatalogueReferences\Pages;
 
-use App\\Filament\\Resources\\OilCatalogueReferences\\OilCatalogueReferenceResource;
-use Filament\\Resources\\Pages\\ListRecords;
+use App\Filament\Resources\OilCatalogueReferences\OilCatalogueReferenceResource;
+use Filament\Resources\Pages\ListRecords;
 
 class ListOilCatalogueReferences extends ListRecords
 {
