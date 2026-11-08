@@ -26,7 +26,7 @@ final class ImportTyreOilReferenceCatalogueCommand extends Command
     {
         $path = $this->argument('path') ?: base_path('docs/data/PNEU_MOUHIM_Manager_Catalogue_Operations_V1_3.xlsx');
 
-        if (!is_file($path)) {
+        if (! is_file($path)) {
             $this->components->error("Classeur introuvable : {$path}");
 
             return self::FAILURE;
@@ -40,7 +40,7 @@ final class ImportTyreOilReferenceCatalogueCommand extends Command
             foreach ($reader->getSheetIterator() as $sheet) {
                 $name = $sheet->getName();
 
-                if (!isset(self::SHEETS[$name])) {
+                if (! isset(self::SHEETS[$name])) {
                     continue;
                 }
 
@@ -108,7 +108,7 @@ final class ImportTyreOilReferenceCatalogueCommand extends Command
                         'updated_at' => now(),
                     ];
 
-                    if (!$this->option('dry-run')) {
+                    if (! $this->option('dry-run')) {
                         DB::table($config['table'])->updateOrInsert(['unique_key' => $key], $payload);
                     }
 
