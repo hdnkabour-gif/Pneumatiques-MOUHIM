@@ -1,11 +1,11 @@
 <?php
 
-namespace Tests\\Feature\\Catalogue;
+namespace Tests\Feature\Catalogue;
 
-use Illuminate\\Foundation\\Testing\\RefreshDatabase;
-use Illuminate\\Support\\Facades\\Artisan;
-use Illuminate\\Support\\Facades\\DB;
-use Tests\\TestCase;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
+use Tests\TestCase;
 
 class TyreOilReferenceCatalogueImportTest extends TestCase
 {
