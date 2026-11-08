@@ -86,12 +86,10 @@ final class ImportTyreOilReferenceCatalogueCommand extends Command
                         continue;
                     }
 
-                    $key = hash('sha256', implode('|', [
-                        $name,
-                        mb_strtolower((string) $brand),
-                        mb_strtolower((string) $model),
-                        mb_strtolower((string) $dimension),
-                    ]));
+                    // Include the source row in the identity: oil ranges can repeat the same
+                    // commercial family with different viscosities (e.g. Castrol EDGE).
+                    // A stable sheet + row key preserves every source row and remains idempotent.
+                    $key = hash('sha256', $name.'|'.$line);
                     $status = $data['Statut final'] ?? $data['Statut de compatibilité'] ?? $data['Vérification'] ?? 'to_verify';
 
                     $payload = [
