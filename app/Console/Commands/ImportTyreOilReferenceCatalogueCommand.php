@@ -32,7 +32,7 @@ final class ImportTyreOilReferenceCatalogueCommand extends Command
             return self::FAILURE;
         }
 
-        $reader = new Reader();
+        $reader = new Reader;
         $reader->open($path);
         $counts = [];
 
