@@ -1,8 +1,8 @@
 <?php
 
-namespace Database\Seeders;
+namespace Database\\Seeders;
 
-use Illuminate\Database\Seeder;
+use Illuminate\\Database\\Seeder;
 
 /**
  * Production-safe seeding only: reference data, no user account.
@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             CategoriesSeeder::class,
             ReferenceBrandsSeeder::class,
             ChineseMarketVehicleCatalogueSeeder::class,
+            TyreOilReferenceCatalogueSeeder::class,
         ]);
     }
 }
