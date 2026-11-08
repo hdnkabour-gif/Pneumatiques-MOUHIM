@@ -1,9 +1,9 @@
 <?php
 
-namespace App\\Filament\\Resources\\TyreCatalogueReferences\\Pages;
+namespace App\Filament\Resources\TyreCatalogueReferences\Pages;
 
-use App\\Filament\\Resources\\TyreCatalogueReferences\\TyreCatalogueReferenceResource;
-use Filament\\Resources\\Pages\\ListRecords;
+use App\Filament\Resources\TyreCatalogueReferences\TyreCatalogueReferenceResource;
+use Filament\Resources\Pages\ListRecords;
 
 class ListTyreCatalogueReferences extends ListRecords
 {
