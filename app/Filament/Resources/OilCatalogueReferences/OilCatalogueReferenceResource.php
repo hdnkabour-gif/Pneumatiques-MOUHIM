@@ -1,22 +1,22 @@
 <?php
 
-namespace App\\Filament\\Resources\\OilCatalogueReferences;
+namespace App\Filament\Resources\OilCatalogueReferences;
 
-use App\\Enums\\Permission;
-use App\\Filament\\Resources\\OilCatalogueReferences\\Pages\\ListOilCatalogueReferences;
-use App\\Models\\OilCatalogueReference;
+use App\Enums\Permission;
+use App\Filament\Resources\OilCatalogueReferences\Pages\ListOilCatalogueReferences;
+use App\Models\OilCatalogueReference;
 use BackedEnum;
-use Filament\\Resources\\Resource;
-use Filament\\Tables\\Columns\\TextColumn;
-use Filament\\Tables\\Filters\\SelectFilter;
-use Filament\\Tables\\Table;
-use Illuminate\\Database\\Eloquent\\Builder;
+use Filament\Resources\Resource;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class OilCatalogueReferenceResource extends Resource
 {
     protected static ?string $model = OilCatalogueReference::class;
     protected static bool $hasTitleCaseModelLabel = false;
-    protected static string|BackedEnum|null $navigationIcon = \\Filament\\Support\\Icons\\Heroicon::OutlinedBeaker;
+    protected static string|BackedEnum|null $navigationIcon = \Filament\Support\Icons\Heroicon::OutlinedBeaker;
     protected static ?int $navigationSort = 21;
     protected static ?string $slug = 'oil-reference-catalogue';
 
