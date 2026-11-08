@@ -39,8 +39,8 @@ it('imports the reference workbook V1.3', function () {
     $report = importWorkbook();
 
     expect($report['errors'])->toBe([])
-        ->and(VehicleMake::query()->count())->toBe(39)
-        ->and(VehicleModel::query()->count())->toBe(263)
+        ->and(VehicleMake::query()->count())->toBe(56) // 39 workbook makes + 17 confirmed Chinese-market makes
+        ->and(VehicleModel::query()->count())->toBe(307) // 263 workbook models + 44 confirmed Chinese-market models
         ->and(CompatibilitySource::query()->count())->toBe(26)
         ->and(TyreFitment::query()->count())->toBe(13)
         ->and(OilFitment::query()->count())->toBe(11);
@@ -74,7 +74,7 @@ it('is idempotent and never overwrites a compatibility verified in the app', fun
     $second = importWorkbook();
 
     expect(TyreFitment::query()->count())->toBe(13)
-        ->and(VehicleModel::query()->count())->toBe(263)
+        ->and(VehicleModel::query()->count())->toBe(307)
         ->and($second['counts']['VEHICLE_TIRE_FITMENTS']['created'])->toBe(0)
         ->and($fitment->fresh()->status)->toBe(CompatibilityStatus::Verified);
 });

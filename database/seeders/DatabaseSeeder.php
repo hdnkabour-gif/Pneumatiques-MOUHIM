@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             SitesSeeder::class,
             CategoriesSeeder::class,
             ReferenceBrandsSeeder::class,
+            ChineseMarketVehicleCatalogueSeeder::class,
         ]);
     }
 }
