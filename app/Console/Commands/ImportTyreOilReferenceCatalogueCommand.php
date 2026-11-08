@@ -1,10 +1,10 @@
 <?php
 
-namespace App\\Console\\Commands;
+namespace App\Console\Commands;
 
-use Illuminate\\Console\\Command;
-use Illuminate\\Support\\Facades\\DB;
-use OpenSpout\\Reader\\XLSX\\Reader;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
+use OpenSpout\Reader\XLSX\Reader;
 
 final class ImportTyreOilReferenceCatalogueCommand extends Command
 {
