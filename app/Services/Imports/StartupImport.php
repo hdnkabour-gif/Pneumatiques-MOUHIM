@@ -36,12 +36,57 @@ class StartupImport
         'stock' => ['SKU', 'Site (DEP/M01/M02)', 'Quantité', 'Coût unitaire HT', 'DOT (ex. 2425)'],
     ];
 
+    /** Column help and one filled example per file (shown on a second sheet, never imported). */
+    public const HELP = [
+        'customers' => [
+            ['Nom', 'Obligatoire. Nom du client ou raison sociale.', 'Transport Atlas SARL'],
+            ['Téléphone', 'Obligatoire, complet (06…, 05…, +212…).', '0522 11 22 33'],
+            ['Type (particulier/société)', '« particulier » ou « société » (vide = particulier ; un ICE = société).', 'société'],
+            ['ICE', '15 chiffres, pour les sociétés.', '001234567000089'],
+            ['Ville', 'Facultatif.', 'Casablanca'],
+            ['Plafond crédit (MAD)', 'Pris en compte seulement si le propriétaire importe. Vide = tout crédit demande son accord.', '10000'],
+            ['Solde d\'ouverture (MAD)', 'Dette actuelle du client (cahier, Excel). Vide si rien.', '3000'],
+            ['Date du solde (JJ/MM/AAAA)', 'Obligatoire si un solde est indiqué.', '31/10/2026'],
+            ['Immatriculation', 'Facultatif : une voiture du client.', '12345-أ-6'],
+        ],
+        'products' => [
+            ['Nom', 'Obligatoire sauf pour un pneu (le nom est alors « Marque + dimension »).', ''],
+            ['Catégorie', 'Obligatoire, exactement comme dans Catalogue → Catégories (ex. Tourisme, SUV / 4x4, Utilitaire, Huiles moteur, Filtres à huile, Batteries).', 'Tourisme'],
+            ['Marque', 'Facultatif (créée si absente).', 'Michelin'],
+            ['Prix particulier TTC', 'Obligatoire, en MAD (ex. 850 ou 850,50).', '850'],
+            ['Prix pro TTC', 'Facultatif (sinon prix particulier).', '780'],
+            ['Prix revendeur TTC', 'Facultatif.', '740'],
+            ['Coût d\'achat HT', 'Facultatif mais conseillé : sans coût, la marge reste « incomplète ».', '520'],
+            ['Unité (piece/can/kit/set/litre)', 'piece par défaut ; can = bidon fermé ; litre = huile au fût (prix au litre).', 'piece'],
+            ['Dimension pneu (205/55 R16 91V)', 'Pour les pneus neufs : dimension avec indices de charge et de vitesse.', '205/55 R16 91V'],
+            ['Référence fabricant', 'Facultatif (recherche par référence).', ''],
+            ['SKU (vide = automatique)', 'Laisser vide : le code est créé (PN-000123). À remplir seulement pour garder vos anciens codes.', ''],
+        ],
+        'stock' => [
+            ['SKU', 'Obligatoire : code du produit (Catalogue → Produits), après l\'import des produits.', 'PN-000001'],
+            ['Site (DEP/M01/M02)', 'Obligatoire : DEP = Dépôt Central, M01 = Magasin 01, M02 = Magasin 02.', 'M01'],
+            ['Quantité', 'Obligatoire, nombre entier compté lors de l\'inventaire.', '8'],
+            ['Coût unitaire HT', 'Conseillé : sert au coût moyen et à la marge.', '520'],
+            ['DOT (ex. 2425)', 'Pneus neufs : semaine + année de fabrication (2425 = semaine 24 de 2025). Une ligne par DOT différent.', '2425'],
+        ],
+    ];
+
     public function template(string $type, string $path): void
     {
         $writer = new Writer;
         $writer->openToFile($path);
-        $writer->getCurrentSheet()->setName($type);
+        $writer->getCurrentSheet()->setName('A remplir');
         $writer->addRow(Row::fromValues(self::TYPES[$type]));
+        $writer->addNewSheetAndMakeItCurrent();
+        $writer->getCurrentSheet()->setName('Explications');
+        $writer->addRow(Row::fromValues(['Colonne', 'Ce qu\'il faut mettre', 'Exemple']));
+        foreach (self::HELP[$type] as $help) {
+            $writer->addRow(Row::fromValues($help));
+        }
+        $writer->addRow(Row::fromValues([]));
+        $writer->addRow(Row::fromValues(['Remplir uniquement la feuille « A remplir », une ligne par '.match ($type) {
+            'customers' => 'client', 'products' => 'produit', default => 'produit et site (et DOT)'
+        }.'. Ne pas changer les titres des colonnes.']));
         $writer->close();
     }
 

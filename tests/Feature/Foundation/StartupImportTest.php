@@ -55,3 +55,12 @@ it('refuses the whole file with clear line errors', function () {
     expect($check['errors'])->toHaveCount(5)
         ->and($check['errors'][0])->toStartWith(__('imports.line', ['line' => 2, 'error' => '']));
 });
+
+it('gives templates with an explanation sheet that is never imported', function () {
+    $path = storage_path('app/test-template-'.uniqid().'.xlsx');
+    app(StartupImport::class)->template('stock', $path);
+    $check = app(StartupImport::class)->check('stock', $path);
+    unlink($path);
+
+    expect($check['errors'])->toBe([__('imports.empty')]);
+});
