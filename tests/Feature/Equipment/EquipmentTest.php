@@ -42,3 +42,8 @@ it('manages equipment from the screen, sellers only report', function () {
     expect($eq->fresh()->status)->toBe('broken');
     $this->get(EquipmentResource::getUrl('create'))->assertForbidden();
 });
+
+it('hides the create button from those who cannot create', function () {
+    $this->actingAs(userWithRole(RoleName::Seller, 'M01'));
+    Livewire::test(ListEquipment::class)->assertActionHidden('create');
+});
