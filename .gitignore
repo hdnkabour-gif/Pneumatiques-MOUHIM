@@ -36,3 +36,4 @@ Thumbs.db
 # Local backups and restore scratch space
 /storage/app/backups
 /storage/app/restore-*
+__pycache__/

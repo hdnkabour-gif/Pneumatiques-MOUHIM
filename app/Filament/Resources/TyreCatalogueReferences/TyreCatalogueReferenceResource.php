@@ -33,6 +33,12 @@ class TyreCatalogueReferenceResource extends Resource
         ]) ?? false;
     }
 
+    /** Simplicity (§5): reference data in the menu only for whoever manages the vehicle reference. */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return parent::shouldRegisterNavigation() && (auth()->user()?->can(Permission::CompatibilitiesManage->value) ?? false);
+    }
+
     public static function getModelLabel(): string
     {
         return __('reference_catalogue.tyres');
