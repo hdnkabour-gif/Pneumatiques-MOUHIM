@@ -11,6 +11,7 @@ return [
     'locales' => ['fr', 'ar'],
     'timezone' => 'Africa/Casablanca',
     'currency' => 'MAD',
+    'evening_summary_at' => env('EVENING_SUMMARY_AT', '20:00'),
 
     // Default values of every setting key.
     'settings' => [

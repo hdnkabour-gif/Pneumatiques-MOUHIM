@@ -14,3 +14,7 @@ Schedule::command('backup:monitor')->dailyAt('08:00')->timezone(config('mouhim.t
 // Quotes past their validity are expired and their reserved stock released (§10.3, D-13).
 Schedule::call(fn () => app(QuoteActions::class)->expireOld())
     ->name('expire-quotes')->dailyAt('00:15')->timezone(config('mouhim.timezone'))->onOneServer();
+
+// Evening summary to the owner (§16.2), 20:00 by default.
+Schedule::command('reports:evening-summary')->dailyAt(config('mouhim.evening_summary_at'))
+    ->timezone(config('mouhim.timezone'))->onOneServer();

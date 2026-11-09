@@ -33,6 +33,16 @@
 
 ## [Non publié]
 
+### Ajouté – Phase 5 (démarrage, propriétaire)
+- Page « Aujourd'hui » (téléphone d'abord) : alertes à traiter (5 max), ventes du jour et comparaison avec la veille,
+  encaissements par moyen, crédit, dépenses, marge (incomplète si un coût manque, visible avec la permission coûts),
+  ventes du mois par site avec objectif et barre de progression, fil « en direct ». Rafraîchie chaque minute.
+- Objectifs mensuels par site fixés par le propriétaire.
+- Résumé du soir (20 h, `EVENING_SUMMARY_AT`) : notification dans l'application + email au propriétaire.
+- Application installable sur l'écran d'accueil du téléphone (PWA : manifeste, icônes, service worker sans cache).
+- Référence des indices de charge et de vitesse (ETRTO / ISO) affichée sur l'écran de vente (ex. 91V = 615 kg · 240 km/h).
+- Reste à faire en phase 5 : notifications push hors application (clés VAPID à créer) et imports Excel de démarrage.
+
 ### Ajouté – Phase 4 (argent)
 - Page « Ce qui reste » (propriétaire et responsables, téléphone) : clients qui doivent avec ancienneté et relance
   WhatsApp, chèques à encaisser, devis en attente, véhicules à l'atelier, transferts et demandes, approbations.

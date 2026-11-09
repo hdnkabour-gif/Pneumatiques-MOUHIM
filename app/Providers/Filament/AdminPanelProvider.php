@@ -25,6 +25,7 @@ use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\HtmlString;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class AdminPanelProvider extends PanelProvider
@@ -75,6 +76,11 @@ class AdminPanelProvider extends PanelProvider
                 Locale::cases(),
             ))
             ->renderHook(PanelsRenderHook::AUTH_LOGIN_FORM_AFTER, fn () => view('auth.locale-switcher'))
+            // Installable on the phone (PWA, §16.1).
+            ->renderHook(PanelsRenderHook::HEAD_END, fn () => new HtmlString(
+                '<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#e07000">'
+                .'<link rel="apple-touch-icon" href="/pwa/icon-192.png">'
+                .'<script>if ("serviceWorker" in navigator) { navigator.serviceWorker.register("/sw.js"); }</script>'))
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
