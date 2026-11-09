@@ -30,7 +30,29 @@ class StockVerifier
             GROUP BY t.id HAVING t.quantity <> COALESCE(SUM(m.quantity), 0)
         SQL);
 
+        // Used tyres (one record each): on hand = +1 on the ledger at its site, gone = 0 everywhere.
+        $usedTyres = DB::select(<<<'SQL'
+            SELECT u.id, u.site_id, u.status,
+                   COALESCE(SUM(m.quantity) FILTER (WHERE m.site_id = u.site_id), 0) AS here,
+                   COALESCE(SUM(m.quantity), 0) AS total
+            FROM used_tyres u LEFT JOIN stock_movements m ON m.used_tyre_id = u.id
+            GROUP BY u.id
+            HAVING (u.status IN ('sold', 'scrapped') AND COALESCE(SUM(m.quantity), 0) <> 0)
+                OR (u.status NOT IN ('sold', 'scrapped') AND (COALESCE(SUM(m.quantity) FILTER (WHERE m.site_id = u.site_id), 0) <> 1
+                    OR COALESCE(SUM(m.quantity), 0) <> 1))
+        SQL);
+
+        // Quotes can never hold more than the stock (D-13).
+        $reserved = DB::select('SELECT product_id, site_id, reserved, quantity FROM stock_levels WHERE reserved > quantity');
+
         $rows = [];
+        foreach ($usedTyres as $r) {
+            $rows[] = ['kind' => 'used_tyre:'.$r->id.' ('.$r->status.')', 'product_id' => 0, 'site_id' => (int) $r->site_id, 'lot_id' => null,
+                'cached' => in_array($r->status, ['sold', 'scrapped'], true) ? 0 : 1, 'ledger' => (int) $r->total];
+        }
+        foreach ($reserved as $r) {
+            $rows[] = ['kind' => 'reserved', 'product_id' => (int) $r->product_id, 'site_id' => (int) $r->site_id, 'lot_id' => null, 'cached' => (int) $r->reserved, 'ledger' => (int) $r->quantity];
+        }
         foreach ($levels as $r) {
             $rows[] = ['kind' => 'level', 'product_id' => (int) $r->product_id, 'site_id' => (int) $r->site_id, 'lot_id' => null, 'cached' => (int) $r->cached, 'ledger' => (int) $r->ledger];
         }

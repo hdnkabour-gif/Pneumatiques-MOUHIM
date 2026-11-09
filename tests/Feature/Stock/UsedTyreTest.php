@@ -8,6 +8,7 @@ use App\Enums\UsedTyreStatus;
 use App\Exceptions\BusinessRuleException;
 use App\Models\StockMovement;
 use App\Models\UsedTyre;
+use App\Services\Stock\StockVerifier;
 use App\Services\Stock\UsedTyreSetFinder;
 
 function allChecksOk(): array
@@ -102,4 +103,14 @@ it('shows matching sets on the sets screen', function () {
 
     $this->actingAs($this->seller)->get('/admin/used-tyres/sets')
         ->assertOk()->assertSee('PO-000001')->assertSee('5.0 / 5.2 / 5.5 / 5.8');
+});
+
+it('checks every used tyre against its ledger in stock:verify (audit)', function () {
+    $tyre = ($this->register)();
+    expect(app(StockVerifier::class)->differences())->toBe([]);
+
+    // A status changed without its movement is reported.
+    $tyre->forceFill(['status' => UsedTyreStatus::Sold])->save();
+    $diff = app(StockVerifier::class)->differences();
+    expect($diff)->toHaveCount(1)->and($diff[0]['kind'])->toStartWith('used_tyre:'.$tyre->id);
 });
