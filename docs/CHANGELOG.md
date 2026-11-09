@@ -33,6 +33,13 @@
 
 ## [Non publié]
 
+### Ajouté – Phase 7 (équipements et maintenance)
+- Registre des équipements par site (démonte-pneu, équilibreuse, banc, compresseur, azote, pont, cric, clé à choc,
+  vidange, réglophare…), marque, modèle, n° de série, achat, garantie, photo.
+- Entretien préventif tous les X jours (date suivante calculée), signalement de panne par le personnel du site
+  (alerte aux responsables), réparation / entretien avec coût et intervenant, coût total par équipement.
+- Alerte « équipements à entretenir ou en panne » sur la page « Aujourd'hui ».
+
 ### Ajouté – Phase 6 (achats)
 - Fournisseurs (solde d'ouverture par le propriétaire) avec « Nous devons » ; paiement fournisseur (propriétaire).
 - Commandes fournisseurs (`BC-…`), réception totale ou partielle au site choisi (dépôt par défaut), coût HT,

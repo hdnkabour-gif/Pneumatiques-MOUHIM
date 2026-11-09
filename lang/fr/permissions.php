@@ -2,6 +2,7 @@
 
 return [
     'groups' => [
+        'equipment' => 'Équipements',
         'purchases' => 'Achats',
         'suppliers' => 'Fournisseurs',
         'expenses' => 'Dépenses',
@@ -64,4 +65,6 @@ return [
     'cash.close' => 'Compter et clôturer la caisse du jour',
     'purchases.manage' => 'Gérer fournisseurs, commandes et réceptions (avec les coûts)',
     'suppliers.pay' => 'Enregistrer un paiement fournisseur',
+    'equipment.manage' => 'Gérer les équipements et leur entretien',
+    'equipment.report' => 'Signaler une panne d\'équipement',
 ];

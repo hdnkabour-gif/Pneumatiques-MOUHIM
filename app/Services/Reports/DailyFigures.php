@@ -8,6 +8,7 @@ use App\Enums\SaleKind;
 use App\Enums\SaleStatus;
 use App\Models\ApprovalRequest;
 use App\Models\CashDay;
+use App\Models\Equipment;
 use App\Models\Expense;
 use App\Models\Payment;
 use App\Models\Sale;
@@ -85,6 +86,12 @@ class DailyFigures
             ->whereNull('recap_invoice_id')->where('credit_cents', '>', 0)->where('confirmed_at', '<', $day->subDays(30)->utc())->distinct()->count('customer_id');
         if ($late) {
             $alerts[] = __('today.alerts.late', ['count' => $late]);
+        }
+
+        $equipment = Equipment::query()->where('status', '!=', 'retired')
+            ->where(fn ($q) => $q->where('status', 'broken')->orWhereDate('next_maintenance_on', '<=', $day->toDateString()))->count();
+        if ($equipment) {
+            $alerts[] = __('equipment.alert_due', ['count' => $equipment]);
         }
 
         return array_slice($alerts, 0, 5);

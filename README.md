@@ -20,7 +20,7 @@ pneumatiques, services automobiles, stock, ventes, crédit, caisse, atelier.
 | 4. Argent | « Ce qui reste », comptes clients, soldes d'ouverture, encaissements, chèques, caisse et clôture, dépenses avec photo | ✅ Code et tests – en attente de validation |
 | 5. Démarrage | « Aujourd'hui », objectifs, résumé du soir, PWA (push et imports Excel restants) | ✅ En partie |
 | 6. Achats | Fournisseurs, commandes, réceptions partielles, dettes et paiements fournisseurs, alerte de coût | ✅ Code et tests (écran technicien facultatif D-53) |
-| 7 | Équipements et maintenance, rapports, exports comptables | À venir |
+| 7. Compléments | Équipements et maintenance ✅ ; rapports avancés et export comptable à venir | En partie |
 
 ## Versions (vérifiées le 4 novembre 2026)
 

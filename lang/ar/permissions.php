@@ -2,6 +2,7 @@
 
 return [
     'groups' => [
+        'equipment' => 'المعدات',
         'purchases' => 'المشتريات',
         'suppliers' => 'الموردون',
         'expenses' => 'المصاريف',
@@ -64,4 +65,6 @@ return [
     'cash.close' => 'عدّ الصندوق وإغلاق اليوم',
     'purchases.manage' => 'تسيير الموردين والطلبيات والاستلام (مع التكاليف)',
     'suppliers.pay' => 'تسجيل أداء لمورد',
+    'equipment.manage' => 'تسيير المعدات وصيانتها',
+    'equipment.report' => 'التبليغ عن عطل في المعدات',
 ];

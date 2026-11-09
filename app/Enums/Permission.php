@@ -66,6 +66,10 @@ enum Permission: string
     case PurchasesManage = 'purchases.manage';   // suppliers, orders, receipts (with costs)
     case SuppliersPay = 'suppliers.pay';         // record a payment to a supplier
 
+    // Equipment (phase 7)
+    case EquipmentManage = 'equipment.manage';   // register, repairs, maintenance plan
+    case EquipmentReport = 'equipment.report';   // report a breakdown
+
     public function label(): string
     {
         return __('permissions.'.$this->value);
