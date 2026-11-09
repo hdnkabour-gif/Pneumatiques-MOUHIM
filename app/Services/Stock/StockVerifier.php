@@ -45,7 +45,17 @@ class StockVerifier
         // Quotes can never hold more than the stock (D-13).
         $reserved = DB::select('SELECT product_id, site_id, reserved, quantity FROM stock_levels WHERE reserved > quantity');
 
+        // Oil drums: cached remaining litres = sum of the drum's ledger.
+        $drums = DB::select(<<<'SQL'
+            SELECT d.id, d.product_id, d.site_id, d.remaining_ml AS cached, COALESCE(SUM(m.quantity_ml), 0) AS ledger
+            FROM oil_drums d LEFT JOIN oil_drum_movements m ON m.oil_drum_id = d.id
+            GROUP BY d.id HAVING d.remaining_ml <> COALESCE(SUM(m.quantity_ml), 0)
+        SQL);
+
         $rows = [];
+        foreach ($drums as $r) {
+            $rows[] = ['kind' => 'oil_drum:'.$r->id.' (ml)', 'product_id' => (int) $r->product_id, 'site_id' => (int) $r->site_id, 'lot_id' => null, 'cached' => (int) $r->cached, 'ledger' => (int) $r->ledger];
+        }
         foreach ($usedTyres as $r) {
             $rows[] = ['kind' => 'used_tyre:'.$r->id.' ('.$r->status.')', 'product_id' => 0, 'site_id' => (int) $r->site_id, 'lot_id' => null,
                 'cached' => in_array($r->status, ['sold', 'scrapped'], true) ? 0 : 1, 'ledger' => (int) $r->total];

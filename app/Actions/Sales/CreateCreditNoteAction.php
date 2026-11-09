@@ -12,12 +12,14 @@ use App\Enums\StockMovementType;
 use App\Enums\UsedTyreStatus;
 use App\Exceptions\BusinessRuleException;
 use App\Models\ApprovalRequest;
+use App\Models\OilDrum;
 use App\Models\Sale;
 use App\Models\SaleLine;
 use App\Models\StockMovement;
 use App\Models\UsedTyre;
 use App\Models\User;
 use App\Services\Approvals\ApprovalService;
+use App\Services\Oil\OilDrumService;
 use App\Services\Sales\SaleCalculator;
 use App\Services\SequenceService;
 use App\Services\Stock\LotInput;
@@ -84,11 +86,14 @@ class CreateCreditNoteAction
                     continue;
                 }
                 $line = $invoice->lines->firstWhere('id', (int) $lineId);
-                $totals = SaleCalculator::split($line->unit_price_ttc_cents * $qty, $line->vat_rate_bp);
+                // A litre line is returned whole (quantity 1 = all its litres).
+                $totals = $line->kind === 'bulk_oil'
+                    ? ['ht' => $line->total_ht_cents, 'vat' => $line->total_vat_cents, 'ttc' => $line->total_ttc_cents]
+                    : SaleCalculator::split($line->unit_price_ttc_cents * $qty, $line->vat_rate_bp);
                 $restock = $line->kind !== 'service' && (bool) ($item['restock'] ?? true);
 
                 $note->lines()->create([
-                    ...collect($line->getAttributes())->only(['product_id', 'used_tyre_id', 'bundle_id', 'kind', 'description',
+                    ...collect($line->getAttributes())->only(['product_id', 'used_tyre_id', 'bundle_id', 'oil_drum_id', 'quantity_ml', 'kind', 'description',
                         'list_price_ttc_cents', 'unit_price_ttc_cents', 'discount_bp', 'vat_rate_bp', 'unit_cost_cents'])->all(),
                     'quantity' => $qty,
                     'original_line_id' => $line->id,
@@ -141,6 +146,11 @@ class CreateCreditNoteAction
                 $line->unit_cost_cents, $user, $note->reason, $note, $lots, $quantities);
             if (! $line->restock) {
                 $this->stock->issue($line->product, $note->site, $line->quantity, StockMovementType::Damaged, $user, $note->reason, $note, respectReservations: false);
+            }
+        } elseif ($line->kind === 'bulk_oil') {
+            if ($line->restock) {
+                app(OilDrumService::class)->giveBack(OilDrum::query()->findOrFail($line->oil_drum_id),
+                    (int) $line->quantity_ml, $user, $note, $note->reason);
             }
         } elseif ($line->kind === 'used_tyre') {
             $tyre = UsedTyre::query()->lockForUpdate()->findOrFail($line->used_tyre_id);

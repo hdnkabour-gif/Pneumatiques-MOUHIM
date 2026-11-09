@@ -17,13 +17,18 @@ class SaleLine extends Model
             'quantity' => 'integer', 'list_price_ttc_cents' => 'integer', 'unit_price_ttc_cents' => 'integer',
             'discount_bp' => 'integer', 'vat_rate_bp' => 'integer', 'total_ht_cents' => 'integer',
             'total_vat_cents' => 'integer', 'total_ttc_cents' => 'integer', 'unit_cost_cents' => 'integer',
-            'restock' => 'boolean', 'meta' => 'array',
+            'restock' => 'boolean', 'meta' => 'array', 'quantity_ml' => 'integer',
         ];
     }
 
     public function sale(): BelongsTo
     {
         return $this->belongsTo(Sale::class);
+    }
+
+    public function drum(): BelongsTo
+    {
+        return $this->belongsTo(OilDrum::class, 'oil_drum_id');
     }
 
     public function product(): BelongsTo

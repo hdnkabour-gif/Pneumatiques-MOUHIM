@@ -2,7 +2,7 @@
 
 return [
     'product_kind' => ['goods' => 'سلعة', 'service' => 'خدمة', 'bundle' => 'عرض مجمّع'],
-    'unit' => ['piece' => 'قطعة', 'can' => 'بيدون', 'kit' => 'طقم', 'set' => 'مجموعة'],
+    'unit' => ['piece' => 'قطعة', 'can' => 'بيدون', 'kit' => 'طقم', 'set' => 'مجموعة', 'litre' => 'لتر (من البرميل)'],
     'tyre_season' => ['summer' => 'صيفي', 'winter' => 'شتوي', 'all_season' => 'لكل الفصول'],
     'tyre_usage' => ['car' => 'سياحية', 'suv' => 'SUV / دفع رباعي', 'van' => 'نفعية', 'truck' => 'وزن ثقيل', 'moto' => 'دراجة نارية'],
     'oil_type' => ['synthetic' => 'اصطناعي', 'semi_synthetic' => 'نصف اصطناعي', 'mineral' => 'معدني'],
@@ -54,4 +54,6 @@ return [
     'sale_kind' => ['invoice' => 'فاتورة', 'quote' => 'عرض سعر', 'delivery_note' => 'وصل تسليم', 'credit_note' => 'فاتورة مضادة'],
     'quote_status' => ['sent' => 'مرسل', 'refused' => 'مرفوض', 'expired' => 'منتهي الصلاحية', 'converted' => 'تحول إلى بيع'],
     'refund_method' => ['cash' => 'إرجاع نقدا', 'account' => 'خصم من دين الزبون', 'voucher' => 'وصل شراء (تبديل)'],
+    'oil_drum_status' => ['closed' => 'مغلق', 'open' => 'مفتوح', 'empty' => 'فارغ', 'blocked' => 'موقوف'],
+    'oil_drum_movement_type' => ['receipt' => 'استلام', 'sale' => 'بيع باللتر', 'service' => 'استهلاك في الورشة', 'return' => 'إرجاع من زبون', 'adjustment' => 'تسوية', 'transfer_out' => 'تحويل خارج', 'transfer_in' => 'تحويل داخل'],
 ];

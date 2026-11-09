@@ -7,6 +7,7 @@ use App\Enums\ProductKind;
 use App\Enums\UsedTyreStatus;
 use App\Exceptions\BusinessRuleException;
 use App\Models\CustomerVehicle;
+use App\Models\OilDrum;
 use App\Models\Product;
 use App\Models\Site;
 use App\Models\UsedTyre;
@@ -63,6 +64,12 @@ class SaleCalculator
 
             if ($product->kind === ProductKind::Service && $product->sites->isNotEmpty() && ! $product->sites->contains($site)) {
                 throw BusinessRuleException::make('sales.errors.service_not_offered', ['service' => $product->name, 'site' => $site->name]);
+            }
+
+            if ($product->isBulk()) {
+                $rows[] = $this->bulkLine($product, $item, $site, $level, $discount);
+
+                continue;
             }
 
             if ($product->kind === ProductKind::Bundle) {
@@ -126,6 +133,8 @@ class SaleCalculator
             'product_id' => $product->id,
             'used_tyre_id' => null,
             'bundle_id' => $bundleId,
+            'oil_drum_id' => null,
+            'quantity_ml' => null,
             'kind' => $product->kind === ProductKind::Service ? 'service' : 'goods',
             'trade_in_type' => null,
             'meta' => null,
@@ -160,10 +169,70 @@ class SaleCalculator
             'product_id' => null,
             'used_tyre_id' => $tyre->id,
             'bundle_id' => null,
+            'oil_drum_id' => null,
+            'quantity_ml' => null,
             'kind' => 'used_tyre',
             'trade_in_type' => null,
             'meta' => null,
             'description' => trim(__('sales.lines.used_tyre', ['size' => $tyre->sizeLabel(), 'code' => $tyre->code], 'fr').' '.($tyre->brand?->name ?? '')),
+            'quantity' => 1,
+            'list_price_ttc_cents' => $list,
+            'unit_price_ttc_cents' => $unit,
+            'discount_bp' => $discount,
+            'vat_rate_bp' => $vat,
+            'total_ht_cents' => $totals['ht'],
+            'total_vat_cents' => $totals['vat'],
+            'total_ttc_cents' => $totals['ttc'],
+        ];
+    }
+
+    /** Litres as typed ("2,5", "4.25") → millilitres; null when unreadable. */
+    public static function millilitres(mixed $litres): ?int
+    {
+        $value = str_replace([',', ' '], ['.', ''], trim((string) $litres));
+        if (! preg_match('/^\d{1,4}(\.\d{1,3})?$/', $value)) {
+            return null;
+        }
+        $ml = (int) round(((float) $value) * 1000);
+
+        return $ml > 0 ? $ml : null;
+    }
+
+    /**
+     * Oil by the litre from a chosen drum (D-06 revised): the price is per
+     * litre, the line keeps the drum and the exact quantity in millilitres.
+     */
+    private function bulkLine(Product $product, array $item, Site $site, PriceLevel $level, int $discount): array
+    {
+        $ml = self::millilitres($item['litres'] ?? null);
+        if ($ml === null) {
+            throw BusinessRuleException::make('oil_drums.errors.quantity');
+        }
+        $drum = OilDrum::query()->find($item['oil_drum_id'] ?? 0);
+        if (! $drum || $drum->product_id !== $product->id) {
+            throw BusinessRuleException::make('oil_drums.errors.pick_drum', ['product' => $product->name]);
+        }
+        if ($drum->site_id !== $site->id) {
+            throw BusinessRuleException::make('oil_drums.errors.other_site', ['drum' => $drum->code]);
+        }
+
+        $vat = $this->settings->vatRateBasisPoints();
+        $list = (int) $product->priceFor($level->value);
+        $override = $item['unit_price_ttc_cents'] ?? null;
+        $unit = $override !== null ? (int) $override : intdiv($list * (10000 - $discount) + 5000, 10000);
+        $discount = $list > 0 && $unit < $list ? intdiv(($list - $unit) * 10000 + intdiv($list, 2), $list) : 0;
+        $totals = self::split(intdiv($unit * $ml * 2 + 1000, 2000), $vat);
+
+        return [
+            'product_id' => $product->id,
+            'used_tyre_id' => null,
+            'bundle_id' => null,
+            'oil_drum_id' => $drum->id,
+            'quantity_ml' => $ml,
+            'kind' => 'bulk_oil',
+            'trade_in_type' => null,
+            'meta' => null,
+            'description' => $product->name.' – '.OilDrum::litres($ml).' ('.$drum->code.')',
             'quantity' => 1,
             'list_price_ttc_cents' => $list,
             'unit_price_ttc_cents' => $unit,
@@ -201,6 +270,8 @@ class SaleCalculator
             'product_id' => null,
             'used_tyre_id' => null,
             'bundle_id' => null,
+            'oil_drum_id' => null,
+            'quantity_ml' => null,
             'kind' => 'trade_in',
             'trade_in_type' => $type,
             'meta' => $size ? ['width' => $size['width'], 'aspect_ratio' => $size['aspect_ratio'], 'rim_diameter' => $size['rim_diameter'],

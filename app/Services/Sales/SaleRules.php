@@ -5,10 +5,12 @@ namespace App\Services\Sales;
 use App\Enums\ApprovalType;
 use App\Enums\Permission;
 use App\Enums\RoleName;
+use App\Models\OilDrum;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\UsedTyre;
 use App\Models\User;
+use App\Services\Oil\OilDrumService;
 use App\Services\SettingsService;
 
 /**
@@ -69,7 +71,7 @@ class SaleRules
 
         return sha1(json_encode([
             $sale->customer_id,
-            $sale->lines->map(fn ($l) => [$l->product_id, $l->used_tyre_id, $l->quantity, $l->unit_price_ttc_cents])->all(),
+            $sale->lines->map(fn ($l) => [$l->product_id, $l->used_tyre_id, $l->quantity, $l->unit_price_ttc_cents, $l->oil_drum_id, $l->quantity_ml])->all(),
         ]));
     }
 
@@ -109,6 +111,8 @@ class SaleRules
                 'used_tyre' => $usedCosts[$line->used_tyre_id] ?? null,
                 'goods' => $costs[$line->product_id] ?? null,
                 'service' => $this->consumablesCost($services[$line->product_id] ?? null),
+                'bulk_oil' => ($drum = OilDrum::query()->find($line->oil_drum_id))
+                    ? OilDrumService::costOf($drum->cost_per_litre_cents, (int) $line->quantity_ml) : null,
                 default => null,
             };
             if ($cost !== null && $line->total_ht_cents < $cost * $line->quantity) {

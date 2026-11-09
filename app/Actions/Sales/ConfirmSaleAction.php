@@ -5,6 +5,7 @@ namespace App\Actions\Sales;
 use App\Actions\UsedTyres\UsedTyreActions;
 use App\Enums\ApprovalType;
 use App\Enums\DocumentType;
+use App\Enums\OilDrumMovementType;
 use App\Enums\PaymentMethod;
 use App\Enums\Permission;
 use App\Enums\QuoteStatus;
@@ -16,6 +17,7 @@ use App\Enums\UsedTyreStatus;
 use App\Enums\WorkOrderStatus;
 use App\Exceptions\ApprovalRequiredException;
 use App\Exceptions\BusinessRuleException;
+use App\Models\OilDrum;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\Sale;
@@ -23,6 +25,7 @@ use App\Models\StockMovement;
 use App\Models\UsedTyre;
 use App\Models\User;
 use App\Models\WorkOrder;
+use App\Services\Oil\OilDrumService;
 use App\Services\Sales\SaleRules;
 use App\Services\SequenceService;
 use App\Services\SettingsService;
@@ -160,6 +163,12 @@ class ConfirmSaleAction
                     $unit = $consumable->product->refresh()->average_cost_cents;
                     $cost = $cost === null || $unit === null ? null : $cost + $unit * $consumable->quantity;
                 }
+            } elseif ($line->kind === 'bulk_oil') {
+                $drum = OilDrum::query()->findOrFail($line->oil_drum_id);
+                $movement = app(OilDrumService::class)->draw($drum, (int) $line->quantity_ml,
+                    OilDrumMovementType::Sale, $user, $sale, $sale->site);
+                // Cost of the litres frozen on the line: old invoices keep their margin.
+                $cost = OilDrumService::costOf($movement->cost_per_litre_cents, (int) $line->quantity_ml);
             } elseif ($line->kind === 'trade_in') {
                 // Tyres left by the customer await the safety check before any resale (§5.4).
                 if ($line->trade_in_type === 'tyre' && $line->meta) {

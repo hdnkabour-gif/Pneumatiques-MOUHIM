@@ -136,9 +136,21 @@ class Product extends Model
         return $this->belongsToMany(Site::class);
     }
 
+    /** Counted in stock_levels (pieces, cans…). Bulk oil lives in drums instead. */
     public function isStocked(): bool
     {
-        return $this->kind === ProductKind::Goods;
+        return $this->kind === ProductKind::Goods && ! $this->isBulk();
+    }
+
+    /** Oil sold by the litre from drums (D-06 revised): price per litre, stock per drum. */
+    public function isBulk(): bool
+    {
+        return $this->unit === Unit::Litre;
+    }
+
+    public function drums(): HasMany
+    {
+        return $this->hasMany(OilDrum::class);
     }
 
     public function isNewTyre(): bool

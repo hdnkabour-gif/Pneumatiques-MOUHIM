@@ -2,7 +2,7 @@
 
 return [
     'product_kind' => ['goods' => 'Article', 'service' => 'Prestation', 'bundle' => 'Forfait'],
-    'unit' => ['piece' => 'Pièce', 'can' => 'Bidon', 'kit' => 'Kit', 'set' => 'Jeu'],
+    'unit' => ['piece' => 'Pièce', 'can' => 'Bidon', 'kit' => 'Kit', 'set' => 'Jeu', 'litre' => 'Litre (vrac, au fût)'],
     'tyre_season' => ['summer' => 'Été', 'winter' => 'Hiver', 'all_season' => 'Toutes saisons'],
     'tyre_usage' => ['car' => 'Tourisme', 'suv' => 'SUV / 4x4', 'van' => 'Utilitaire', 'truck' => 'Poids lourd', 'moto' => 'Moto'],
     'oil_type' => ['synthetic' => 'Synthèse', 'semi_synthetic' => 'Semi-synthèse', 'mineral' => 'Minérale'],
@@ -54,4 +54,6 @@ return [
     'sale_kind' => ['invoice' => 'Facture', 'quote' => 'Devis', 'delivery_note' => 'Bon de livraison', 'credit_note' => 'Avoir'],
     'quote_status' => ['sent' => 'Envoyé', 'refused' => 'Refusé', 'expired' => 'Expiré', 'converted' => 'Transformé en vente'],
     'refund_method' => ['cash' => 'Rendu en espèces', 'account' => 'Déduit du crédit du client', 'voucher' => 'Bon d\'achat (échange)'],
+    'oil_drum_status' => ['closed' => 'Fermé', 'open' => 'Ouvert', 'empty' => 'Vide', 'blocked' => 'Bloqué'],
+    'oil_drum_movement_type' => ['receipt' => 'Réception', 'sale' => 'Vente au litre', 'service' => 'Consommation atelier', 'return' => 'Retour client', 'adjustment' => 'Ajustement', 'transfer_out' => 'Transfert sortant', 'transfer_in' => 'Transfert entrant'],
 ];

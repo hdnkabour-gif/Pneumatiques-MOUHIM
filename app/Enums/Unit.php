@@ -15,4 +15,5 @@ enum Unit: string implements HasLabel
     case Can = 'can';
     case Kit = 'kit';
     case Set = 'set';
+    case Litre = 'litre'; // bulk oil sold by the litre from drums (D-06 revised)
 }
