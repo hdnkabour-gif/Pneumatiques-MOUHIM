@@ -92,7 +92,7 @@ class CustomerAccountActions
             if ($left > 0) {
                 $docs = Sale::query()->where('customer_id', $customer->id)->where('status', SaleStatus::Confirmed->value)
                     ->whereIn('kind', [SaleKind::Invoice->value, SaleKind::DeliveryNote->value])->whereNull('recap_invoice_id')
-                    ->where('credit_cents', '>', 0)->orderBy('confirmed_at')->lockForUpdate()->get();
+                    ->where('credit_cents', '>', 0)->orderBy('confirmed_at')->orderBy('id')->lockForUpdate()->get();
                 foreach ($docs as $doc) {
                     $take = min($left, $doc->credit_cents);
                     DB::table('payment_allocations')->insert(['payment_id' => $payment->id, 'sale_id' => $doc->id, 'amount_cents' => $take]);

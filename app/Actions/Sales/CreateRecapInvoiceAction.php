@@ -30,7 +30,7 @@ class CreateRecapInvoiceAction
         }
 
         return DB::transaction(function () use ($customer, $noteIds, $user) {
-            $notes = Sale::query()->with('lines')->whereKey($noteIds)->lockForUpdate()->orderBy('confirmed_at')->get();
+            $notes = Sale::query()->with('lines')->whereKey($noteIds)->lockForUpdate()->orderBy('confirmed_at')->orderBy('id')->get();
 
             if ($notes->isEmpty() || $notes->count() !== count(array_unique($noteIds)) || $notes->contains(fn (Sale $n) => ! $n->isKind(SaleKind::DeliveryNote)
                 || $n->status !== SaleStatus::Confirmed || $n->customer_id !== $customer->id || $n->recap_invoice_id !== null
