@@ -302,7 +302,7 @@ class SaleScreen extends Page
             return;
         }
         $size = $type === 'tyre' ? ($this->vehicle()?->tyre_size_front ?? '') : null;
-        $this->cart[] = ['trade_in' => $type, 'value' => null, 'size' => $size, 'tread' => null, 'quantity' => 1];
+        $this->cart[] = ['trade_in' => $type, 'value' => null, 'size' => $size, 'tread' => null, 'dot' => null, 'quantity' => 1];
         $this->afterCartChange();
     }
 
@@ -769,7 +769,8 @@ class SaleScreen extends Page
                 $m = $line->meta ?? [];
                 $cart[] = ['trade_in' => $line->trade_in_type, 'value' => Decimal::fromCents(-$line->unit_price_ttc_cents), 'quantity' => 1,
                     'size' => $m ? TyreSize::format($m['width'], $m['aspect_ratio'], (string) $m['rim_diameter']) : null,
-                    'tread' => isset($m['tread_depth_tenths']) ? (string) ($m['tread_depth_tenths'] / 10) : null];
+                    'tread' => isset($m['tread_depth_tenths']) ? (string) ($m['tread_depth_tenths'] / 10) : null,
+                    'dot' => isset($m['dot_week'], $m['dot_year']) ? sprintf('%02d%02d', $m['dot_week'], $m['dot_year'] % 100) : null];
 
                 continue;
             }
@@ -798,7 +799,7 @@ class SaleScreen extends Page
         return array_map(fn (array $item) => ! empty($item['trade_in']) ? [
             'trade_in' => $item['trade_in'],
             'value_cents' => $this->cents($item['value'] ?? null),
-            'meta' => ['size' => $item['size'] ?? null, 'tread_mm' => $item['tread'] ?? null],
+            'meta' => ['size' => $item['size'] ?? null, 'tread_mm' => $item['tread'] ?? null, 'dot' => $item['dot'] ?? null],
         ] : array_filter([
             'unit_price_ttc_cents' => isset($item['price']) && empty($item['used_tyre_id'])
                 ? min((int) $item['price'], $this->currentListPrice((int) $item['product_id'])) : null,

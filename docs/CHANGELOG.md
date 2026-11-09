@@ -33,6 +33,18 @@
 
 ## [Non publié]
 
+### Corrections après audit externe (9 novembre 2026)
+- Marge et contrôle « vente sous le coût » : le coût des consommables des prestations (masses, valves…)
+  et le coût des pneus d'occasion sont maintenant comptés ; une reprise n'est plus comptée comme une perte de marge.
+- Un ajustement approuvé ne laisse jamais plus de stock réservé que de stock réel.
+- Un pneu neuf retourné revient avec son DOT d'origine (lots de la vente), même en plusieurs retours.
+- Reprise d'un pneu : le DOT (ex. 2423) est enregistré sur la fiche du pneu d'occasion.
+- `stock:verify` contrôle aussi chaque pneu d'occasion et les réservations.
+- Restauration d'une sauvegarde : les fichiers (logo, photos) reviennent avec la base ; test de bout en bout.
+- Ajouts du 8 novembre vérifiés et conservés (catalogue véhicules chinois au Maroc, catalogues de référence
+  pneus / huiles, audit du classeur) ; l'import du classeur ne peut plus bloquer le démarrage en production,
+  et ces pages de référence sont retirées du menu du vendeur.
+
 ### Revue complète de la plateforme (6 novembre 2026)
 - Parcours automatique de toutes les pages pour chaque rôle (propriétaire, responsable, vendeurs FR/AR, magasinier,
   technicien) sur un écran de téléphone : 189 pages, aucun débordement horizontal, aucune erreur JavaScript.

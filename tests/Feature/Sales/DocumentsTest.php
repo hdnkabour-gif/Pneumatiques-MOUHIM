@@ -194,7 +194,7 @@ it('exchanges: the credit note becomes a voucher used to pay the new sale', func
 it('deducts trade-ins, creates used tyres awaiting inspection, caps the value (D-52)', function () {
     $sale = ($this->draft)([
         ['product_id' => $this->tyre->id, 'quantity' => 4],
-        ['trade_in' => 'tyre', 'value_cents' => 15000, 'meta' => ['size' => '205/55R16', 'tread_mm' => '4,5']],
+        ['trade_in' => 'tyre', 'value_cents' => 15000, 'meta' => ['size' => '205/55R16', 'tread_mm' => '4,5', 'dot' => '2423']],
         ['trade_in' => 'battery', 'value_cents' => 10000],
     ]);
     expect($sale->total_ttc_cents)->toBe(320000 - 25000);
@@ -204,6 +204,7 @@ it('deducts trade-ins, creates used tyres awaiting inspection, caps the value (D
     expect($tyre->status)->toBe(UsedTyreStatus::PendingInspection)
         ->and($tyre->origin->value)->toBe('trade_in')
         ->and($tyre->tread_depth_tenths)->toBe(45)
+        ->and($tyre->dot_week)->toBe(24)->and($tyre->dot_year)->toBe(2023)
         ->and($tyre->cost_cents)->toBe(15000)
         ->and($tyre->origin_document_id)->toBe($sale->id);
 

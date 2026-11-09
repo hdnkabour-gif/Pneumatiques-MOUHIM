@@ -218,6 +218,7 @@
                             @if ($item['trade_in'] === 'tyre')
                                 <input class="pm-input sm pm-grow" wire:model.blur="cart.{{ $i }}.size" placeholder="{{ __('sales.screen.size') }} (205/55 R16)">
                                 <input class="pm-input sm" style="width: 6em;" inputmode="decimal" wire:model.blur="cart.{{ $i }}.tread" placeholder="mm">
+                                <input class="pm-input sm" style="width: 6em;" inputmode="numeric" maxlength="4" wire:model.blur="cart.{{ $i }}.dot" placeholder="DOT">
                             @endif
                             <input class="pm-input sm" style="width: 8em;" inputmode="decimal" wire:model.blur="cart.{{ $i }}.value" placeholder="{{ __('sales.screen.trade_in_value') }}">
                             <button type="button" class="pm-btn danger" style="min-height: 44px; padding: 4px 12px;" wire:click="removeLine({{ $i }})">✕</button>

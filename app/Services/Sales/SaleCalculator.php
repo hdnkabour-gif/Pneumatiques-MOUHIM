@@ -204,7 +204,8 @@ class SaleCalculator
             'kind' => 'trade_in',
             'trade_in_type' => $type,
             'meta' => $size ? ['width' => $size['width'], 'aspect_ratio' => $size['aspect_ratio'], 'rim_diameter' => $size['rim_diameter'],
-                'tread_depth_tenths' => isset($meta['tread_mm']) && is_numeric(str_replace(',', '.', (string) $meta['tread_mm'])) ? (int) round(((float) str_replace(',', '.', (string) $meta['tread_mm'])) * 10) : null] : null,
+                'tread_depth_tenths' => isset($meta['tread_mm']) && is_numeric(str_replace(',', '.', (string) $meta['tread_mm'])) ? (int) round(((float) str_replace(',', '.', (string) $meta['tread_mm'])) * 10) : null,
+                ...$this->dot($meta['dot'] ?? null)] : null,
             'description' => $label,
             'quantity' => 1,
             'list_price_ttc_cents' => -$value,
@@ -215,6 +216,18 @@ class SaleCalculator
             'total_vat_cents' => $totals['vat'],
             'total_ttc_cents' => $totals['ttc'],
         ];
+    }
+
+    /** DOT "2423" = week 24 of 2023; anything else is left empty (never invented). */
+    private function dot(mixed $value): array
+    {
+        $digits = preg_replace('/\D/', '', (string) $value);
+        if (strlen($digits) !== 4 || (int) substr($digits, 0, 2) < 1 || (int) substr($digits, 0, 2) > 53) {
+            return [];
+        }
+        $year = 2000 + (int) substr($digits, 2, 2);
+
+        return $year > (int) date('Y') ? [] : ['dot_week' => (int) substr($digits, 0, 2), 'dot_year' => $year];
     }
 
     /** @param  list<Product>  $products */
