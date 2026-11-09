@@ -5,6 +5,7 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 
 /*
@@ -73,4 +74,27 @@ it('schedules the daily backup', function () {
 
     expect($events->contains(fn ($c) => str_contains($c, 'backup:run')))->toBeTrue()
         ->and($events->contains(fn ($c) => str_contains($c, 'backup:clean')))->toBeTrue();
+});
+
+it('restores the uploaded files together with the database (audit)', function () {
+    $dir = storage_path('app/public/backup-test-'.uniqid());
+    mkdir($dir, 0775, true);
+    file_put_contents($dir.'/logo.png', 'LOGO');
+
+    $config = config('backup_restore_test');
+    $config['backup']['source']['files']['include'] = [$dir];
+    $config['backup']['source']['files']['relative_path'] = storage_path('app');
+    config(['backup_restore_test' => $config]);
+
+    try {
+        expect(Artisan::call('backup:run', ['--config' => 'backup_restore_test', '--disable-notifications' => true]))->toBe(0);
+        unlink($dir.'/logo.png'); // disaster: the file is lost
+
+        $restore = app(RestoreDatabaseBackupAction::class);
+        $restore->execute('backups_local', $restore->available('backups_local')[0], 'backup_test');
+
+        expect(file_get_contents($dir.'/logo.png'))->toBe('LOGO');
+    } finally {
+        File::deleteDirectory($dir);
+    }
 });

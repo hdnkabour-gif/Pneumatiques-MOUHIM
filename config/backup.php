@@ -57,7 +57,8 @@ return [
                  * Set to `null` to include complete absolute path
                  * Example: base_path()
                  */
-                'relative_path' => null,
+                // Archive paths start at storage/app ("public/…"), so the restore can put them back.
+                'relative_path' => storage_path('app'),
             ],
 
             /*

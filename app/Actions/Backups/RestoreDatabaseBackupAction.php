@@ -27,7 +27,11 @@ class RestoreDatabaseBackupAction
         return $files;
     }
 
-    public function execute(string $disk, string $path, ?string $connection = null): void
+    /**
+     * @param  string|null  $filesTarget  where uploaded files go back (default storage/app/public);
+     *                                    files are added or replaced, never deleted.
+     */
+    public function execute(string $disk, string $path, ?string $connection = null, bool $withFiles = true, ?string $filesTarget = null): void
     {
         $connection ??= config('database.default');
         $config = config("database.connections.{$connection}");
@@ -81,9 +85,33 @@ class RestoreDatabaseBackupAction
                     '--file', $dump,
                 ])
                 ->throw();
+
+            if ($withFiles) {
+                $this->restoreFiles($workDir, $filesTarget ?? storage_path('app/public'));
+            }
         } finally {
             Process::run(['rm', '-rf', $workDir]);
         }
+    }
+
+    /**
+     * Uploaded files (logo, used tyre photos…) are in "public/" inside the
+     * archive; older archives used absolute paths ending in storage/app/public.
+     */
+    private function restoreFiles(string $workDir, string $target): void
+    {
+        $source = is_dir($workDir.'/public') ? $workDir.'/public'
+            : (collect(glob($workDir.'/{,*/,*/*/,*/*/*/}storage/app/public', GLOB_BRACE | GLOB_ONLYDIR) ?: [])->first());
+
+        if (! $source) {
+            return; // database-only backup
+        }
+
+        if (! is_dir($target)) {
+            mkdir($target, 0775, true);
+        }
+
+        Process::run(['cp', '-a', rtrim($source, '/').'/.', rtrim($target, '/').'/'])->throw();
     }
 
     /**
