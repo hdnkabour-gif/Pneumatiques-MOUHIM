@@ -33,6 +33,12 @@
 
 ## [Non publié]
 
+### Ajouté – Rapports (10 novembre 2026)
+- Page « Rapports » (propriétaire, responsables sur leurs sites) : période (aujourd'hui, semaine, mois, mois dernier,
+  année ou dates libres) et site ; chiffre d'affaires, nombre de ventes, panier moyen, marge (⚠ si un coût manque) ;
+  par site, vendeur, catégorie, marque ; 10 produits les plus vendus ; balance âgée des clients (0–30, 31–60, 61–90,
+  > 90 jours) ; valeur du stock par site (coûts réservés au propriétaire) ; export Excel.
+
 ### Ajouté – Notifications sur le téléphone et papier à en-tête (10 novembre 2026)
 - Notifications push (Web Push) : bouton « Notifications sur ce téléphone » sur la page « Aujourd'hui » ; chaque
   notification de l'application (approbation, écart de caisse, résumé du soir, panne, hausse de coût…) arrive aussi
