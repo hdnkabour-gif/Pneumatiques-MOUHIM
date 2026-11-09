@@ -33,6 +33,11 @@
 
 ## [Non publié]
 
+### Ajouté – Phase 7 (export comptable)
+- « Export comptable » (propriétaire) : un fichier Excel par mois — ventes et avoirs (HT, TVA, TTC, ICE client),
+  TVA collectée par taux, achats fournisseurs, encaissements avec l'état des chèques, dépenses. Format à valider
+  avec le comptable (D-30).
+
 ### Ajouté – Phase 7 (équipements et maintenance)
 - Registre des équipements par site (démonte-pneu, équilibreuse, banc, compresseur, azote, pont, cric, clé à choc,
   vidange, réglophare…), marque, modèle, n° de série, achat, garantie, photo.
