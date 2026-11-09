@@ -49,7 +49,7 @@ return [
     'document_type' => [
         'invoice' => 'Facture', 'quote' => 'Devis', 'delivery_note' => 'Bon de livraison', 'work_note' => 'Bon de travail',
         'credit_note' => 'Avoir', 'receipt' => 'Reçu', 'work_order' => 'Ordre de travail', 'transfer' => 'Transfert',
-        'replenishment' => 'Demande de réapprovisionnement', 'inventory' => 'Inventaire',
+        'replenishment' => 'Demande de réapprovisionnement', 'inventory' => 'Inventaire', 'purchase_order' => 'Bon de commande fournisseur',
     ],
     'sale_kind' => ['invoice' => 'Facture', 'quote' => 'Devis', 'delivery_note' => 'Bon de livraison', 'credit_note' => 'Avoir'],
     'quote_status' => ['sent' => 'Envoyé', 'refused' => 'Refusé', 'expired' => 'Expiré', 'converted' => 'Transformé en vente'],

@@ -26,6 +26,7 @@ enum DocumentType: string implements HasLabel
     case Transfer = 'transfer';
     case Replenishment = 'replenishment';
     case Inventory = 'inventory';
+    case PurchaseOrder = 'purchase_order';
 
     public function defaultPrefix(): string
     {
@@ -40,6 +41,7 @@ enum DocumentType: string implements HasLabel
             self::Transfer => 'TR',
             self::Replenishment => 'DR',
             self::Inventory => 'INV',
+            self::PurchaseOrder => 'BC',
         };
     }
 

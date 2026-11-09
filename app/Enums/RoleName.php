@@ -45,7 +45,7 @@ enum RoleName: string
                 Permission::SalesView, Permission::WorkOrdersManage, Permission::PaymentsReceive, Permission::ExpensesCreate,
             ],
             self::Storekeeper => [
-                Permission::SitesView, Permission::ProductsView, Permission::StockView, Permission::StockReceive,
+                Permission::SitesView, Permission::ProductsView, Permission::StockView, Permission::StockReceive, Permission::PurchasesManage,
                 Permission::StockAdjust, Permission::TransfersSend, Permission::TransfersReceive,
                 Permission::InventoryCount, Permission::UsedTyresManage,
             ],

@@ -52,6 +52,8 @@ return [
         'documents.prefix.transfer' => 'TR',
         'documents.prefix.replenishment' => 'DR',
         'documents.prefix.inventory' => 'INV',
+        'documents.prefix.purchase_order' => 'BC',
+        'purchases.cost_alert_bp' => 500, // purchase cost up more than 5 %: owner alerted
 
         // Sales (phase 3): caps in basis points / cents; above them the owner approves (D-18, D-52).
         'sales.discount_cap_bp.seller' => 500,

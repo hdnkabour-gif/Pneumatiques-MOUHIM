@@ -62,6 +62,10 @@ enum Permission: string
     case ExpensesCreate = 'expenses.create';     // record an expense with its photo
     case CashClose = 'cash.close';               // count and close the day's cash
 
+    // Purchases (phase 6)
+    case PurchasesManage = 'purchases.manage';   // suppliers, orders, receipts (with costs)
+    case SuppliersPay = 'suppliers.pay';         // record a payment to a supplier
+
     public function label(): string
     {
         return __('permissions.'.$this->value);

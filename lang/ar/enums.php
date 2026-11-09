@@ -49,7 +49,7 @@ return [
     'document_type' => [
         'invoice' => 'فاتورة', 'quote' => 'عرض سعر', 'delivery_note' => 'وصل تسليم', 'work_note' => 'وصل أشغال',
         'credit_note' => 'فاتورة مضادة', 'receipt' => 'وصل', 'work_order' => 'أمر عمل', 'transfer' => 'تحويل',
-        'replenishment' => 'طلب تموين', 'inventory' => 'جرد',
+        'replenishment' => 'طلب تموين', 'inventory' => 'جرد', 'purchase_order' => 'طلبية مورد',
     ],
     'sale_kind' => ['invoice' => 'فاتورة', 'quote' => 'عرض سعر', 'delivery_note' => 'وصل تسليم', 'credit_note' => 'فاتورة مضادة'],
     'quote_status' => ['sent' => 'مرسل', 'refused' => 'مرفوض', 'expired' => 'منتهي الصلاحية', 'converted' => 'تحول إلى بيع'],

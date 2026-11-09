@@ -2,6 +2,8 @@
 
 return [
     'groups' => [
+        'purchases' => 'Achats',
+        'suppliers' => 'Fournisseurs',
         'expenses' => 'Dépenses',
         'cash' => 'Caisse',
         'payments' => 'Encaissements',
@@ -60,4 +62,6 @@ return [
     'cheques.manage' => 'Suivre les chèques (déposé, encaissé, rejeté)',
     'expenses.create' => 'Saisir une dépense (avec photo)',
     'cash.close' => 'Compter et clôturer la caisse du jour',
+    'purchases.manage' => 'Gérer fournisseurs, commandes et réceptions (avec les coûts)',
+    'suppliers.pay' => 'Enregistrer un paiement fournisseur',
 ];
