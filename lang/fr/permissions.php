@@ -2,6 +2,8 @@
 
 return [
     'groups' => [
+        'expenses' => 'Dépenses',
+        'cash' => 'Caisse',
         'payments' => 'Encaissements',
         'cheques' => 'Chèques',
         'customers' => 'Clients',
@@ -56,4 +58,6 @@ return [
     'work_orders.manage' => 'Gérer les ordres de travail (techniciens, statuts)',
     'payments.receive' => 'Encaisser un client après la vente',
     'cheques.manage' => 'Suivre les chèques (déposé, encaissé, rejeté)',
+    'expenses.create' => 'Saisir une dépense (avec photo)',
+    'cash.close' => 'Compter et clôturer la caisse du jour',
 ];

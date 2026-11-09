@@ -1,0 +1,31 @@
+<?php
+
+return [
+    'title' => 'Caisse',
+    'expense' => 'Dépense',
+    'float' => 'Fond de caisse',
+    'close' => 'Clôturer la journée',
+    'reopen' => 'Rouvrir la journée',
+    'expected' => 'Doit être dans la caisse',
+    'counted' => 'Montant compté',
+    'difference' => 'Écart',
+    'cash_in' => 'Espèces reçues',
+    'refunds' => 'Rendu aux clients',
+    'expenses' => 'Dépenses en espèces',
+    'card_cheque' => 'Carte et chèques (hors caisse)',
+    'today_expenses' => 'Dépenses du jour',
+    'category' => 'Type',
+    'description' => 'Pour quoi ?',
+    'photo' => 'Photo du ticket',
+    'paid_in_cash' => 'Payée avec l\'argent de la caisse',
+    'notes' => 'Remarque',
+    'saved' => 'Enregistré.',
+    'closed' => 'Caisse clôturée.',
+    'closed_by' => 'Journée clôturée par :name à :time',
+    'discrepancy' => 'Écart de caisse à :site : :amount',
+    'categories' => ['supplies' => 'Fournitures', 'transport' => 'Transport', 'food' => 'Repas', 'repairs' => 'Réparation', 'utilities' => 'Eau / électricité / téléphone', 'salary_advance' => 'Avance sur salaire', 'other' => 'Autre'],
+    'errors' => [
+        'closed' => 'La caisse du jour est clôturée : demandez au propriétaire de la rouvrir.',
+        'expense' => 'Indiquez le montant et pour quoi.',
+    ],
+];

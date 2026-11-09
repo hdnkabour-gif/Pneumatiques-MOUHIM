@@ -19,6 +19,7 @@ use App\Models\StockMovement;
 use App\Models\UsedTyre;
 use App\Models\User;
 use App\Services\Approvals\ApprovalService;
+use App\Services\Money\CashRegister;
 use App\Services\Oil\OilDrumService;
 use App\Services\Sales\SaleCalculator;
 use App\Services\SequenceService;
@@ -64,6 +65,9 @@ class CreateCreditNoteAction
     {
         return DB::transaction(function () use ($invoice, $lines, $refund, $reason, $requester, $approver) {
             $invoice = Sale::query()->with(['lines', 'site'])->lockForUpdate()->findOrFail($invoice->id);
+            if ($refund === RefundMethod::Cash) {
+                app(CashRegister::class)->assertOpen($invoice->site_id); // D-29
+            }
             $this->validate($invoice, $lines, $refund, $reason, $requester, checkPermission: false);
 
             $note = Sale::query()->create([

@@ -33,6 +33,17 @@
 
 ## [Non publié]
 
+### Ajouté – Phase 4 (argent)
+- Page « Ce qui reste » (propriétaire et responsables, téléphone) : clients qui doivent avec ancienneté et relance
+  WhatsApp, chèques à encaisser, devis en attente, véhicules à l'atelier, transferts et demandes, approbations.
+- Comptes clients : solde d'ouverture saisi par le propriétaire seul (D-23) ; « Encaisser » depuis la fiche client,
+  montant affecté automatiquement aux dettes les plus anciennes (D-20).
+- Chèques : reçu → déposé → encaissé, ou rejeté avec motif ; un rejet rétablit la dette sans effacer l'historique (D-22).
+- Caisse par site : fond de caisse, espèces reçues, rendus, dépenses en espèces, montant attendu ; clôture avec
+  montant compté et écart (alerte au propriétaire au-delà de 50 MAD, paramétrable) ; journée verrouillée après
+  clôture, réouverture par le propriétaire avec motif (D-29) ; dépenses avec photo du ticket.
+- Permissions `payments.receive`, `cheques.manage`, `expenses.create`, `cash.close`.
+
 ### Ajouté – Huile au litre depuis des fûts (D-06 révisée, 9 novembre 2026)
 - Fûts d'huile : réception (capacité, quantité réellement reçue, prix, frais, fournisseur, facture), coût du litre,
   reste et consommé, valeur restante (propriétaire), alerte « bientôt vide », correction de jauge motivée,

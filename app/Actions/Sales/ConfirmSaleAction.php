@@ -25,6 +25,7 @@ use App\Models\StockMovement;
 use App\Models\UsedTyre;
 use App\Models\User;
 use App\Models\WorkOrder;
+use App\Services\Money\CashRegister;
 use App\Services\Oil\OilDrumService;
 use App\Services\Sales\SaleRules;
 use App\Services\SequenceService;
@@ -87,6 +88,10 @@ class ConfirmSaleAction
             }
             if ($sale->customer?->requires_po_number && blank($sale->po_number)) {
                 throw BusinessRuleException::make('sales.errors.po_required');
+            }
+
+            if (collect($payments)->contains(fn ($p) => $p['method'] === PaymentMethod::Cash)) {
+                app(CashRegister::class)->assertOpen($sale->site_id); // D-29
             }
 
             $missing = $this->rules->required($sale, $user, $credit);

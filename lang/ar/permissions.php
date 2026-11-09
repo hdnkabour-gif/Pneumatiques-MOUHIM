@@ -2,6 +2,8 @@
 
 return [
     'groups' => [
+        'expenses' => 'المصاريف',
+        'cash' => 'الصندوق',
         'payments' => 'الاستخلاصات',
         'cheques' => 'الشيكات',
         'customers' => 'الزبناء',
@@ -56,4 +58,6 @@ return [
     'work_orders.manage' => 'تسيير أوامر العمل (التقنيون، الحالات)',
     'payments.receive' => 'استخلاص دين زبون بعد البيع',
     'cheques.manage' => 'تتبع الشيكات (مودع، مستخلص، مرفوض)',
+    'expenses.create' => 'تسجيل مصروف (مع صورة)',
+    'cash.close' => 'عدّ الصندوق وإغلاق اليوم',
 ];

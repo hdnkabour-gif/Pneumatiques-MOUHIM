@@ -13,6 +13,7 @@ use App\Models\Payment;
 use App\Models\Sale;
 use App\Models\Site;
 use App\Models\User;
+use App\Services\Money\CashRegister;
 use App\Support\Money;
 use Illuminate\Support\Facades\DB;
 
@@ -57,6 +58,10 @@ class CustomerAccountActions
         }
         if ($method === PaymentMethod::Cheque && (blank($data['cheque_number'] ?? null) || blank($data['bank'] ?? null))) {
             throw BusinessRuleException::make('sales.errors.cheque_details');
+        }
+
+        if ($method === PaymentMethod::Cash) {
+            app(CashRegister::class)->assertOpen($site->id); // D-29
         }
 
         return DB::transaction(function () use ($customer, $site, $data, $user, $method, $amount) {

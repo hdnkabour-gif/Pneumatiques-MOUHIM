@@ -59,6 +59,8 @@ enum Permission: string
     // Money (phase 4)
     case PaymentsReceive = 'payments.receive';   // collect a customer's payment after the sale
     case ChequesManage = 'cheques.manage';       // deposited / cashed / rejected
+    case ExpensesCreate = 'expenses.create';     // record an expense with its photo
+    case CashClose = 'cash.close';               // count and close the day's cash
 
     public function label(): string
     {
