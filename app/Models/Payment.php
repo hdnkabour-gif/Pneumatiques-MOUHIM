@@ -14,12 +14,18 @@ class Payment extends Model
 
     protected function casts(): array
     {
-        return ['method' => PaymentMethod::class, 'amount_cents' => 'integer', 'due_date' => 'date', 'received_at' => 'datetime'];
+        return ['method' => PaymentMethod::class, 'amount_cents' => 'integer', 'due_date' => 'date', 'received_at' => 'datetime',
+            'deposited_at' => 'datetime', 'cleared_at' => 'datetime', 'rejected_at' => 'datetime'];
     }
 
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function site(): BelongsTo
+    {
+        return $this->belongsTo(Site::class);
     }
 
     public function sales(): BelongsToMany

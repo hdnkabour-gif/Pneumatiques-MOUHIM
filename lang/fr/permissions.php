@@ -2,6 +2,8 @@
 
 return [
     'groups' => [
+        'payments' => 'Encaissements',
+        'cheques' => 'Chèques',
         'customers' => 'Clients',
         'sales' => 'Ventes',
         'work_orders' => 'Atelier',
@@ -52,4 +54,6 @@ return [
     'sales.create' => 'Vendre (écran de vente, encaissement)',
     'sales.view' => 'Voir les factures de ses sites',
     'work_orders.manage' => 'Gérer les ordres de travail (techniciens, statuts)',
+    'payments.receive' => 'Encaisser un client après la vente',
+    'cheques.manage' => 'Suivre les chèques (déposé, encaissé, rejeté)',
 ];

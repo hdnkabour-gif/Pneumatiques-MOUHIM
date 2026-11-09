@@ -56,6 +56,10 @@ enum Permission: string
     case SalesView = 'sales.view';           // invoices of his sites
     case WorkOrdersManage = 'work_orders.manage'; // create, assign technicians, move statuses (D-53)
 
+    // Money (phase 4)
+    case PaymentsReceive = 'payments.receive';   // collect a customer's payment after the sale
+    case ChequesManage = 'cheques.manage';       // deposited / cashed / rejected
+
     public function label(): string
     {
         return __('permissions.'.$this->value);

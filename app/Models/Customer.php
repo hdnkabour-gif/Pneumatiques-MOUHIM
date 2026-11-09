@@ -51,8 +51,8 @@ class Customer extends Model
     }
 
     /**
-     * Amount still owed on confirmed sales. Phase 4 replaces this with the
-     * full customer account (payments, credit notes, opening balance).
+     * What the customer still owes: unpaid documents + opening balance −
+     * credit notes kept on account (D-20, D-23).
      */
     public function outstandingCents(): int
     {
@@ -64,7 +64,19 @@ class Customer extends Model
             ->where('kind', SaleKind::CreditNote->value)->where('refund_method', RefundMethod::Account->value)
             ->sum('total_ttc_cents');
 
-        return $owed - $credited;
+        $opening = (int) $this->openingBalances()->sum('remaining_cents');
+
+        return $owed + $opening - $credited;
+    }
+
+    public function openingBalances(): HasMany
+    {
+        return $this->hasMany(CustomerOpeningBalance::class)->orderBy('as_of');
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class)->latest('received_at');
     }
 
     /** Exchange vouchers of this customer with money left on them. */

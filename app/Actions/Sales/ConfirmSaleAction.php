@@ -108,6 +108,7 @@ class ConfirmSaleAction
                     ...$p,
                     'site_id' => $sale->site_id,
                     'customer_id' => $sale->customer_id,
+                    'status' => 'received',
                     'received_by' => $user->id,
                     'received_at' => now(),
                 ]);

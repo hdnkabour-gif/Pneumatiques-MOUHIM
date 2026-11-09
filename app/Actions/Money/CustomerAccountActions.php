@@ -1,0 +1,146 @@
+<?php
+
+namespace App\Actions\Money;
+
+use App\Enums\PaymentMethod;
+use App\Enums\Permission;
+use App\Enums\SaleKind;
+use App\Enums\SaleStatus;
+use App\Exceptions\BusinessRuleException;
+use App\Models\Customer;
+use App\Models\CustomerOpeningBalance;
+use App\Models\Payment;
+use App\Models\Sale;
+use App\Models\Site;
+use App\Models\User;
+use App\Support\Money;
+use Illuminate\Support\Facades\DB;
+
+/**
+ * Customer account (D-20, D-22, D-23): opening balance, payment collected
+ * after the sale and spread over the oldest debts first, cheque follow-up.
+ * Nothing is deleted: a rejected cheque restores the debt and keeps its history.
+ */
+class CustomerAccountActions
+{
+    /** D-23: debt from the paper books, entered by the owner only. */
+    public function addOpeningBalance(Customer $customer, int $amountCents, string $asOf, ?string $note, User $user): CustomerOpeningBalance
+    {
+        if (! $user->can(Permission::ApprovalsDecide->value)) {
+            throw BusinessRuleException::make('app.errors.forbidden');
+        }
+        if ($amountCents <= 0) {
+            throw BusinessRuleException::make('money.errors.amount');
+        }
+
+        $balance = $customer->openingBalances()->create([
+            'amount_cents' => $amountCents, 'remaining_cents' => $amountCents, 'as_of' => $asOf, 'note' => $note, 'created_by' => $user->id,
+        ]);
+        activity('money')->causedBy($user)->performedOn($customer)->event('opening_balance')
+            ->withProperties(['amount_cents' => $amountCents, 'as_of' => $asOf])->log('opening_balance');
+
+        return $balance;
+    }
+
+    /**
+     * @param  array{method: string, amount_cents: int, cheque_number?: ?string, bank?: ?string, drawer?: ?string, due_date?: ?string}  $data
+     */
+    public function receive(Customer $customer, Site $site, array $data, User $user): Payment
+    {
+        if (! $user->can(Permission::PaymentsReceive->value) || ! $user->canAccessSite($site)) {
+            throw BusinessRuleException::make('app.errors.forbidden');
+        }
+        $method = PaymentMethod::tryFrom((string) ($data['method'] ?? ''));
+        $amount = (int) ($data['amount_cents'] ?? 0);
+        if (! $method || $method === PaymentMethod::CreditNote || $amount <= 0) {
+            throw BusinessRuleException::make('money.errors.amount');
+        }
+        if ($method === PaymentMethod::Cheque && (blank($data['cheque_number'] ?? null) || blank($data['bank'] ?? null))) {
+            throw BusinessRuleException::make('sales.errors.cheque_details');
+        }
+
+        return DB::transaction(function () use ($customer, $site, $data, $user, $method, $amount) {
+            Customer::query()->lockForUpdate()->findOrFail($customer->id);
+            if ($amount > $customer->outstandingCents()) {
+                throw BusinessRuleException::make('money.errors.more_than_due', ['due' => Money::format($customer->outstandingCents())]);
+            }
+
+            $payment = Payment::query()->create([
+                'site_id' => $site->id, 'customer_id' => $customer->id, 'method' => $method, 'amount_cents' => $amount,
+                'cheque_number' => $method === PaymentMethod::Cheque ? trim($data['cheque_number']) : null,
+                'bank' => $method === PaymentMethod::Cheque ? trim($data['bank']) : null,
+                'drawer' => $method === PaymentMethod::Cheque ? ($data['drawer'] ?? null) : null,
+                'due_date' => $method === PaymentMethod::Cheque ? ($data['due_date'] ?? null) : null,
+                'status' => 'received', 'received_by' => $user->id, 'received_at' => now(),
+            ]);
+
+            // Oldest first: opening balance, then documents by date.
+            $left = $amount;
+            foreach ($customer->openingBalances()->where('remaining_cents', '>', 0)->lockForUpdate()->get() as $ob) {
+                $take = min($left, $ob->remaining_cents);
+                DB::table('payment_allocations')->insert(['payment_id' => $payment->id, 'opening_balance_id' => $ob->id, 'amount_cents' => $take]);
+                $ob->decrement('remaining_cents', $take);
+                if (($left -= $take) === 0) {
+                    break;
+                }
+            }
+            if ($left > 0) {
+                $docs = Sale::query()->where('customer_id', $customer->id)->where('status', SaleStatus::Confirmed->value)
+                    ->whereIn('kind', [SaleKind::Invoice->value, SaleKind::DeliveryNote->value])->whereNull('recap_invoice_id')
+                    ->where('credit_cents', '>', 0)->orderBy('confirmed_at')->lockForUpdate()->get();
+                foreach ($docs as $doc) {
+                    $take = min($left, $doc->credit_cents);
+                    DB::table('payment_allocations')->insert(['payment_id' => $payment->id, 'sale_id' => $doc->id, 'amount_cents' => $take]);
+                    $doc->forceFill(['credit_cents' => $doc->credit_cents - $take, 'paid_cents' => $doc->paid_cents + $take])->save();
+                    if (($left -= $take) === 0) {
+                        break;
+                    }
+                }
+            }
+            // What is left covers credit notes kept on account: nothing to allocate, the balance already counts them.
+
+            activity('money')->causedBy($user)->performedOn($payment)->event('payment_received')
+                ->withProperties(['customer' => $customer->id, 'amount_cents' => $amount, 'method' => $method->value])
+                ->tap(fn ($a) => $a->site_id = $site->id)->log('payment_received');
+
+            return $payment;
+        });
+    }
+
+    /** Cheque follow-up: received → deposited → cashed, or rejected (debt restored). */
+    public function chequeStatus(Payment $payment, string $status, User $user, ?string $reason = null): Payment
+    {
+        if (! $user->can(Permission::ChequesManage->value) || ! $user->canAccessSite($payment->site_id)) {
+            throw BusinessRuleException::make('app.errors.forbidden');
+        }
+        if ($status === 'rejected' && blank($reason)) {
+            throw BusinessRuleException::make('approvals.errors.reason_required');
+        }
+
+        return DB::transaction(function () use ($payment, $status, $user, $reason) {
+            $payment = Payment::query()->lockForUpdate()->findOrFail($payment->id);
+            $allowed = ['received' => ['deposited', 'rejected'], 'deposited' => ['cleared', 'rejected'], 'cleared' => [], 'rejected' => []];
+            if ($payment->method !== PaymentMethod::Cheque || ! in_array($status, $allowed[$payment->status] ?? [], true)) {
+                throw BusinessRuleException::make('money.errors.cheque_status');
+            }
+
+            if ($status === 'rejected') {
+                foreach (DB::table('payment_allocations')->where('payment_id', $payment->id)->get() as $a) {
+                    if ($a->sale_id) {
+                        $sale = Sale::query()->lockForUpdate()->find($a->sale_id);
+                        $sale->forceFill(['credit_cents' => $sale->credit_cents + $a->amount_cents, 'paid_cents' => $sale->paid_cents - $a->amount_cents])->save();
+                    } else {
+                        CustomerOpeningBalance::query()->whereKey($a->opening_balance_id)->increment('remaining_cents', $a->amount_cents);
+                    }
+                }
+            }
+
+            $payment->forceFill(['status' => $status, $status.'_at' => now(), 'rejection_reason' => $status === 'rejected' ? trim($reason) : null])->save();
+
+            activity('money')->causedBy($user)->performedOn($payment)->event('cheque_'.$status)
+                ->withProperties(['reason' => $reason])->tap(fn ($a) => $a->site_id = $payment->site_id)->log('cheque_'.$status);
+
+            return $payment;
+        });
+    }
+}
