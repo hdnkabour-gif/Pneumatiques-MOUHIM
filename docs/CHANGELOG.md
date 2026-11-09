@@ -33,6 +33,12 @@
 
 ## [Non publié]
 
+### Ajouté – Phase 5 (imports de démarrage)
+- « Imports de démarrage » (propriétaire) : modèles Excel à télécharger pour les clients (avec dette existante datée,
+  plafond de crédit et immatriculation), les produits (nom ou dimension pneu, catégorie, marque, prix, coût, unité)
+  et le stock d'ouverture par site (avec DOT). Chaque ligne est vérifiée ; une seule erreur = rien n'est importé et
+  la liste des erreurs ligne par ligne s'affiche ; jamais d'écrasement (clients par téléphone / ICE, produits par SKU).
+
 ### Ajouté – Phase 7 (export comptable)
 - « Export comptable » (propriétaire) : un fichier Excel par mois — ventes et avoirs (HT, TVA, TTC, ICE client),
   TVA collectée par taux, achats fournisseurs, encaissements avec l'état des chèques, dépenses. Format à valider
