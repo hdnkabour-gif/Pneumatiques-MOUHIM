@@ -99,7 +99,7 @@ class CompanySettings extends Page
                     ->columns(2)
                     ->schema([
                         TextInput::make('company_name')->label(__('settings.fields.company_name'))->required()->maxLength(255),
-                        TextInput::make('company_phone')->label(__('settings.fields.company_phone'))->tel()->maxLength(30),
+                        TextInput::make('company_phone')->label(__('settings.fields.company_phone'))->tel()->maxLength(60),
                         TextInput::make('company_address')->label(__('settings.fields.company_address'))->maxLength(255),
                         TextInput::make('company_city')->label(__('settings.fields.company_city'))->maxLength(100),
                         TextInput::make('company_email')->label(__('settings.fields.company_email'))->email()->maxLength(255),

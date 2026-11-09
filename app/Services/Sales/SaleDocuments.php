@@ -43,17 +43,33 @@ class SaleDocuments
 
             $mpdf = new Mpdf([
                 'mode' => 'utf-8', 'format' => 'A4', 'tempDir' => $dir,
-                'margin_left' => 12, 'margin_right' => 12, 'margin_top' => 12, 'margin_bottom' => 18,
+                'margin_left' => 12, 'margin_right' => 12, 'margin_top' => 42, 'margin_bottom' => 40,
+                'margin_header' => 8, 'margin_footer' => 6,
                 'default_font' => 'dejavusans', 'autoScriptToLang' => true, 'autoLangToFont' => true,
             ]);
             $mpdf->SetTitle($sale->number ?? 'Brouillon');
-            $mpdf->SetFooter($sale->number.' – {PAGENO}/{nbpg}');
+            // Company paper (letterhead) on every page: name / logo, yellow corners, brands and legal lines.
+            $accent = (string) ($company['documents.accent_color'] ?? '#D4C21F');
+            $mpdf->SetHTMLHeader(view('pdf.letterhead-header', ['company' => $company, 'logo' => $logo, 'corner' => $this->corner($accent, true)])->render());
+            $mpdf->SetHTMLFooter(view('pdf.letterhead-footer', ['company' => $company, 'number' => $sale->number])->render());
+            $mpdf->SetWatermarkImage($this->corner($accent, false), 1, [38, 38], [0, 259]);
+            $mpdf->showWatermarkImage = true;
             $mpdf->WriteHTML($html);
 
             return $mpdf->Output('', 'S');
         } finally {
             app()->setLocale($previous);
         }
+    }
+
+    /** Yellow "V" stroke of the company paper (top right) or bottom-left corner, as an SVG image. */
+    private function corner(string $color, bool $top): string
+    {
+        $svg = $top
+            ? '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M10 0 L100 0 L100 8 L30 8 L78 70 Q86 80 100 82 L100 100 Q78 98 66 82 Z" fill="'.$color.'"/></svg>'
+            : '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M0 20 Q30 22 46 50 L72 100 L52 100 L30 58 Q18 38 0 36 Z" fill="'.$color.'"/></svg>';
+
+        return 'data:image/svg+xml;base64,'.base64_encode($svg);
     }
 
     /** Link valid 30 days, readable without an account (sent to the customer). */

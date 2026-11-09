@@ -251,3 +251,12 @@ it('renders the sale screen and the workshop in Arabic', function () {
     $this->get(SaleScreen::getUrl())->assertOk()->assertSee('بيع جديد')->assertSee('dir="rtl"', false);
     $this->get(Workshop::getUrl())->assertOk()->assertSee('الورشة');
 });
+
+it('prints the company letterhead (name, legal details, brands) on documents', function () {
+    $this->actingAs($this->seller);
+    Livewire::test(SaleScreen::class)->call('addProduct', $this->tyre->id)->call('confirm');
+    $pdf = app(SaleDocuments::class)->pdf(Sale::query()->firstOrFail());
+    $text = (new \Smalot\PdfParser\Parser)->parseContent($pdf)->getText();
+
+    expect($text)->toContain('PNEUMATIQUE MOUHIM')->toContain('000167198000034')->toContain('MICHELIN');
+})->skip(! class_exists(\Smalot\PdfParser\Parser::class), 'PDF parser not installed');

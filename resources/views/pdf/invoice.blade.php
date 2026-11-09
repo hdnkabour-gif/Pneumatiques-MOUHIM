@@ -12,6 +12,7 @@
     $customer = $sale->customer;
     $docType = $sale->documentType()->value;
     $kind = $sale->kind->value;
+    $accent = $c('documents.accent_color') ?: '#D4C21F';
 @endphp
 <html>
 <head>
@@ -20,12 +21,12 @@
     .title { font-size: 18pt; font-weight: bold; }
     .muted { color: #555; }
     table { border-collapse: collapse; width: 100%; }
-    .lines th { background: #eee; border: 0.6pt solid #888; padding: 5px; font-size: 8.5pt; text-align: left; }
+    .lines th { background: {{ $accent }}; color: #111; border: 0.6pt solid #888; padding: 5px; font-size: 8.5pt; text-align: left; }
     .lines td { border: 0.6pt solid #aaa; padding: 5px; vertical-align: top; }
     .num { text-align: right; white-space: nowrap; }
     .box { border: 0.6pt solid #888; padding: 8px; }
     .totals td { padding: 4px 6px; }
-    .grand { font-size: 12pt; font-weight: bold; background: #eee; }
+    .grand { font-size: 12pt; font-weight: bold; background: {{ $accent }}; }
     .words { margin-top: 10px; padding: 8px; border: 0.6pt solid #888; }
     .footer { font-size: 7.5pt; color: #444; text-align: center; margin-top: 18px; }
 </style>
@@ -33,15 +34,9 @@
 <body>
 <table>
     <tr>
-        <td style="width: 55%; vertical-align: top;">
-            @if ($logo)<img src="{{ $logo }}" style="max-height: 60px; max-width: 200px;"><br>@endif
-            <span class="title" style="font-size: 14pt;">{{ $c('company.name') }}</span><br>
-            @if ($c('company.address')){{ $c('company.address') }}@if ($c('company.city')), {{ $c('company.city') }}@endif<br>@endif
-            @if ($c('company.phone'))Tél. : {{ $c('company.phone') }}@endif @if ($c('company.email')) · {{ $c('company.email') }}@endif<br>
-            <span class="muted">{{ __('sales.pdf.site') }} : {{ $sale->site->name }}</span>
-        </td>
-        <td style="width: 45%; vertical-align: top; text-align: right;">
-            <span class="title">{{ __('sales.pdf.title_'.$docType) }}</span><br>
+        <td style="width: 50%; vertical-align: top;" class="muted">{{ __('sales.pdf.site') }} : {{ $sale->site->name }}</td>
+        <td style="width: 50%; vertical-align: top; text-align: right;">
+            <span class="title" style="color: {{ $accent }};">{{ __('sales.pdf.title_'.$docType) }}</span><br>
             <b>N° {{ $sale->number }}</b><br>
             {{ __('sales.pdf.date') }} : {{ $sale->confirmed_at?->timezone(config('mouhim.timezone'))->format('d/m/Y') }}<br>
             @if ($kind === 'quote' && $sale->valid_until){{ __('sales.pdf.valid_until', ['date' => $sale->valid_until->format('d/m/Y')]) }}<br>@endif
@@ -149,10 +144,6 @@
     </table>
 @endif
 
-<div class="footer">
-    {{ implode(' · ', $legal) }}
-    @if ($c('bank.rib'))<br>{{ $c('bank.name') }} – RIB : {{ $c('bank.rib') }}@endif
-    @if ($c('documents.legal_mentions'))<br>{{ $c('documents.legal_mentions') }}@endif
-</div>
+@if ($c('documents.legal_mentions'))<div class="footer">{{ $c('documents.legal_mentions') }}</div>@endif
 </body>
 </html>
