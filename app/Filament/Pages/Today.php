@@ -6,6 +6,7 @@ use App\Enums\Permission;
 use App\Enums\RoleName;
 use App\Filament\Support\Fields;
 use App\Models\Site;
+use App\Services\Push\PushNotifier;
 use App\Services\Reports\DailyFigures;
 use App\Support\Decimal;
 use App\Support\Money;
@@ -113,6 +114,9 @@ class Today extends Page
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('push')->label(__('push.enable'))->icon(Heroicon::OutlinedBellAlert)->color('gray')
+                ->visible(fn () => app(PushNotifier::class)->enabled())
+                ->alpineClickHandler('window.mouhimEnablePush && window.mouhimEnablePush()'),
             Action::make('targets')->label(__('today.set_targets'))->icon(Heroicon::OutlinedFlag)->color('gray')
                 ->visible(fn () => auth()->user()->can(Permission::ApprovalsDecide->value))
                 ->schema(fn () => $this->sites()->map(fn (Site $s) => Fields::money('target_'.$s->id, $s->name)

@@ -5,12 +5,15 @@ namespace App\Providers;
 use App\Listeners\LogAuthenticationEvents;
 use App\Models\Activity;
 use App\Models\Site;
+use App\Models\User;
 use App\Policies\ActivityPolicy;
 use App\Policies\RolePolicy;
+use App\Services\Push\PushNotifier;
 use App\Services\SettingsService;
 use AsyncAws\S3\S3Client;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Filesystem\FilesystemAdapter;
+use Illuminate\Notifications\Events\NotificationSent;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
@@ -35,6 +38,17 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Activity::class, ActivityPolicy::class);
 
         Event::subscribe(LogAuthenticationEvents::class);
+
+        // Every in-app notification also goes to the user's phones (Web Push), when configured.
+        Event::listen(NotificationSent::class, function ($event) {
+            if ($event->channel !== 'database' || ! $event->notifiable instanceof User) {
+                return;
+            }
+            $data = method_exists($event->notification, 'toDatabase') ? (array) $event->notification->toDatabase($event->notifiable) : [];
+            if (filled($data['title'] ?? null)) {
+                app(PushNotifier::class)->send($event->notifiable, (string) $data['title'], $data['body'] ?? null);
+            }
+        });
 
         $this->configureActivityLog();
         $this->registerS3CompatibleDriver();

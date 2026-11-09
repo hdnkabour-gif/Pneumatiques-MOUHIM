@@ -25,6 +25,7 @@ use App\Support\AmountInWords;
 use App\Support\Money;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Livewire;
+use Smalot\PdfParser\Parser;
 
 beforeEach(function () {
     $this->seller = userWithRole(RoleName::Seller, 'M01');
@@ -256,7 +257,7 @@ it('prints the company letterhead (name, legal details, brands) on documents', f
     $this->actingAs($this->seller);
     Livewire::test(SaleScreen::class)->call('addProduct', $this->tyre->id)->call('confirm');
     $pdf = app(SaleDocuments::class)->pdf(Sale::query()->firstOrFail());
-    $text = (new \Smalot\PdfParser\Parser)->parseContent($pdf)->getText();
+    $text = (new Parser)->parseContent($pdf)->getText();
 
     expect($text)->toContain('PNEUMATIQUE MOUHIM')->toContain('000167198000034')->toContain('MICHELIN');
-})->skip(! class_exists(\Smalot\PdfParser\Parser::class), 'PDF parser not installed');
+})->skip(! class_exists(Parser::class), 'PDF parser not installed');

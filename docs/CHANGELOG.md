@@ -33,6 +33,16 @@
 
 ## [Non publié]
 
+### Ajouté – Notifications sur le téléphone et papier à en-tête (10 novembre 2026)
+- Notifications push (Web Push) : bouton « Notifications sur ce téléphone » sur la page « Aujourd'hui » ; chaque
+  notification de l'application (approbation, écart de caisse, résumé du soir, panne, hausse de coût…) arrive aussi
+  sur le téléphone. Clés générées par `php artisan push:keys`, à mettre dans les variables Railway (`VAPID_PUBLIC_KEY`,
+  `VAPID_PRIVATE_KEY`) ; sans clés, rien n'est envoyé. Sur iPhone : ajouter d'abord l'application à l'écran d'accueil.
+- Documents A4 sur le papier de la société : « PNEUMATIQUE MOUHIM » + « PM » (ou le logo téléversé), coins jaunes,
+  marques en pied de page, siège, RC, I.F, T.P, CNSS, ICE et téléphones sur chaque page (renseignés d'après la photo
+  du papier à en-tête, seulement si les paramètres étaient vides).
+- Modèles d'import avec une feuille « Explications » (chaque colonne et un exemple).
+
 ### Ajouté – Phase 5 (imports de démarrage)
 - « Imports de démarrage » (propriétaire) : modèles Excel à télécharger pour les clients (avec dette existante datée,
   plafond de crédit et immatriculation), les produits (nom ou dimension pneu, catégorie, marque, prix, coût, unité)

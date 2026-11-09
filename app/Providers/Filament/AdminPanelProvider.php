@@ -81,7 +81,8 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(PanelsRenderHook::HEAD_END, fn () => new HtmlString(
                 '<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#e07000">'
                 .'<link rel="apple-touch-icon" href="/pwa/icon-192.png">'
-                .'<script>if ("serviceWorker" in navigator) { navigator.serviceWorker.register("/sw.js"); }</script>'))
+                .'<script>if ("serviceWorker" in navigator) { navigator.serviceWorker.register("/sw.js"); }</script>'
+                .view('push-script')->render()))
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
