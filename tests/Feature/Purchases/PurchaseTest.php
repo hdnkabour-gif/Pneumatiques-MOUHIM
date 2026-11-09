@@ -3,10 +3,16 @@
 use App\Actions\Purchases\PurchaseActions;
 use App\Enums\RoleName;
 use App\Exceptions\BusinessRuleException;
+use App\Filament\Resources\PurchaseOrders\Pages\CreatePurchaseOrder;
+use App\Filament\Resources\PurchaseOrders\Pages\ViewPurchaseOrder;
+use App\Filament\Resources\PurchaseOrders\PurchaseOrderResource;
+use App\Filament\Resources\Suppliers\SupplierResource;
 use App\Models\Product;
+use App\Models\PurchaseOrder;
 use App\Models\StockLevel;
 use App\Models\Supplier;
 use App\Models\TyreLot;
+use Livewire\Livewire;
 
 beforeEach(function () {
     $this->owner = owner();
@@ -53,4 +59,25 @@ it('pays a supplier (owner only) and keeps sellers away from purchases', functio
     $seller = userWithRole(RoleName::Seller, 'M01');
     expect(fn () => $this->purchases->receive($this->supplier, site('M01'), [['product_id' => $this->tyre->id, 'quantity' => 1, 'unit_cost_cents' => 1]], $seller))
         ->toThrow(BusinessRuleException::class);
+});
+
+it('orders and receives at once from the screen, then receives the rest of another order', function () {
+    $this->actingAs($this->storekeeper);
+
+    Livewire::test(CreatePurchaseOrder::class)
+        ->fillForm(['supplier_id' => $this->supplier->id, 'site_id' => site('DEP')->id, 'received_now' => true, 'invoice_ref' => 'F-9',
+            'lines' => [['product_id' => $this->tyre->id, 'quantity' => 4, 'unit_cost_cents' => '480', 'dot' => '1226']]])
+        ->call('create')->assertHasNoFormErrors();
+
+    $order = PurchaseOrder::query()->firstOrFail();
+    expect($order->status)->toBe('received')
+        ->and(TyreLot::query()->where('product_id', $this->tyre->id)->value('dot_week'))->toBe(12);
+
+    $o2 = $this->purchases->order($this->supplier, site('DEP'), [['product_id' => $this->tyre->id, 'quantity' => 5, 'unit_cost_cents' => 48000]], $this->storekeeper);
+    Livewire::test(ViewPurchaseOrder::class, ['record' => $o2->id])
+        ->callAction('receive', ['lines' => [$o2->lines->first()->id => ['quantity' => 2, 'unit_cost_cents' => '480', 'dot' => '']]]);
+    expect($o2->fresh()->status)->toBe('partial');
+
+    $this->get(SupplierResource::getUrl())->assertOk()->assertSee('Atlas Pneus SARL');
+    $this->actingAs(userWithRole(RoleName::Seller, 'M01'))->get(PurchaseOrderResource::getUrl())->assertForbidden();
 });

@@ -54,6 +54,7 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make(fn () => __('app.navigation.sales')),
                 NavigationGroup::make(fn () => __('app.navigation.catalog')),
                 NavigationGroup::make(fn () => __('app.navigation.stock')),
+                NavigationGroup::make(fn () => __('app.navigation.purchases')),
                 NavigationGroup::make(fn () => __('app.navigation.vehicles')),
                 NavigationGroup::make(fn () => __('app.navigation.administration')),
                 NavigationGroup::make(fn () => __('app.navigation.settings')),

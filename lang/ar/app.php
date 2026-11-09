@@ -16,6 +16,7 @@ return [
         'required_body' => 'يجب حماية حساب المالك برمز على هاتفك. ثبّت تطبيق Google Authenticator (أو ما يشبهه)، ثم اضغط على «Configurer» أدناه وامسح رمز QR. احتفظ برموز الاسترجاع في مكان آمن.',
     ],
     'navigation' => [
+        'purchases' => 'المشتريات',
         'sales' => 'المبيعات',
         'vehicles' => 'السيارات',
         'catalog' => 'الكتالوج',

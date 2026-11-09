@@ -18,7 +18,9 @@ pneumatiques, services automobiles, stock, ventes, crédit, caisse, atelier.
 | 3a. Vente au quotidien | Clients et véhicules, écran de vente unique, facture A4 (mPDF), WhatsApp, paiement espèces / carte / chèque / crédit, approbations (remise, prix, sous le coût, crédit), « Demander au dépôt », atelier saisi par le vendeur, numérotation paramétrable | ✅ Code et tests – en attente de validation |
 | 3b. Documents | Devis (réservation propriétaire), BL / BT + facture récapitulative, avoirs, retours, échanges (bon d'achat), reprises | ✅ Code et tests – en attente de validation |
 | 4. Argent | « Ce qui reste », comptes clients, soldes d'ouverture, encaissements, chèques, caisse et clôture, dépenses avec photo | ✅ Code et tests – en attente de validation |
-| 5 → 7 | — | À venir |
+| 5. Démarrage | « Aujourd'hui », objectifs, résumé du soir, PWA (push et imports Excel restants) | ✅ En partie |
+| 6. Achats | Fournisseurs, commandes, réceptions partielles, dettes et paiements fournisseurs, alerte de coût | ✅ Code et tests (écran technicien facultatif D-53) |
+| 7 | Équipements et maintenance, rapports, exports comptables | À venir |
 
 ## Versions (vérifiées le 4 novembre 2026)
 

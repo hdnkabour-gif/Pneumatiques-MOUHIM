@@ -33,6 +33,15 @@
 
 ## [Non publié]
 
+### Ajouté – Phase 6 (achats)
+- Fournisseurs (solde d'ouverture par le propriétaire) avec « Nous devons » ; paiement fournisseur (propriétaire).
+- Commandes fournisseurs (`BC-…`), réception totale ou partielle au site choisi (dépôt par défaut), coût HT,
+  DOT des pneus (ex. 2425), ou « Déjà reçu » pour une réception directe ; le stock entre au coût (CUMP) et la
+  dette fournisseur (TTC) augmente.
+- Hausse du coût d'achat de plus de 5 % (paramétrable) : alerte au propriétaire avec le prix de vente suggéré ;
+  comparaison du dernier coût par fournisseur.
+- Permissions `purchases.manage` (magasinier) et `suppliers.pay` (propriétaire).
+
 ### Ajouté – Phase 5 (démarrage, propriétaire)
 - Page « Aujourd'hui » (téléphone d'abord) : alertes à traiter (5 max), ventes du jour et comparaison avec la veille,
   encaissements par moyen, crédit, dépenses, marge (incomplète si un coût manque, visible avec la permission coûts),
