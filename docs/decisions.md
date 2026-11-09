@@ -19,7 +19,7 @@ Format : **D-XX – Titre** : décision, puis raison.
 
 **D-05 – Montants.** Stockés en centimes (bigint). Devise unique : MAD.
 
-**D-06 – Quantités.** Quantités entières (unité : pièce, bidon, kit…). Pas de vente au litre ni de stock en fût : les huiles sont achetées et vendues par bidon fermé (1L, 4L, 5L…).
+**D-06 – Quantités (révisée le 9 novembre 2026).** Quantités entières pour les pièces, bidons, kits… Les huiles sont vendues de deux façons qui coexistent : en bidon fermé (1 L, 4 L, 5 L, 20 L…, stock habituel) et au litre depuis des fûts (produit d'unité « Litre », prix au litre). Chaque fût a son numéro, son site, sa quantité reçue réelle, son coût du litre ((prix d'achat + frais) ÷ litres reçus) et son registre de mouvements non modifiable (réception, vente, atelier, retour, correction de jauge motivée, transfert). Le vendeur choisit le fût ; le coût est figé sur la ligne de vente ; aucune quantité négative ; bidons et fûts ne sont jamais mélangés. L'huile d'une vidange se saisit au litre sur la même facture que la prestation.
 
 ## Sites et stock
 

@@ -226,18 +226,25 @@
                     </div>
                     @continue
                 @endif
-                @php $rows = collect($lines)->filter(fn ($l) => ($item['used_tyre_id'] ?? null) ? $l['used_tyre_id'] === $item['used_tyre_id'] : ($l['product_id'] === $item['product_id'] || $l['bundle_id'] === $item['product_id'])); @endphp
+                @php $rows = collect($lines)->filter(fn ($l) => ! empty($item['oil_drum_id']) ? ($l['oil_drum_id'] ?? null) === (int) $item['oil_drum_id']
+                    : (($item['used_tyre_id'] ?? null) ? $l['used_tyre_id'] === $item['used_tyre_id'] : (($l['oil_drum_id'] ?? null) === null && ($l['product_id'] === $item['product_id'] || $l['bundle_id'] === $item['product_id'])))); @endphp
                 <div class="pm-line" wire:key="line-{{ $i }}-{{ $item['product_id'] ?? 'u'.$item['used_tyre_id'] }}">
                     <div>
                         <div style="font-weight: 600;">{{ $rows->first()['description'] ?? '…' }}@if ($rows->count() > 1) <span class="pm-muted">+ {{ $rows->count() - 1 }}</span>@endif</div>
                         <div class="pm-muted">
-                            {{ $this->money($rows->first()['unit_price_ttc_cents'] ?? 0) }}
+                            {{ $this->money($rows->first()['unit_price_ttc_cents'] ?? 0) }}{{ ! empty($item['oil_drum_id']) ? ' / L' : '' }}
                             @if (($rows->first()['discount_bp'] ?? 0) > 0) <s>{{ $this->money($rows->first()['list_price_ttc_cents']) }}</s> −{{ rtrim(rtrim(number_format($rows->first()['discount_bp'] / 100, 2, ',', ''), '0'), ',') }} %@endif
                         </div>
                     </div>
                     <div class="pm-end" style="font-weight: 700;">{{ $this->money($rows->sum('total_ttc_cents')) }}</div>
                     <div class="pm-row">
-                        @if (empty($item['used_tyre_id']))
+                        @if (! empty($item['oil_drum_id']))
+                            <input class="pm-input sm" style="width: 6em;" inputmode="decimal" wire:model.blur="cart.{{ $i }}.litres">
+                            <span style="font-weight: 700;">{{ __('oil_drums.fields.litres') }}</span>
+                            @foreach (['1', '4', '5'] as $l)
+                                <button type="button" class="pm-btn {{ ($item['litres'] ?? '') === $l ? 'on' : '' }}" style="min-height: 44px; padding: 4px 12px;" wire:click="$set('cart.{{ $i }}.litres', '{{ $l }}')">{{ $l }} L</button>
+                            @endforeach
+                        @elseif (empty($item['used_tyre_id']))
                             <span class="pm-qty">
                                 <button type="button" wire:click="setQuantity({{ $i }}, {{ $item['quantity'] - 1 }})">−</button>
                                 <span>{{ $item['quantity'] }}</span>

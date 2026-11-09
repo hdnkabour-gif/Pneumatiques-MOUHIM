@@ -22,6 +22,7 @@ use App\Filament\Resources\Sales\SaleResource;
 use App\Filament\Support\VehicleFields;
 use App\Models\Customer;
 use App\Models\CustomerVehicle;
+use App\Models\OilDrum;
 use App\Models\OilFitment;
 use App\Models\Product;
 use App\Models\Sale;
@@ -236,7 +237,7 @@ class SaleScreen extends Page
     public function addProduct(int $id): void
     {
         foreach ($this->cart as $i => $item) {
-            if (($item['product_id'] ?? null) === $id) {
+            if (($item['product_id'] ?? null) === $id && empty($item['oil_drum_id'])) {
                 $this->cart[$i]['quantity']++;
                 $this->afterCartChange();
 
@@ -245,10 +246,32 @@ class SaleScreen extends Page
         }
 
         $product = Product::query()->with('tyreSpec')->findOrFail($id);
+        if ($product->isBulk()) {
+            return; // poured from a chosen drum: addDrum()
+        }
         // Tyres usually go by 2 or 4; one is the safe default, buttons change it.
         $this->cart[] = ['product_id' => $product->id, 'used_tyre_id' => null, 'quantity' => 1, 'discount' => null];
         $this->search = '';
         $this->afterCartChange();
+    }
+
+    /** Oil by the litre (D-06 revised): one line per drum, litres typed by the seller. */
+    public function addDrum(int $drumId): void
+    {
+        $drum = OilDrum::query()->usable()->where('site_id', $this->siteId)->find($drumId);
+        if (! $drum || collect($this->cart)->contains(fn ($i) => (int) ($i['oil_drum_id'] ?? 0) === $drum->id)) {
+            return;
+        }
+        $this->cart[] = ['product_id' => $drum->product_id, 'used_tyre_id' => null, 'oil_drum_id' => $drum->id, 'litres' => '1', 'quantity' => 1, 'discount' => null];
+        $this->search = '';
+        $this->afterCartChange();
+    }
+
+    /** @return Collection<int, OilDrum> */
+    public function drumsFor(Product $product): Collection
+    {
+        return OilDrum::query()->usable()->where('product_id', $product->id)->where('site_id', $this->siteId)
+            ->orderBy('remaining_ml')->get();
     }
 
     public function addUsedTyre(int $id): void
@@ -781,6 +804,14 @@ class SaleScreen extends Page
 
                 continue;
             }
+            if ($line->kind === 'bulk_oil') {
+                $cart[] = ['product_id' => $line->product_id, 'used_tyre_id' => null, 'oil_drum_id' => $line->oil_drum_id, 'quantity' => 1,
+                    'litres' => rtrim(rtrim(number_format($line->quantity_ml / 1000, 3, '.', ''), '0'), '.'),
+                    'discount' => $line->discount_bp ? Decimal::basisPointsToPercent($line->discount_bp) : null,
+                    'price' => $fromQuote ? $line->unit_price_ttc_cents : null];
+
+                continue;
+            }
             $cart[] = [
                 'product_id' => $line->product_id,
                 'used_tyre_id' => $line->used_tyre_id,
@@ -800,7 +831,14 @@ class SaleScreen extends Page
             'trade_in' => $item['trade_in'],
             'value_cents' => $this->cents($item['value'] ?? null),
             'meta' => ['size' => $item['size'] ?? null, 'tread_mm' => $item['tread'] ?? null, 'dot' => $item['dot'] ?? null],
-        ] : array_filter([
+        ] : (! empty($item['oil_drum_id']) ? array_filter([
+            'product_id' => $item['product_id'],
+            'oil_drum_id' => $item['oil_drum_id'],
+            'litres' => $item['litres'] ?? null,
+            'unit_price_ttc_cents' => isset($item['price']) ? min((int) $item['price'], $this->currentListPrice((int) $item['product_id'])) : null,
+            'discount_bp' => preg_match('/^\d{1,3}([.,]\d{1,2})?$/', trim((string) ($item['discount'] ?? '')))
+                ? min(10000, Decimal::percentToBasisPoints(str_replace(',', '.', trim((string) $item['discount'])))) : 0,
+        ], fn ($v) => $v !== null) : array_filter([
             'unit_price_ttc_cents' => isset($item['price']) && empty($item['used_tyre_id'])
                 ? min((int) $item['price'], $this->currentListPrice((int) $item['product_id'])) : null,
             'product_id' => $item['product_id'] ?? null,
@@ -808,7 +846,7 @@ class SaleScreen extends Page
             'quantity' => (int) ($item['quantity'] ?? 1),
             'discount_bp' => preg_match('/^\d{1,3}([.,]\d{1,2})?$/', trim((string) ($item['discount'] ?? '')))
                 ? min(10000, Decimal::percentToBasisPoints(str_replace(',', '.', trim((string) $item['discount'])))) : 0,
-        ], fn ($v) => $v !== null), $this->cart);
+        ], fn ($v) => $v !== null)), $this->cart);
     }
 
     private function paymentInput(): array

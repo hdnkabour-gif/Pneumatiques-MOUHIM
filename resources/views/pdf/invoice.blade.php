@@ -87,8 +87,8 @@
         @foreach ($sale->lines as $line)
             <tr>
                 <td>{{ $line->description }}@if ($kind === 'credit_note' && $line->restock === false) <i>({{ __('sales.pdf.damaged') }})</i>@endif</td>
-                <td class="num">{{ $line->quantity }}</td>
-                <td class="num">{{ Money::format($line->list_price_ttc_cents, false) }}</td>
+                <td class="num">{{ $line->quantity_ml ? \App\Models\OilDrum::litres($line->quantity_ml) : $line->quantity }}</td>
+                <td class="num">{{ Money::format($line->list_price_ttc_cents, false) }}{{ $line->quantity_ml ? ' /L' : '' }}</td>
                 <td class="num">{{ $line->discount_bp ? number_format($line->discount_bp / 100, 1, ',', ' ').' %' : '' }}</td>
                 <td class="num">{{ rtrim(rtrim(number_format($line->vat_rate_bp / 100, 2, ',', ''), '0'), ',') }} %</td>
                 <td class="num">{{ Money::format($line->total_ht_cents, false) }}</td>

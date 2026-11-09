@@ -57,6 +57,7 @@ return [
         'words' => 'Arrêtée la présente facture à la somme de : :amount TTC.',
     ],
     'screen' => [
+        'no_drum' => 'لا يوجد برميل هنا',
         'kind_invoice' => 'فاتورة',
         'kind_quote' => 'عرض سعر',
         'kind_delivery_note' => 'وصل (الفاتورة لاحقا)',

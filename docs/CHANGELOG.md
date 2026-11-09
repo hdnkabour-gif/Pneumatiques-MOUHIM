@@ -33,6 +33,14 @@
 
 ## [Non publié]
 
+### Ajouté – Huile au litre depuis des fûts (D-06 révisée, 9 novembre 2026)
+- Fûts d'huile : réception (capacité, quantité réellement reçue, prix, frais, fournisseur, facture), coût du litre,
+  reste et consommé, valeur restante (propriétaire), alerte « bientôt vide », correction de jauge motivée,
+  transfert vers un autre site, blocage ; registre de mouvements non modifiable.
+- Écran de vente : pour une huile au litre, les fûts du site s'affichent avec leur reste ; litres au clavier
+  (2,5 / 4,25) ou boutons 1 L / 4 L / 5 L ; prix au litre, remise, coût figé sur la ligne ; refus au-delà du reste.
+- Bidons fermés inchangés et séparés ; retour client remis dans le fût ; `stock:verify` contrôle les fûts.
+
 ### Corrections après audit externe (9 novembre 2026)
 - Marge et contrôle « vente sous le coût » : le coût des consommables des prestations (masses, valves…)
   et le coût des pneus d'occasion sont maintenant comptés ; une reprise n'est plus comptée comme une perte de marge.

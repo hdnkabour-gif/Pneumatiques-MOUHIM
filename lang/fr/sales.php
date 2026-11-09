@@ -57,6 +57,7 @@ return [
         'words' => 'Arrêtée la présente facture à la somme de : :amount TTC.',
     ],
     'screen' => [
+        'no_drum' => 'Aucun fût ici',
         'kind_invoice' => 'Facture',
         'kind_quote' => 'Devis',
         'kind_delivery_note' => 'Bon (facture plus tard)',

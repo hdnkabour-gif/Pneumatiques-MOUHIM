@@ -13,6 +13,9 @@ return [
     ],
     'received_help' => 'Si la quantité réellement reçue diffère de la capacité, indiquez-la : le coût du litre est calculé sur la quantité reçue.',
     'actions' => ['receive' => 'Réceptionner un fût', 'adjust' => 'Corriger (jauge)', 'transfer' => 'Transférer', 'block' => 'Bloquer', 'unblock' => 'Débloquer'],
+    'product_help' => 'Produits dont l\'unité est « Litre (vrac, au fût) ». Prix de vente = prix du litre.',
+    'adjust_litres' => 'Litres à ajouter (+) ou retirer (−)',
+    'adjust_help' => 'Exemple : -1,5 si la jauge montre 1,5 L de moins.',
     'low' => 'Bientôt vide',
     'errors' => [
         'not_bulk' => '« :product » n\'est pas vendu au litre (unité « Litre » à choisir sur le produit).',

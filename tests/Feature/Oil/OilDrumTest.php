@@ -8,16 +8,23 @@ use App\Enums\RefundMethod;
 use App\Enums\RoleName;
 use App\Enums\Unit;
 use App\Exceptions\BusinessRuleException;
+use App\Filament\Pages\SaleScreen;
+use App\Filament\Resources\OilDrums\OilDrumResource;
+use App\Filament\Resources\OilDrums\Pages\ListOilDrums;
 use App\Models\Customer;
+use App\Models\OilDrum;
 use App\Models\OilDrumMovement;
 use App\Models\Product;
+use App\Models\Sale;
 use App\Models\StockLevel;
 use App\Models\User;
 use App\Services\Oil\OilDrumService;
 use App\Services\Stock\StockService;
 use App\Services\Stock\StockVerifier;
+use Filament\Actions\Testing\TestAction;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Livewire\Livewire;
 
 beforeEach(function () {
     $this->owner = owner();
@@ -155,4 +162,38 @@ it('keeps stock:verify clean after sale, return and correction; the ledger is ap
 
     expect(fn () => DB::transaction(fn () => DB::table('oil_drum_movements')->where('oil_drum_id', $drum->id)->update(['quantity_ml' => 1])))
         ->toThrow(QueryException::class);
+});
+
+it('sells by the litre from the sale screen and shows the drums page', function () {
+    $drum = ($this->receive)();
+    $this->actingAs($this->seller);
+    $this->seller->update(['default_site_id' => site('M01')->id]);
+
+    Livewire::test(SaleScreen::class)
+        ->set('search', 'vrac')
+        ->assertSee($drum->code)
+        ->call('addDrum', $drum->id)
+        ->set('cart.0.litres', '4,5')
+        ->assertSet('payments.0.amount', '270.00')
+        ->call('confirm')->assertHasNoErrors();
+
+    expect($drum->fresh()->remaining_ml)->toBe(203500);
+    $sale = Sale::query()->firstOrFail();
+    $this->get(route('sales.pdf', $sale))->assertOk();
+
+    $this->get(OilDrumResource::getUrl())->assertOk()->assertSee($drum->code)->assertDontSee('42,50');
+    $this->get(OilDrumResource::getUrl('view', ['record' => $drum]))->assertOk();
+});
+
+it('receives a drum from the drums page (storekeeper)', function () {
+    $this->actingAs(userWithRole(RoleName::Storekeeper, 'DEP'));
+
+    Livewire::test(ListOilDrums::class)
+        ->callAction(TestAction::make('receive')->table(), [
+            'product_id' => $this->bulk->id, 'site_id' => site('DEP')->id, 'capacity' => '208', 'received' => '205,5',
+            'purchase_cost_cents' => '8 220', 'extra_cost_cents' => '0',
+        ])->assertHasNoActionErrors();
+
+    $drum = OilDrum::query()->firstOrFail();
+    expect($drum->received_ml)->toBe(205500)->and($drum->cost_per_litre_cents)->toBe(4000);
 });
