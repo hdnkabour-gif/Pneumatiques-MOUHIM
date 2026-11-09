@@ -3,6 +3,9 @@
     <span class="pm-grow">
         <b>{{ $p->displayName() }}</b>
         @if ($p->brand)<span class="pm-muted">{{ $p->brand->name }}</span>@endif
+        @if ($p->tyreSpec && ($idx = \App\Support\TyreIndex::describe($p->tyreSpec->load_index, $p->tyreSpec->speed_index)))
+            <span class="pm-muted">({{ $idx }})</span>
+        @endif
         <br>
         @if ($stocked)
             <span class="pm-badge {{ $here > 0 ? 'ok' : 'no' }}">{{ __('sales.screen.here') }} {{ $here }}</span>
