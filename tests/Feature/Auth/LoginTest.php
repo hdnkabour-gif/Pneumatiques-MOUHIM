@@ -83,3 +83,9 @@ it('records logins and failed logins in the activity log', function () {
 it('has no default account after a fresh install', function () {
     expect(User::query()->count())->toBe(0);
 });
+
+it('offers to install the app from the login page, in French and Arabic', function () {
+    $this->get('/admin/login')->assertOk()->assertSee('pm-install-btn', false)->assertSee(__('install.button'));
+    $this->get('/locale/ar');
+    $this->get('/admin/login')->assertOk()->assertSee('تثبيت التطبيق');
+});

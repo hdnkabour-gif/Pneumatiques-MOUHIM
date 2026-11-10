@@ -82,7 +82,7 @@ class AdminPanelProvider extends PanelProvider
                     ->visible(fn () => auth()->user()?->locale !== $locale),
                 Locale::cases(),
             ))
-            ->renderHook(PanelsRenderHook::AUTH_LOGIN_FORM_AFTER, fn () => view('auth.locale-switcher'))
+            ->renderHook(PanelsRenderHook::AUTH_LOGIN_FORM_AFTER, fn () => view('auth.locale-switcher').view('auth.install-button'))
             // Installable on the phone (PWA, §16.1).
             ->renderHook(PanelsRenderHook::HEAD_END, fn () => new HtmlString(
                 '<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#F5B800">'
