@@ -6,6 +6,7 @@ use App\Enums\Locale;
 use App\Filament\Pages\Auth\EditProfile;
 use App\Http\Middleware\EnsureOwnerTwoFactor;
 use App\Http\Middleware\SetLocale;
+use App\Services\SettingsService;
 use Filament\Actions\Action;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Http\Middleware\Authenticate;
@@ -41,9 +42,14 @@ class AdminPanelProvider extends PanelProvider
             ->profile(EditProfile::class, isSimple: false)
             // Google Authenticator / Microsoft Authenticator…, with recovery codes (§19, D-47).
             ->multiFactorAuthentication([
-                AppAuthentication::make()->recoverable()->brandName('PNEU MOUHIM'),
+                AppAuthentication::make()->recoverable()->brandName('PNEUMATIQUE MOUHIM'),
             ])
-            ->brandName(fn () => __('app.name'))
+            // The app carries the company's name and logo (owner's request, 10 Nov 2026).
+            ->brandName(fn () => rescue(fn () => app(SettingsService::class)->get('company.name'), null, false) ?: __('app.name'))
+            ->brandLogo(asset('brand/logo.png'))
+            ->darkModeBrandLogo(asset('brand/logo-dark.png'))
+            ->brandLogoHeight('2.6rem')
+            ->favicon(asset('brand/favicon.png'))
             ->colors([
                 'primary' => Color::Amber,
             ])
@@ -79,8 +85,8 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(PanelsRenderHook::AUTH_LOGIN_FORM_AFTER, fn () => view('auth.locale-switcher'))
             // Installable on the phone (PWA, §16.1).
             ->renderHook(PanelsRenderHook::HEAD_END, fn () => new HtmlString(
-                '<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#e07000">'
-                .'<link rel="apple-touch-icon" href="/pwa/icon-192.png">'
+                '<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#F5B800">'
+                .'<link rel="apple-touch-icon" href="/pwa/apple-touch-icon.png"><meta name="apple-mobile-web-app-title" content="PNEUMATIQUE MOUHIM">'
                 .'<script>if ("serviceWorker" in navigator) { navigator.serviceWorker.register("/sw.js"); }</script>'
                 .view('push-script')->render()))
             ->middleware([

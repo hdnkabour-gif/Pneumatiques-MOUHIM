@@ -25,7 +25,8 @@ class SaleDocuments
             $sale->loadMissing(['lines', 'customer', 'vehicle.vehicleModel.make', 'site', 'seller', 'payments', 'originalSale']);
             $company = $this->settings->all();
             $logo = filled($company['company.logo'] ?? null) && Storage::disk('public')->exists($company['company.logo'])
-                ? Storage::disk('public')->path($company['company.logo']) : null;
+                ? Storage::disk('public')->path($company['company.logo'])
+                : (is_file(public_path('brand/logo.png')) ? public_path('brand/logo.png') : null);
 
             $html = view('pdf.invoice', [
                 'sale' => $sale,
@@ -49,7 +50,7 @@ class SaleDocuments
             ]);
             $mpdf->SetTitle($sale->number ?? 'Brouillon');
             // Company paper (letterhead) on every page: name / logo, yellow corners, brands and legal lines.
-            $accent = (string) ($company['documents.accent_color'] ?? '#D4C21F');
+            $accent = (string) ($company['documents.accent_color'] ?? '#F5B800');
             $mpdf->SetHTMLHeader(view('pdf.letterhead-header', ['company' => $company, 'logo' => $logo, 'corner' => $this->corner($accent, true)])->render());
             $mpdf->SetHTMLFooter(view('pdf.letterhead-footer', ['company' => $company, 'number' => $sale->number])->render());
             $mpdf->SetWatermarkImage($this->corner($accent, false), 1, [38, 38], [0, 259]);

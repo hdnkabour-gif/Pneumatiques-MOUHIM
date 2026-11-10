@@ -12,7 +12,7 @@
     $customer = $sale->customer;
     $docType = $sale->documentType()->value;
     $kind = $sale->kind->value;
-    $accent = $c('documents.accent_color') ?: '#D4C21F';
+    $accent = $c('documents.accent_color') ?: '#F5B800';
 @endphp
 <html>
 <head>

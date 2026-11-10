@@ -7,7 +7,7 @@ self.addEventListener('fetch', () => {});
 self.addEventListener('push', (event) => {
     let data = {};
     try { data = event.data ? event.data.json() : {}; } catch (e) { data = { title: event.data ? event.data.text() : '' }; }
-    event.waitUntil(self.registration.showNotification(data.title || 'PNEU MOUHIM', {
+    event.waitUntil(self.registration.showNotification(data.title || 'PNEUMATIQUE MOUHIM', {
         body: data.body || '',
         icon: '/pwa/icon-192.png',
         badge: '/pwa/icon-192.png',

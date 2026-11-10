@@ -15,7 +15,7 @@ return [
 
     // Default values of every setting key.
     'settings' => [
-        'company.name' => 'PNEU MOUHIM',
+        'company.name' => 'PNEUMATIQUE MOUHIM',
         'company.address' => null,
         'company.city' => null,
         'company.phone' => null,
@@ -62,7 +62,7 @@ return [
         'sales.trade_in_cap_cents.battery' => 15000,
         'documents.invoice_footer' => null,
         // Letterhead (company paper): accent colour and the brands printed at the bottom.
-        'documents.accent_color' => '#D4C21F',
+        'documents.accent_color' => '#F5B800',
         'documents.footer_brands' => 'BRIDGESTONE · CONTINENTAL · MICHELIN · PETLAS · SAVA · HANKOOK · DUNLOP · GOODYEAR',
         'sales.quote_validity_days' => 15,
         'cash.discrepancy_threshold_cents' => 5000, // above this gap the owner is alerted

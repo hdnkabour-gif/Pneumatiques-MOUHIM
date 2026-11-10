@@ -44,3 +44,12 @@ it('is installable on a phone (PWA manifest and service worker)', function () {
     expect(json_decode(file_get_contents(public_path('manifest.webmanifest')), true)['display'])->toBe('standalone')
         ->and(file_exists(public_path('pwa/icon-512.png')))->toBeTrue();
 });
+
+it('carries the company name, logo, favicon and phone icons', function () {
+    $this->get('/admin/login')->assertOk()
+        ->assertSee('brand/logo.png', false)->assertSee('brand/favicon.png', false)->assertSee('apple-touch-icon.png', false);
+    $manifest = json_decode(file_get_contents(public_path('manifest.webmanifest')), true);
+    expect($manifest['name'])->toBe('PNEUMATIQUE MOUHIM')
+        ->and(collect($manifest['icons'])->pluck('purpose')->all())->toContain('maskable')
+        ->and(file_exists(public_path('pwa/maskable-512.png')))->toBeTrue();
+});

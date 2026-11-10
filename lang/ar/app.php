@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'name' => 'PNEU MOUHIM Manager',
+    'name' => 'PNEUMATIQUE MOUHIM',
     'language' => 'اللغة',
     'print' => 'طباعة',
     'more_details' => 'تفاصيل إضافية',

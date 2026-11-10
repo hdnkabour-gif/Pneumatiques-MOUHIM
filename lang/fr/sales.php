@@ -49,7 +49,7 @@ return [
         'valid_until' => 'Devis valable jusqu\'au :date',
         'original' => 'Avoir sur la facture n° :number',
         'signature_customer' => 'Reçu par (nom, signature)',
-        'signature_company' => 'Pour PNEU MOUHIM',
+        'signature_company' => 'Pour PNEUMATIQUE MOUHIM',
         'invoice' => 'FACTURE', 'site' => 'Point de vente', 'date' => 'Date', 'customer' => 'Client',
         'qty' => 'Qté', 'unit_ttc' => 'P.U. TTC', 'vat' => 'TVA', 'total_ht' => 'Total HT', 'total_ttc' => 'Total TTC',
         'total_vat' => 'Total TVA', 'vat_rate' => 'Taux TVA', 'base_ht' => 'Base HT', 'vat_amount' => 'Montant TVA',
