@@ -46,10 +46,10 @@ class AdminPanelProvider extends PanelProvider
             ])
             // The app carries the company's name and logo (owner's request, 10 Nov 2026).
             ->brandName(fn () => rescue(fn () => app(SettingsService::class)->get('company.name'), null, false) ?: __('app.name'))
-            ->brandLogo(asset('brand/logo.png'))
-            ->darkModeBrandLogo(asset('brand/logo-dark.png'))
+            ->brandLogo('/brand/logo.png')
+            ->darkModeBrandLogo('/brand/logo-dark.png')
             ->brandLogoHeight('2.6rem')
-            ->favicon(asset('brand/favicon.png'))
+            ->favicon('/brand/favicon.png')
             ->colors([
                 'primary' => Color::Amber,
             ])

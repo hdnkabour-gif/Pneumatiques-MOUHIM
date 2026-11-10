@@ -53,3 +53,8 @@ it('carries the company name, logo, favicon and phone icons', function () {
         ->and(collect($manifest['icons'])->pluck('purpose')->all())->toContain('maskable')
         ->and(file_exists(public_path('pwa/maskable-512.png')))->toBeTrue();
 });
+
+it('links the logo without a fixed scheme, so it shows over https behind the Railway proxy', function () {
+    $html = $this->get('/admin/login', ['X-Forwarded-Proto' => 'https'])->getContent();
+    expect($html)->toContain('src="/brand/logo.png"')->not->toContain('http://localhost/brand/logo.png');
+});
