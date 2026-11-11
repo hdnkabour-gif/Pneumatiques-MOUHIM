@@ -49,8 +49,9 @@ class SequenceService
         $settings = app(SettingsService::class);
 
         return strtr((string) $settings->get('documents.number_pattern'), [
-            '{PREFIX}' => (string) ($settings->get($type->prefixSetting()) ?: $type->defaultPrefix()),
+            '{PREFIX}' => (string) ($settings->get($type->prefixSetting()) ?? $type->defaultPrefix()),
             '{YEAR}' => (string) $year,
+            '{YY}' => substr((string) $year, -2),
             '{NUMBER}' => str_pad((string) $number, (int) $settings->get('documents.number_padding'), '0', STR_PAD_LEFT),
         ]);
     }

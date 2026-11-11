@@ -36,7 +36,8 @@ return [
         'used_tyre_vat_enabled' => 'تطبيق الضريبة على العجلات المستعملة',
         'trade_in_vat_enabled' => 'تطبيق الضريبة على الاسترجاع',
         'document_number_pattern' => 'صيغة الترقيم',
-        'document_number_pattern_help' => 'المتغيرات: {PREFIX}، {YEAR}، {NUMBER}',
+        'document_number_pattern_help' => 'المتغيرات: {PREFIX} (البادئة)، {NUMBER} (الرقم)، {YEAR} (2026) أو {YY} (26). مثال: {PREFIX}{NUMBER}/{YY} ← 219/26',
+        'document_number_pattern_invalid' => 'يجب أن يحتوي الشكل على {PREFIX} و {NUMBER} و {YEAR} أو {YY}.',
         'document_number_padding' => 'عدد الأرقام',
     ],
     'numbering' => [
@@ -46,6 +47,7 @@ return [
         'next_number' => 'الرقم التالي',
         'preview' => 'مثال',
         'year' => 'سنة :year',
+        'duplicate_prefix' => 'لا يمكن أن تكون لوثيقتين نفس البادئة (واحدة فقط يمكن أن تكون فارغة).',
     ],
     'errors' => [
         'number_backwards' => 'غير ممكن: الرقم :last سبق استعماله في «:type». يجب أن يكون الرقم التالي أكبر.',

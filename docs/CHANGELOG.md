@@ -33,6 +33,9 @@
 
 ## [Non publié]
 
+### Numéro de facture « 219/26 » (D-58)
+- Variable `{YY}` (année sur deux chiffres), préfixe de facture vide autorisé, format vérifié, préfixes en double refusés ; appliqué à l'installation en service.
+
 ### Simplification du menu (D-57)
 - Les pages secondaires sont regroupées derrière un bouton « Plus » sur leur page principale ; le menu du propriétaire passe d'environ 24 à 14 entrées, celui du vendeur à 10, en trois groupes (Ventes, Stock, Paramètres).
 

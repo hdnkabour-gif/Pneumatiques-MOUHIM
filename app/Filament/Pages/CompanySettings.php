@@ -146,9 +146,11 @@ class CompanySettings extends Page
                         TextInput::make('stamp_duty_threshold')->label(__('settings.fields.stamp_duty_threshold'))->rules($decimal)->suffix('MAD')
                             ->visible(fn (Get $get) => (bool) $get('stamp_duty_enabled')),
                         TextInput::make('document_number_pattern')->label(__('settings.fields.document_number_pattern'))
-                            ->helperText(__('settings.fields.document_number_pattern_help'))->required()->maxLength(50),
+                            ->helperText(__('settings.fields.document_number_pattern_help'))->required()->maxLength(50)
+                            ->regex('/^(?=.*\{NUMBER\})(?=.*\{PREFIX\})(?=.*\{(YEAR|YY)\}).+$/')
+                            ->validationMessages(['regex' => __('settings.fields.document_number_pattern_invalid')]),
                         TextInput::make('document_number_padding')->label(__('settings.fields.document_number_padding'))
-                            ->integer()->minValue(3)->maxValue(10)->required(),
+                            ->integer()->minValue(1)->maxValue(10)->required(),
                         Textarea::make('legal_mentions')->label(__('settings.fields.legal_mentions'))->rows(3)->columnSpanFull(),
                     ]),
             ]);

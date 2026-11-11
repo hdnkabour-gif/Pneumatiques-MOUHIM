@@ -74,7 +74,7 @@ class DocumentNumbering extends Page
     {
         $data = [];
         foreach (self::types() as $type) {
-            $data[$type->value] = ['prefix' => $settings->get($type->prefixSetting()) ?: $type->defaultPrefix(), 'next' => null];
+            $data[$type->value] = ['prefix' => $settings->get($type->prefixSetting()) ?? $type->defaultPrefix(), 'next' => null];
         }
         $this->form->fill($data);
     }
@@ -87,7 +87,7 @@ class DocumentNumbering extends Page
         $rows = array_map(fn (DocumentType $type) => Grid::make(['default' => 2, 'md' => 4])->schema([
             Text::make($type->label())->weight('bold')->columnSpan(['default' => 2, 'md' => 1]),
             TextInput::make($type->value.'.prefix')->label(__('settings.numbering.prefix'))
-                ->required()->maxLength(10)->regex('/^[A-Za-z0-9]+$/')->live(onBlur: true),
+                ->maxLength(10)->regex('/^[A-Za-z0-9]*$/')->live(onBlur: true),
             TextInput::make($type->value.'.next')->label(__('settings.numbering.next_number'))
                 ->integer()->minValue($sequences->lastNumber($type, $year) + 1)
                 ->placeholder((string) ($sequences->lastNumber($type, $year) + 1))->live(onBlur: true),
@@ -136,6 +136,9 @@ class DocumentNumbering extends Page
                             ->log('numbering_changed');
                     }
                 }
+                if (count(array_unique($prefixes)) !== count($prefixes)) {
+                    throw new BusinessRuleException(__('settings.numbering.duplicate_prefix'));
+                }
                 $settings->setMany($prefixes, auth()->user());
             });
         } catch (BusinessRuleException $e) {
@@ -154,8 +157,9 @@ class DocumentNumbering extends Page
         $number = filled($next) ? (int) $next : app(SequenceService::class)->lastNumber($type, $year) + 1;
 
         return strtr((string) $settings->get('documents.number_pattern'), [
-            '{PREFIX}' => strtoupper((string) ($prefix ?: $type->defaultPrefix())),
+            '{PREFIX}' => strtoupper((string) $prefix),
             '{YEAR}' => (string) $year,
+            '{YY}' => substr((string) $year, -2),
             '{NUMBER}' => str_pad((string) $number, (int) $settings->get('documents.number_padding'), '0', STR_PAD_LEFT),
         ]);
     }

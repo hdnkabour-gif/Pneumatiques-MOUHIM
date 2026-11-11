@@ -36,7 +36,8 @@ return [
         'used_tyre_vat_enabled' => 'TVA appliquée aux pneus d\'occasion',
         'trade_in_vat_enabled' => 'TVA appliquée aux reprises',
         'document_number_pattern' => 'Format de numérotation',
-        'document_number_pattern_help' => 'Variables : {PREFIX}, {YEAR}, {NUMBER}',
+        'document_number_pattern_help' => 'Variables : {PREFIX} (préfixe), {NUMBER} (numéro), {YEAR} (2026) ou {YY} (26). Exemple : {PREFIX}{NUMBER}/{YY} → 219/26',
+        'document_number_pattern_invalid' => 'Le format doit contenir {PREFIX}, {NUMBER} et {YEAR} ou {YY}.',
         'document_number_padding' => 'Nombre de chiffres',
     ],
     'numbering' => [
@@ -46,6 +47,7 @@ return [
         'next_number' => 'Prochain numéro',
         'preview' => 'Exemple',
         'year' => 'Année :year',
+        'duplicate_prefix' => 'Deux documents ne peuvent pas avoir le même préfixe (un seul peut être vide).',
     ],
     'errors' => [
         'number_backwards' => 'Impossible : le numéro :last a déjà été utilisé pour « :type ». Le prochain numéro doit être supérieur.',

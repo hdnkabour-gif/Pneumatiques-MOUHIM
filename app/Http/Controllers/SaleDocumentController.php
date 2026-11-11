@@ -30,7 +30,7 @@ class SaleDocumentController
     {
         return response($documents->pdf($sale), 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="'.$sale->number.'.pdf"',
+            'Content-Disposition' => 'inline; filename="'.str_replace(['/', '\\'], '-', (string) $sale->number).'.pdf"',
             'Cache-Control' => 'private, no-store',
         ]);
     }
