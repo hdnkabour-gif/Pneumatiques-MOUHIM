@@ -18,7 +18,7 @@ it('sends an owner without two-factor to his profile to set it up', function () 
 it('does not require nor offer two-factor to other roles', function (RoleName $role) {
     $user = userWithRole($role, 'M01');
 
-    $this->actingAs($user)->get('/admin')->assertOk();
+    $this->actingAs($user)->followingRedirects()->get('/admin')->assertOk();
     $this->actingAs($user)->get(Filament::getProfileUrl())->assertOk()->assertDontSee("Application d'authentification");
 })->with([RoleName::Seller, RoleName::SiteManager, RoleName::Technician]);
 

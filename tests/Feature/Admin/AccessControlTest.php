@@ -1,7 +1,10 @@
 <?php
 
 use App\Enums\RoleName;
+use App\Filament\Pages\SaleScreen;
+use App\Filament\Pages\Today;
 use App\Filament\Resources\Categories\CategoryResource;
+use App\Filament\Resources\StockLevels\StockLevelResource;
 use App\Filament\Resources\StockMovements\StockMovementResource;
 
 /*
@@ -57,7 +60,7 @@ it('lets the site manager see users but not manage them', function () {
 
 it('lets every active role open the dashboard', function (RoleName $role) {
     $user = $role === RoleName::Owner ? owner() : userWithRole($role, 'M01');
-    $this->actingAs($user)->get('/admin')->assertOk();
+    $this->actingAs($user)->followingRedirects()->get('/admin')->assertOk();
 })->with(RoleName::cases());
 
 it('redirects guests to the login page', function (string $url) {
@@ -74,7 +77,7 @@ it('reports the health check', function () {
 
 it('keeps the seller menu short: setup pages only for those who manage them (§5)', function () {
     $this->actingAs(userWithRole(RoleName::Seller, 'M01'));
-    $html = $this->get('/admin')->assertOk()->getContent();
+    $html = $this->followingRedirects()->get('/admin')->assertOk()->getContent();
 
     expect($html)->toContain('/admin/vente')
         ->not->toContain(CategoryResource::getUrl())
@@ -83,5 +86,14 @@ it('keeps the seller menu short: setup pages only for those who manage them (§5
 
 it('shows stock movements in the storekeeper menu', function () {
     $this->actingAs(userWithRole(RoleName::Storekeeper, 'DEP'));
-    expect($this->get('/admin')->getContent())->toContain(StockMovementResource::getUrl());
+    expect($this->followingRedirects()->get('/admin')->getContent())->toContain(StockMovementResource::getUrl());
+});
+
+it('lands each role on the page it works on (no empty dashboard)', function () {
+    $this->actingAs(owner())->get('/admin')->assertRedirect(Today::getUrl());
+    $this->actingAs(userWithRole(RoleName::SiteManager, 'M01'))->get('/admin')->assertRedirect(Today::getUrl());
+    $this->actingAs(userWithRole(RoleName::Seller, 'M01'))->get('/admin')->assertRedirect(SaleScreen::getUrl());
+    $this->actingAs(userWithRole(RoleName::Storekeeper, 'DEP'))->get('/admin')
+        ->assertRedirect(StockLevelResource::getUrl());
+    $this->actingAs(userWithRole(RoleName::Technician, 'M01'))->followingRedirects()->get('/admin')->assertOk();
 });
