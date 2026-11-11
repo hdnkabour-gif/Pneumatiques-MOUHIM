@@ -107,7 +107,7 @@ Elles disent ce que l'huile respecte, pas quel véhicule la demande.
 Les sites marocains de Peugeot, Citroën, Opel et Fiat refusent la lecture automatique, et ceux de
 Volkswagen, Škoda, SEAT, Audi et Toyota ne publient pas de fiche technique. Pour ces modèles vendus au Maroc,
 les dimensions de pneus ont été lues sur les fiches techniques françaises de L'argus (millésime indiqué dans
-chaque source) : 153 montes pour 48 modèles.
+chaque source) : 181 montes pour 58 modèles.
 
 **Limites à connaître :**
 - les finitions, les jantes et parfois la voiture elle-même diffèrent d'un marché à l'autre (par exemple la
@@ -125,17 +125,24 @@ chaque source) : 153 montes pour 48 modèles.
 | Citroën | C3 | 205/50 R17, 205/55 R16 |
 | Citroën | C3 Aircross | 205/50 R17, 205/55 R16, 215/60 R17, 215/65 R16 |
 | Citroën | C4 | 195/60 R18, 215/65 R16 |
+| Citroën | C4 X | 195/60 R18, 215/65 R16 |
 | Citroën | C5 Aircross | 225/55 R19, 225/60 R18, 235/55 R18, 235/55 R19 |
 | Dacia | Bigster | 215/60 R18, 215/65 R17, 225/55 R18, 225/60 R17 |
 | Fiat | 500 | 185/55 R15, 185/65 R15, 195/45 R16, 195/55 R16, 205/45 R17 |
+| Fiat | 500X | 215/55 R17, 215/60 R16, 225/40 R19, 225/45 R18 |
 | Fiat | Panda | 175/65 R14, 175/65 R15, 185/55 R15 |
 | Fiat | Tipo | 195/65 R15, 205/55 R16 |
 | Ford | Kuga | 225/55 R19, 225/60 R18, 225/65 R17 |
 | Ford | Puma | 215/50 R18, 215/55 R17, 225/40 R19 |
+| Hyundai | Tucson | 215/65 R17, 235/50 R19, 235/55 R18 |
+| Hyundai | i10 | 175/65 R14, 195/45 R16 |
+| Hyundai | i20 | 185/65 R15, 195/55 R16, 215/45 R17 |
 | Kia | Sportage | 215/65 R17, 235/50 R19, 235/55 R18 |
+| Nissan | Juke | 215/60 R17, 225/45 R19 |
 | Nissan | Qashqai | 215/65 R17, 235/45 R20, 235/50 R19, 235/55 R18 |
 | Opel | Astra | 205/55 R16, 215/45 R18, 225/40 R18, 225/45 R17 |
 | Opel | Corsa | 195/55 R16, 205/45 R17 |
+| Opel | Crossland | 195/60 R16, 205/60 R16, 215/50 R17 |
 | Opel | Grandland | 225/55 R18, 225/55 R19, 235/50 R20, 235/55 R19 |
 | Opel | Mokka | 195/60 R18, 215/60 R17, 215/65 R16, 225/40 R20 |
 | Peugeot | 2008 | 215/55 R18, 215/60 R17, 215/65 R16 |
@@ -143,6 +150,7 @@ chaque source) : 153 montes pour 48 modèles.
 | Peugeot | 3008 | 225/55 R19, 235/50 R20, 235/55 R19 |
 | Peugeot | 308 | 205/55 R16, 215/45 R18, 225/40 R18, 225/45 R17 |
 | Peugeot | 5008 | 215/65 R17, 225/55 R18, 225/55 R19, 225/60 R18, 235/50 R20, 235/55 R19 |
+| Peugeot | Partner | 195/65 R15, 205/60 R16, 215/65 R16 |
 | Peugeot | Rifter | 215/60 R17, 215/65 R16 |
 | Renault | Arkana | 215/55 R18, 215/60 R17, 225/45 R19 |
 | Renault | Captur | 215/55 R18, 215/60 R17, 225/45 R19 |
@@ -158,6 +166,7 @@ chaque source) : 153 montes pour 48 modèles.
 | Toyota | Yaris Cross | 205/65 R16, 215/50 R18, 215/55 R17 |
 | Volkswagen | Golf | 205/55 R16, 225/40 R18, 225/45 R17, 235/35 R19 |
 | Volkswagen | Polo | 185/65 R15, 195/55 R16, 215/45 R17 |
+| Volkswagen | T-Cross | 205/55 R17, 205/60 R16, 215/45 R18 |
 | Volkswagen | T-Roc | 215/50 R18, 215/55 R17, 215/60 R16, 225/50 R18, 225/55 R17, 225/60 R16 |
 | Volkswagen | Tiguan | 215/65 R17, 235/55 R18, 255/45 R19 |
 | Volkswagen | Touareg | 255/55 R19, 285/40 R21 |
@@ -166,6 +175,7 @@ chaque source) : 153 montes pour 48 modèles.
 | Škoda | Karoq | 215/50 R18, 215/55 R17, 225/50 R18 |
 | Škoda | Kodiaq | 215/65 R17, 235/45 R20, 235/50 R19 |
 | Škoda | Octavia | 205/55 R17, 225/45 R18 |
+| Škoda | Scala | 195/60 R16, 205/50 R17, 205/55 R16 |
 
 ## Ce qui reste à obtenir
 
