@@ -7,7 +7,12 @@ use App\Filament\Resources\OilCatalogueReferences\Pages\ListOilCatalogueReferenc
 use App\Filament\Support\PageHub;
 use App\Models\OilCatalogueReference;
 use BackedEnum;
+use Filament\Actions\EditAction;
+use Filament\Forms\Components\KeyValue;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -68,6 +73,17 @@ class OilCatalogueReferenceResource extends Resource
             ->orderBy('model');
     }
 
+    /** Reference rows can be corrected by whoever manages compatibilities; a correction is never overwritten by a later import. */
+    public static function form(Schema $schema): Schema
+    {
+        return $schema->columns(2)->components([
+            TextInput::make('brand')->label(__('reference_catalogue.fields.brand'))->maxLength(255),
+            TextInput::make('model')->label(__('reference_catalogue.fields.model'))->maxLength(255),
+            Select::make('verification_status')->label(__('reference_catalogue.fields.status'))->options(__('reference_catalogue.statuses'))->required()->selectablePlaceholder(false),
+            KeyValue::make('specifications')->label(__('reference_catalogue.fields.details'))->columnSpanFull(),
+        ]);
+    }
+
     public static function table(Table $table): Table
     {
         return $table
@@ -75,7 +91,9 @@ class OilCatalogueReferenceResource extends Resource
                 TextColumn::make('record_type')->label(__('reference_catalogue.fields.type'))->badge(),
                 TextColumn::make('brand')->label(__('reference_catalogue.fields.brand'))->searchable()->sortable(),
                 TextColumn::make('model')->label(__('reference_catalogue.fields.model'))->searchable()->sortable(),
-                TextColumn::make('verification_status')->label(__('reference_catalogue.fields.status'))->badge(),
+                TextColumn::make('verification_status')->label(__('reference_catalogue.fields.status'))->badge()
+                    ->formatStateUsing(fn (string $state) => __('reference_catalogue.statuses')[$state] ?? $state)
+                    ->color(fn (string $state) => $state === 'checked' ? 'success' : 'gray'),
                 TextColumn::make('source_sheet')->label(__('reference_catalogue.fields.source'))->toggleable(),
                 TextColumn::make('source_row')->label(__('reference_catalogue.fields.row'))->toggleable(),
                 TextColumn::make('specifications')
@@ -92,6 +110,7 @@ class OilCatalogueReferenceResource extends Resource
                         'model' => __('reference_catalogue.types.model'),
                     ]),
             ])
+            ->recordActions([EditAction::make()])
             ->defaultSort('brand')
             ->striped();
     }

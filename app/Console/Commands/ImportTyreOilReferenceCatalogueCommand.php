@@ -106,8 +106,9 @@ final class ImportTyreOilReferenceCatalogueCommand extends Command
                         'updated_at' => now(),
                     ];
 
-                    if (! $this->option('dry-run')) {
-                        DB::table($config['table'])->updateOrInsert(['unique_key' => $key], $payload);
+                    // Insert only: a row already imported may have been corrected in the application (D-59).
+                    if (! $this->option('dry-run') && ! DB::table($config['table'])->where('unique_key', $key)->exists()) {
+                        DB::table($config['table'])->insert($payload);
                     }
 
                     $count++;

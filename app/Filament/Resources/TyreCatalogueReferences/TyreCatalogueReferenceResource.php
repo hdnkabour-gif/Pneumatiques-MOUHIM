@@ -7,7 +7,12 @@ use App\Filament\Resources\TyreCatalogueReferences\Pages\ListTyreCatalogueRefere
 use App\Filament\Support\PageHub;
 use App\Models\TyreCatalogueReference;
 use BackedEnum;
+use Filament\Actions\EditAction;
+use Filament\Forms\Components\KeyValue;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -69,6 +74,18 @@ class TyreCatalogueReferenceResource extends Resource
             ->orderBy('dimension');
     }
 
+    /** Reference rows can be corrected by whoever manages compatibilities; a correction is never overwritten by a later import. */
+    public static function form(Schema $schema): Schema
+    {
+        return $schema->columns(2)->components([
+            TextInput::make('brand')->label(__('reference_catalogue.fields.brand'))->maxLength(255),
+            TextInput::make('model')->label(__('reference_catalogue.fields.model'))->maxLength(255),
+            TextInput::make('dimension')->label(__('reference_catalogue.fields.dimension'))->maxLength(40),
+            Select::make('verification_status')->label(__('reference_catalogue.fields.status'))->options(__('reference_catalogue.statuses'))->required()->selectablePlaceholder(false),
+            KeyValue::make('specifications')->label(__('reference_catalogue.fields.details'))->columnSpanFull(),
+        ]);
+    }
+
     public static function table(Table $table): Table
     {
         return $table
@@ -77,7 +94,9 @@ class TyreCatalogueReferenceResource extends Resource
                 TextColumn::make('brand')->label(__('reference_catalogue.fields.brand'))->searchable()->sortable(),
                 TextColumn::make('model')->label(__('reference_catalogue.fields.model'))->searchable()->sortable(),
                 TextColumn::make('dimension')->label(__('reference_catalogue.fields.dimension'))->searchable()->sortable(),
-                TextColumn::make('verification_status')->label(__('reference_catalogue.fields.status'))->badge(),
+                TextColumn::make('verification_status')->label(__('reference_catalogue.fields.status'))->badge()
+                    ->formatStateUsing(fn (string $state) => __('reference_catalogue.statuses')[$state] ?? $state)
+                    ->color(fn (string $state) => $state === 'checked' ? 'success' : 'gray'),
                 TextColumn::make('source_sheet')->label(__('reference_catalogue.fields.source'))->toggleable(),
                 TextColumn::make('source_row')->label(__('reference_catalogue.fields.row'))->toggleable(),
                 TextColumn::make('specifications')
@@ -95,6 +114,7 @@ class TyreCatalogueReferenceResource extends Resource
                         'size' => __('reference_catalogue.types.size'),
                     ]),
             ])
+            ->recordActions([EditAction::make()])
             ->defaultSort('brand')
             ->striped();
     }

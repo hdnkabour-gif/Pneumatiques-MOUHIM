@@ -4,6 +4,7 @@ use App\Actions\Vehicles\ImportReferenceWorkbookAction;
 use App\Enums\CompatibilityStatus;
 use App\Models\Activity;
 use App\Models\CompatibilitySource;
+use App\Models\OilCatalogueReference;
 use App\Models\OilFitment;
 use App\Models\TyreCatalogueReference;
 use App\Models\TyreFitment;
@@ -79,10 +80,24 @@ it('ships a supplement where every row is sourced and nothing is verified', func
         expect($knownSources)->toContain($row['Source_ID'])
             ->and($generations)->toContain($row['Generation_ID'])
             ->and(TyreSize::parse($row['Dimension']))->not->toBeNull()
+            ->and(mb_strlen((string) $row['Finition']))->toBeLessThanOrEqual(255)
+            ->and(strlen($row['Fitment_ID']))->toBeLessThanOrEqual(60)
             ->and(CompatibilityStatus::fromWorkbook($row['Statut vérification']))->not->toBe(CompatibilityStatus::Verified);
         if ($row['Engine_ID'] !== null) {
             expect($engines)->toContain($row['Engine_ID']);
         }
+        // Data read on another market's sheets is never more than "unverified", and says so.
+        if (str_contains($row['Fitment_ID'], '-FR-')) {
+            expect(CompatibilityStatus::fromWorkbook($row['Statut vérification']))->toBe(CompatibilityStatus::Unverified)
+                ->and($row['Notes'])->toContain('Marché France')
+                ->and($row['Indice charge'])->toBeNull();
+        }
+    }
+
+    foreach ($data['OIL_PRODUCTS'] as $product) {
+        expect($product['Source'])->toStartWith('https://lubricants.catalog.totalenergies.com/MAROC/')
+            ->and($product['Viscosité'])->not->toBeEmpty()
+            ->and($product['Marque'])->toBeIn(['TotalEnergies', 'Elf']);
     }
 
     foreach ($data['VEHICLE_OIL_FITMENTS'] as $row) {
@@ -127,7 +142,19 @@ it('loads the workbook and the supplement at deploy time, with nothing verified'
         ->and(VehicleGeneration::query()->whereNotNull('year_from')->count())->toBe(0);
 
     expect(VehicleModel::query()->whereHas('make', fn ($q) => $q->where('name', 'Dacia'))->where('name', 'Bigster')->exists())->toBeTrue()
-        ->and(TyreCatalogueReference::query()->where('source_sheet', MoroccoVehicleReferenceSeeder::SIZES_SHEET)->count())->toBe(count($data['TIRE_SIZES']));
+        ->and(TyreCatalogueReference::query()->where('source_sheet', MoroccoVehicleReferenceSeeder::SIZES_SHEET)->count())->toBe(count($data['TIRE_SIZES']))
+        ->and(OilCatalogueReference::query()->where('source_sheet', MoroccoVehicleReferenceSeeder::SIZES_SHEET)->count())->toBe(count($data['OIL_PRODUCTS']));
+
+    // Official Moroccan oil catalogue: norms and approvals as published.
+    $quartz = OilCatalogueReference::query()->where('brand', 'TotalEnergies')->where('model', 'QUARTZ 9000 5W-40')->firstOrFail();
+    expect($quartz->specifications['Norme ACEA'])->toBe('A3/B4')
+        ->and($quartz->specifications['Homologations constructeur (approuvé)'])->toContain('VW 502.00');
+
+    // Same model, French-market sheet: present, but only as "unverified".
+    $peugeot = TyreFitment::query()->where('external_id', 'TIR-FR-PEU-208-II-19555R16')->firstOrFail();
+    expect($peugeot->status)->toBe(CompatibilityStatus::Unverified)
+        ->and($peugeot->model->fullName())->toBe('Peugeot 208')
+        ->and($peugeot->load_index)->toBeNull();
 });
 
 it('is idempotent and never overwrites what is already in the application', function () {
@@ -143,13 +170,14 @@ it('is idempotent and never overwrites what is already in the application', func
     $model = VehicleModel::query()->where('name', 'Jogger')->firstOrFail();
     $model->update(['notes' => 'Note saisie par le responsable']);
 
-    $counts = [TyreFitment::query()->count(), OilFitment::query()->count(), VehicleEngine::query()->count(), VehicleModel::query()->count(), TyreCatalogueReference::query()->count()];
+    $count = fn () => [TyreFitment::query()->count(), OilFitment::query()->count(), VehicleEngine::query()->count(), VehicleModel::query()->count(), TyreCatalogueReference::query()->count(), OilCatalogueReference::query()->count()];
+    $counts = $count();
     $logs = Activity::query()->where('event', 'reference_imported')->count();
 
     app(MoroccoVehicleReferenceSeeder::class)->run();
     app(MoroccoVehicleReferenceSeeder::class)->run();
 
-    expect([TyreFitment::query()->count(), OilFitment::query()->count(), VehicleEngine::query()->count(), VehicleModel::query()->count(), TyreCatalogueReference::query()->count()])->toBe($counts)
+    expect($count())->toBe($counts)
         ->and($verified->fresh()->status)->toBe(CompatibilityStatus::Verified)
         ->and($verified->fresh()->load_index)->toBe('95')
         ->and($edited->fresh()->notes)->toBe('Note du responsable')

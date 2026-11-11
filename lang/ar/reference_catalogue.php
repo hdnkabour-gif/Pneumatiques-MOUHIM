@@ -9,4 +9,5 @@ return [
         'row' => 'سطر Excel', 'details' => 'بيانات مرجعية',
     ],
     'types' => ['brand' => 'علامة', 'model' => 'موديل', 'size' => 'مقاس'],
+    'statuses' => ['to_verify' => 'للتحقق', 'checked' => 'تم التحقق'],
 ];

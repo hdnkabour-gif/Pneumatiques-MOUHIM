@@ -1,28 +1,28 @@
 # Complément du référentiel véhicules – marché marocain (novembre 2026)
 
 Mise à jour : 11 novembre 2026. Fichier de données : `database/data/morocco_reference_supplement.json`.
-Chargé automatiquement à chaque déploiement par `MoroccoVehicleReferenceSeeder` (décision D-59).
+Chargé automatiquement à chaque déploiement par `MoroccoVehicleReferenceSeeder` (décisions D-59 et D-60).
 
-## Méthode de vérification
+## Trois niveaux de confiance
 
-- Chaque valeur a été **lue sur un document officiel marocain** du constructeur ou de l'importateur
-  (brochure PDF Dacia / Renault Maroc, fiche « spécificités » Kia Maroc, fiche « spécifications »
-  Hyundai Maroc, brochure Nissan Maroc), consulté le 11 novembre 2026. L'adresse exacte est enregistrée
-  dans la source de chaque ligne.
-- Les huiles viennent des **manuels constructeur Kia en ligne** (ligne « Maroc » du tableau des lubrifiants).
-- **Rien n'est déduit** : ce que la source ne publie pas reste vide (codes moteur, années de production,
-  indices de charge et de vitesse, carburant de la Kia Sportage 1.6 136 ch…).
-- **Rien n'est « Vérifié »** : les lignes arrivent « À contrôler » (document officiel) ou « Non vérifié »
-  (valeur douteuse sur le document lui-même). Seul un utilisateur autorisé peut vérifier, avec l'étiquette
-  de portière ou la carte grise (D-24).
+| Origine | Statut à l'arrivée | Contenu |
+|---|---|---|
+| Document officiel marocain (constructeur, importateur, fabricant d'huile) | « À contrôler » | Motorisations, pneus, huiles par moteur, huiles TotalEnergies / Elf |
+| Document officiel marocain avec une valeur douteuse | « Non vérifié » + raison | Quelques pneus Kia / Hyundai |
+| Fiche technique d'un autre marché (France) pour un modèle vendu au Maroc | « Non vérifié » + mention « Marché France » | Dimensions de pneus uniquement |
 
-## Contenu
+**Rien n'est « Vérifié »** et rien de « Non vérifié » n'est présenté au vendeur comme compatible (D-24).
+Tout se corrige dans l'application : *Recherche par véhicule › Plus › Compatibilités pneus / huiles,
+Motorisations, Générations* et *Produits › Plus › Références pneus et huiles* (bouton « Modifier »,
+permission `compatibilities.manage`). Une correction n'est jamais écrasée par un déploiement.
 
-- 35 sources, 29 gammes, 42 motorisations
-  (dont 7 motorisations du classeur complétées : cylindrée, couple, kW), 29 montes de pneus,
-  2 préconisations d'huile, 11 dimensions ajoutées au catalogue de référence.
-- 7 nouveaux modèles commercialisés au Maroc : Dacia Bigster, Kia Sonet, Kia Carnival, Kia K5, Kia Tasman,
-  Hyundai Staria, Hyundai Sonata.
+## 1. Documents officiels marocains
+
+- 36 sources : brochures Dacia / Renault Maroc, fiches Kia Maroc et Hyundai Maroc, brochure Nissan Maroc,
+  manuels constructeur Kia (ligne « Maroc »), catalogue TotalEnergies Maroc. Consultés le 11 novembre 2026.
+- 42 motorisations (dont 7 du classeur complétées), 29 montes de pneus, 2 préconisations d'huile.
+- 7 nouveaux modèles : Dacia Bigster, Kia Sonet, Carnival, K5, Tasman, Hyundai Staria, Sonata.
+- Ce que la source ne publie pas reste vide (codes moteur, années, indices de charge et de vitesse).
 
 | Marque | Modèle | Motorisations | Montes pneus | Huiles |
 |---|---|---:|---:|---:|
@@ -57,9 +57,7 @@ Chargé automatiquement à chaque déploiement par `MoroccoVehicleReferenceSeede
 | Hyundai | Sonata | 1 | 1 | 0 |
 | Nissan | Magnite | 1 | 1 | 0 |
 
-## Valeurs douteuses relevées sur les documents officiels
-
-Elles sont enregistrées telles que publiées, en « Non vérifié », avec la raison dans la note :
+### Valeurs douteuses relevées sur les documents officiels (« Non vérifié »)
 
 - Kia Sorento Hybrid : pneus 235/55 R17 (dimension inhabituelle pour ce modèle).
 - Hyundai Staria : pneus 215/55 R18 (largeur inhabituelle pour ce modèle).
@@ -68,22 +66,121 @@ Elles sont enregistrées telles que publiées, en « Non vérifié », avec la r
 - Kia Sorento diesel (« 202 »), Sorento Hybrid (« 215 ») et Tasman (« 141 ch ») : puissance non saisie.
 - Kia K2500 : arrière 5.00R12 (dimension non métrique, non enregistrée).
 
-## Ce qui n'a pas pu être vérifié (non ajouté)
+## 2. Huiles : catalogue officiel TotalEnergies Maroc
+
+27 huiles moteur pour voitures, lues sur `lubricants.catalog.totalenergies.com/MAROC`, avec viscosité,
+normes ACEA / API, homologations constructeur et conditionnements. Visibles dans *Références huiles*.
+Elles disent ce que l'huile respecte, pas quel véhicule la demande.
+
+| Marque | Gamme | Viscosité | ACEA | API |
+|---|---|---|---|---|
+| Elf | EVOL. 700 ST 10W40 | 10W-40 | A3/B4 | CF, SL |
+| Elf | EVOL. PRO TECH 15W40 | 15W-40 | A3/B3 | CF, SL |
+| Elf | EVOL. PRO TECH C3 5W30 (ELF) | 5W-30 | C3 | SN PLUS |
+| Elf | EVOL. RN TECH 10W40 | 10W-40 | A3/B4 | CF, SL |
+| Elf | EVOL. RN TECH 5W40 | 5W-40 | A3/B4 | CF, SN |
+| Elf | EVOLUTION 500 TS 15W-40 | 15W-40 | — | CF, SL |
+| Elf | EVOLUTION 900 FT 5W-40 | 5W-40 | A3/B4 | SP |
+| Elf | EVOLUTION 900 SXR 5W-40 | 5W-40 | A3/B4 | SP |
+| Elf | EVOLUTION FULL-TECH MSX 5W-30 | 5W-30 | C3 | SP |
+| TotalEnergies | QUARTZ 5000 15W40 | 15W-40 | — | CF, SL |
+| TotalEnergies | QUARTZ 7000 15W-50 | 15W-50 | A3/B4 | CF, SL |
+| TotalEnergies | QUARTZ 7000 S 10W-40 | 10W-40 | A3/B4 | CF, SN |
+| TotalEnergies | QUARTZ 9000 5W-40 | 5W-40 | A3/B4 | CF, SP |
+| TotalEnergies | QUARTZ 9000 ENERGY 0W-40 | 0W-40 | A3/B4 | SP |
+| TotalEnergies | QUARTZ INEO ECS 5W-30 | 5W-30 | C2 | — |
+| TotalEnergies | QUARTZ INEO FIRST 0W-30 | 0W-30 | C2 | SN PLUS |
+| TotalEnergies | QUARTZ INEO FIRST 0W20 (TOT) | 0W-20 | C5 | — |
+| TotalEnergies | QUARTZ INEO HTC 5W-30 | 5W-30 | C3 | SN PLUS |
+| TotalEnergies | QUARTZ INEO LONG LIFE 0W-30 | 0W-30 | C3 | — |
+| TotalEnergies | QUARTZ INEO LONG LIFE 0W20 | 0W-20 | C5 | — |
+| TotalEnergies | QUARTZ INEO LONG LIFE 5W-30 | 5W-30 | C3 | SP |
+| TotalEnergies | QUARTZ INEO MC3 5W-30 | 5W-30 | C3 | SP |
+| TotalEnergies | QUARTZ INEO MC3 5W40 | 5W-40 | C3 | CF, SN |
+| TotalEnergies | QUARTZ INEO XTRA DYNAMICS 0W-20 | 0W-20 | C5 | SN |
+| TotalEnergies | QUARTZ INEO XTRA LONG LIFE 0W-20 | 0W-20 | C5, C6 | SP |
+| TotalEnergies | QUARTZ RACING 10W-60 | 10W-60 | — | CF, SN |
+| TotalEnergies | Quartz 5000 20W-50 | 20W-50 | — | CF, SL |
+
+## 3. Pneus : fiches techniques du marché français (D-60)
+
+Les sites marocains de Peugeot, Citroën, Opel et Fiat refusent la lecture automatique, et ceux de
+Volkswagen, Škoda, SEAT, Audi et Toyota ne publient pas de fiche technique. Pour ces modèles vendus au Maroc,
+les dimensions de pneus ont été lues sur les fiches techniques françaises de L'argus (millésime indiqué dans
+chaque source) : 153 montes pour 48 modèles.
+
+**Limites à connaître :**
+- les finitions, les jantes et parfois la voiture elle-même diffèrent d'un marché à l'autre (par exemple la
+  Citroën C3 ou la Fiat Tipo) : la dimension est une piste, à confirmer sur l'étiquette de portière ;
+- chaque ligne liste les versions françaises concernées, y compris sportives ou électriques ;
+- les indices de charge et de vitesse ne sont pas publiés ;
+- **aucune motorisation ni huile** n'est reprise d'un autre marché.
+
+| Marque | Modèle | Dimensions relevées (France) |
+|---|---|---|
+| Audi | Q3 | 215/65 R17, 235/55 R18, 235/60 R17, 255/45 R19 |
+| Audi | Q5 | 235/55 R19, 235/60 R18, 255/45 R20 |
+| BYD | Seal U | 235/50 R19 |
+| Citroën | Berlingo | 205/60 R16 |
+| Citroën | C3 | 205/50 R17, 205/55 R16 |
+| Citroën | C3 Aircross | 205/50 R17, 205/55 R16, 215/60 R17, 215/65 R16 |
+| Citroën | C4 | 195/60 R18, 215/65 R16 |
+| Citroën | C5 Aircross | 225/55 R19, 225/60 R18, 235/55 R18, 235/55 R19 |
+| Dacia | Bigster | 215/60 R18, 215/65 R17, 225/55 R18, 225/60 R17 |
+| Fiat | 500 | 185/55 R15, 185/65 R15, 195/45 R16, 195/55 R16, 205/45 R17 |
+| Fiat | Panda | 175/65 R14, 175/65 R15, 185/55 R15 |
+| Fiat | Tipo | 195/65 R15, 205/55 R16 |
+| Ford | Kuga | 225/55 R19, 225/60 R18, 225/65 R17 |
+| Ford | Puma | 215/50 R18, 215/55 R17, 225/40 R19 |
+| Kia | Sportage | 215/65 R17, 235/50 R19, 235/55 R18 |
+| Nissan | Qashqai | 215/65 R17, 235/45 R20, 235/50 R19, 235/55 R18 |
+| Opel | Astra | 205/55 R16, 215/45 R18, 225/40 R18, 225/45 R17 |
+| Opel | Corsa | 195/55 R16, 205/45 R17 |
+| Opel | Grandland | 225/55 R18, 225/55 R19, 235/50 R20, 235/55 R19 |
+| Opel | Mokka | 195/60 R18, 215/60 R17, 215/65 R16, 225/40 R20 |
+| Peugeot | 2008 | 215/55 R18, 215/60 R17, 215/65 R16 |
+| Peugeot | 208 | 195/55 R16, 205/45 R17 |
+| Peugeot | 3008 | 225/55 R19, 235/50 R20, 235/55 R19 |
+| Peugeot | 308 | 205/55 R16, 215/45 R18, 225/40 R18, 225/45 R17 |
+| Peugeot | 5008 | 215/65 R17, 225/55 R18, 225/55 R19, 225/60 R18, 235/50 R20, 235/55 R19 |
+| Peugeot | Rifter | 215/60 R17, 215/65 R16 |
+| Renault | Arkana | 215/55 R18, 215/60 R17, 225/45 R19 |
+| Renault | Captur | 215/55 R18, 215/60 R17, 225/45 R19 |
+| Renault | Clio | 195/55 R16, 195/60 R16, 205/45 R17, 205/45 R18 |
+| SEAT | Arona | 205/55 R17, 205/60 R16 |
+| SEAT | Ateca | 215/50 R18, 215/55 R17 |
+| SEAT | Ibiza | 185/65 R15, 195/55 R16, 215/45 R17 |
+| SEAT | Leon | 205/55 R16, 225/45 R17 |
+| Toyota | C-HR | 235/50 R20, 235/60 R18 |
+| Toyota | Corolla | 205/55 R16, 225/40 R18, 225/45 R17 |
+| Toyota | RAV4 | 225/55 R19, 225/60 R18, 225/65 R17, 235/50 R20, 235/60 R18 |
+| Toyota | Yaris | 185/65 R15, 195/55 R16, 205/45 R17, 215/40 R18, 225/45 R18 |
+| Toyota | Yaris Cross | 205/65 R16, 215/50 R18, 215/55 R17 |
+| Volkswagen | Golf | 205/55 R16, 225/40 R18, 225/45 R17, 235/35 R19 |
+| Volkswagen | Polo | 185/65 R15, 195/55 R16, 215/45 R17 |
+| Volkswagen | T-Roc | 215/50 R18, 215/55 R17, 215/60 R16, 225/50 R18, 225/55 R17, 225/60 R16 |
+| Volkswagen | Tiguan | 215/65 R17, 235/55 R18, 255/45 R19 |
+| Volkswagen | Touareg | 255/55 R19, 285/40 R21 |
+| Škoda | Fabia | 185/65 R15, 195/55 R16, 215/45 R17, 215/45 R18 |
+| Škoda | Kamiq | 205/55 R17, 205/60 R16 |
+| Škoda | Karoq | 215/50 R18, 215/55 R17, 225/50 R18 |
+| Škoda | Kodiaq | 215/65 R17, 235/45 R20, 235/50 R19 |
+| Škoda | Octavia | 205/55 R17, 225/45 R18 |
+
+## Ce qui reste à obtenir
 
 | Sujet | Raison | Ce qu'il faut |
 |---|---|---|
-| Peugeot (208, 2008, 3008, 308…), Citroën, Opel (Corsa), Fiat | Les sites marocains refusent la lecture automatique des fiches techniques (HTTP 403). Les fiches existent, par exemple `peugeot.ma/content/dam/peugeot/morocco/brochure/new-fiche-technique/F-T-208-v2.pdf`. | Télécharger les PDF à la main et les déposer dans `docs/data/` |
-| Volkswagen (T-Roc, Touareg), Škoda (Kodiaq), SEAT (Ateca), Audi (Q3), Toyota, BYD (Seal U) | Aucune fiche technique publique lisible sur les sites marocains (brochure sur demande ou configurateur). | Fiches techniques de l'importateur |
-| Renault Kardian, Clio 6, Captur, Arkana, Express ; Dacia Bigster ; Kia Sportage | Les brochures Maroc ne publient pas les dimensions de pneus. | Étiquette de portière du véhicule |
-| Huiles Renault / Dacia des nouvelles motorisations (Hybrid 155, TCe 150, dCi 102…) | Le catalogue Renault disponible (autre marché) ne permet pas de rattacher ces moteurs sans supposition. | Carnet d'entretien ou manuel du véhicule |
-| Huiles Hyundai, Nissan, Kia Sportage / Seltos | Pas de manuel constructeur accessible pour la version vendue au Maroc. | Manuel du véhicule |
+| Motorisations et huiles Peugeot, Citroën, Opel, Fiat, Volkswagen, Škoda, SEAT, Audi, Toyota | Pas de document marocain lisible ; non repris d'un autre marché car les moteurs changent d'un pays à l'autre. | Fiches techniques de l'importateur (PDF à déposer dans `docs/data/`) ou saisie dans l'application |
+| Huiles Renault / Dacia des nouvelles motorisations, huiles Hyundai, Nissan, Kia Sportage / Seltos | Aucune source ne rattache ces moteurs sans supposition. | Carnet d'entretien ou manuel du véhicule |
+| Huiles Shell, Castrol, Mobil, Motul, Liqui Moly… | Pas de catalogue produit lisible pour le Maroc dans cette session (pages dynamiques ou introuvables). | Fiches techniques des fournisseurs, ou saisie dans *Références huiles* |
+| Disponibilité des marques de pneus au Maroc | Aucune source officielle par marque. | Liste des fournisseurs de l'entreprise |
 | Nissan Patrol | La brochure en ligne est celle d'un marché à conduite à droite. | Fiche Nissan Maroc |
-| Gammes d'huiles (ACEA, API, homologations) et disponibilité des marques de pneus au Maroc | Fiches techniques produit non accessibles dans cette session. | Fiches techniques des fournisseurs |
 
 ## Règles
 
-- Les lignes déjà présentes ne sont jamais écrasées : notes du responsable, compatibilités vérifiées ou
-  obsolètes, valeurs déjà saisies. Seuls les champs vides d'une gamme ou d'une motorisation sont complétés.
+- Les lignes déjà présentes ne sont jamais écrasées : notes du responsable, corrections, compatibilités
+  vérifiées ou obsolètes. Seuls les champs vides d'une gamme ou d'une motorisation sont complétés.
 - Aucun produit, prix, SKU ou stock n'est créé.
 - Pour ajouter des données : nouvelles lignes dans le fichier JSON (mêmes colonnes que le classeur V1.3),
   chacune avec sa source ; les tests `MoroccoVehicleReferenceTest` refusent une ligne sans source.

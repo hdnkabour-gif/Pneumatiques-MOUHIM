@@ -31,7 +31,8 @@ class MoroccoVehicleReferenceSeeder extends Seeder
         try {
             $supplement = self::supplement();
             $sizes = $supplement['TIRE_SIZES'] ?? [];
-            unset($supplement['_meta'], $supplement['TIRE_SIZES']);
+            $oils = $supplement['OIL_PRODUCTS'] ?? [];
+            unset($supplement['_meta'], $supplement['TIRE_SIZES'], $supplement['OIL_PRODUCTS']);
 
             $report = app(ImportReferenceWorkbookAction::class)->executeSystem(
                 base_path(self::WORKBOOK),
@@ -40,6 +41,7 @@ class MoroccoVehicleReferenceSeeder extends Seeder
             );
 
             $this->tyreSizes($sizes);
+            $this->oilProducts($oils);
 
             foreach ($report['errors'] as $error) {
                 Log::warning('Vehicle reference import: '.$error);
@@ -56,6 +58,37 @@ class MoroccoVehicleReferenceSeeder extends Seeder
         $path = base_path(self::SUPPLEMENT);
 
         return is_file($path) ? json_decode((string) file_get_contents($path), true, flags: JSON_THROW_ON_ERROR) : [];
+    }
+
+    /**
+     * Engine oils listed in an official Moroccan manufacturer catalogue, with their
+     * norms and approvals (information only: no product, price or stock).
+     * Inserted once: a row corrected in the application is never overwritten.
+     *
+     * @param  list<array<string, mixed>>  $products
+     */
+    private function oilProducts(array $products): void
+    {
+        foreach (array_values($products) as $i => $product) {
+            $key = hash('sha256', self::SIZES_SHEET.'|OIL|'.$product['Marque'].'|'.$product['Gamme']);
+
+            if (DB::table('oil_catalogue_references')->where('unique_key', $key)->exists()) {
+                continue;
+            }
+
+            DB::table('oil_catalogue_references')->insert([
+                'record_type' => 'model',
+                'brand' => $product['Marque'],
+                'model' => $product['Gamme'],
+                'specifications' => json_encode($product, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                'verification_status' => 'to_verify',
+                'source_sheet' => self::SIZES_SHEET,
+                'source_row' => $i + 1,
+                'unique_key' => $key,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
     }
 
     /**

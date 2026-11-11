@@ -102,6 +102,8 @@ docker/            entrypoint, php.ini
   `database/data/morocco_reference_supplement.json` (documents officiels marocains, D-59 ; détail dans
   `docs/MOROCCO_REFERENCE_SUPPLEMENT_2026_11.md`).
 - Chargement automatique au démarrage (`MoroccoVehicleReferenceSeeder`) : il complète sans rien écraser.
+- Données d'un autre marché (D-60) : dimensions de pneus uniquement, toujours « Non vérifié », corrigeables.
+- Références pneus et huiles corrigeables dans l'application ; une correction survit aux imports.
 - Import manuel d'un classeur mis à jour : *Véhicules › Compatibilités pneus › Importer le classeur*
   (permission `compatibilities.manage`).
 - Statuts : Vérifié / Non vérifié / À contrôler / Obsolète ; l'import n'attribue jamais « Vérifié ».

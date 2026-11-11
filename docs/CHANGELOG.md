@@ -33,6 +33,15 @@
 
 ## [Non publié]
 
+### Référentiel : huiles officielles Maroc, pneus d'un autre marché, corrections (D-60) – 2026-11-11
+- Huiles moteur TotalEnergies Quartz et Elf Evolution du catalogue officiel TotalEnergies Maroc (viscosité,
+  ACEA / API, homologations constructeur, conditionnements) dans « Références huiles ».
+- Dimensions de pneus des modèles Peugeot, Citroën, Opel, Fiat, Volkswagen, Škoda, SEAT, Audi, Toyota… lues sur
+  les fiches techniques du marché français : toujours « Non vérifié », avec la mention du marché.
+- « Références pneus » et « Références huiles » corrigeables (bouton « Modifier », `compatibilities.manage`),
+  corrections journalisées et jamais écrasées par un nouvel import.
+- Détail et limites : `docs/MOROCCO_REFERENCE_SUPPLEMENT_2026_11.md`.
+
 ### Référentiel véhicules Maroc (D-59) – 2026-11-11
 - Complément sourcé du référentiel véhicules : 35 sources officielles marocaines (Dacia, Renault, Kia, Hyundai,
   Nissan), 29 gammes, 42 motorisations, 29 montes de pneus, 2 préconisations d'huile, 11 dimensions ;
