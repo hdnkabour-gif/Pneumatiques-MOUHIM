@@ -8,6 +8,7 @@ use App\Enums\Permission;
 use App\Exceptions\BusinessRuleException;
 use App\Filament\Resources\Payments\Pages\ListPayments;
 use App\Filament\Support\Fields;
+use App\Filament\Support\PageHub;
 use App\Models\Payment;
 use App\Models\Site;
 use BackedEnum;
@@ -24,6 +25,11 @@ use Illuminate\Database\Eloquent\Builder;
 /** Money received; cheques followed until cashed or rejected (D-22). Read-only otherwise. */
 class PaymentResource extends Resource
 {
+    public static function shouldRegisterNavigation(): bool
+    {
+        return PageHub::inMenu(static::class) && parent::shouldRegisterNavigation();
+    }
+
     protected static ?string $model = Payment::class;
 
     protected static bool $hasTitleCaseModelLabel = false;

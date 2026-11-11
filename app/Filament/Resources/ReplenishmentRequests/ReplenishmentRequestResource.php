@@ -7,6 +7,7 @@ use App\Filament\Resources\ReplenishmentRequests\Pages\CreateReplenishmentReques
 use App\Filament\Resources\ReplenishmentRequests\Pages\ListReplenishmentRequests;
 use App\Filament\Resources\ReplenishmentRequests\Pages\ViewReplenishmentRequest;
 use App\Filament\Resources\Transfers\TransferResource;
+use App\Filament\Support\PageHub;
 use App\Models\ReplenishmentRequest;
 use App\Models\Site;
 use BackedEnum;
@@ -27,6 +28,11 @@ use Illuminate\Database\Eloquent\Builder;
 /** A store asks the depot for goods; the depot turns it into a transfer (§2, §6.3). */
 class ReplenishmentRequestResource extends Resource
 {
+    public static function shouldRegisterNavigation(): bool
+    {
+        return PageHub::inMenu(static::class) && parent::shouldRegisterNavigation();
+    }
+
     protected static ?string $model = ReplenishmentRequest::class;
 
     /** French labels keep their own capitalisation ("Pneus d'occasion"). */

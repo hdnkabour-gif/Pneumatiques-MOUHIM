@@ -4,6 +4,7 @@ namespace App\Filament\Resources\OilCatalogueReferences;
 
 use App\Enums\Permission;
 use App\Filament\Resources\OilCatalogueReferences\Pages\ListOilCatalogueReferences;
+use App\Filament\Support\PageHub;
 use App\Models\OilCatalogueReference;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -36,7 +37,7 @@ class OilCatalogueReferenceResource extends Resource
     /** Simplicity (§5): reference data in the menu only for whoever manages the vehicle reference. */
     public static function shouldRegisterNavigation(): bool
     {
-        return parent::shouldRegisterNavigation() && (auth()->user()?->can(Permission::CompatibilitiesManage->value) ?? false);
+        return PageHub::inMenu(static::class) && parent::shouldRegisterNavigation() && (auth()->user()?->can(Permission::CompatibilitiesManage->value) ?? false);
     }
 
     public static function getModelLabel(): string

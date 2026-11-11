@@ -7,6 +7,7 @@ use App\Filament\Resources\Users\Pages\EditUser;
 use App\Filament\Resources\Users\Pages\ListUsers;
 use App\Filament\Resources\Users\Schemas\UserForm;
 use App\Filament\Resources\Users\Tables\UsersTable;
+use App\Filament\Support\PageHub;
 use App\Models\User;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -17,6 +18,11 @@ use Illuminate\Database\Eloquent\Builder;
 
 class UserResource extends Resource
 {
+    public static function shouldRegisterNavigation(): bool
+    {
+        return PageHub::inMenu(static::class) && parent::shouldRegisterNavigation();
+    }
+
     protected static ?string $model = User::class;
 
     /** French labels keep their own capitalisation ("Pneus d'occasion"). */
@@ -40,7 +46,7 @@ class UserResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('app.navigation.administration');
+        return __('app.navigation.settings');
     }
 
     /** Non-global users only load colleagues sharing one of their sites. */

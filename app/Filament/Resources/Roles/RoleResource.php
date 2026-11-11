@@ -7,6 +7,7 @@ use App\Enums\RoleName;
 use App\Filament\Resources\Roles\Pages\CreateRole;
 use App\Filament\Resources\Roles\Pages\EditRole;
 use App\Filament\Resources\Roles\Pages\ListRoles;
+use App\Filament\Support\PageHub;
 use BackedEnum;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -24,6 +25,11 @@ use Spatie\Permission\Models\Role;
 /** Roles and their permissions, editable by the owner (§3). */
 class RoleResource extends Resource
 {
+    public static function shouldRegisterNavigation(): bool
+    {
+        return PageHub::inMenu(static::class) && parent::shouldRegisterNavigation();
+    }
+
     protected static ?string $model = Role::class;
 
     /** French labels keep their own capitalisation ("Pneus d'occasion"). */
@@ -45,7 +51,7 @@ class RoleResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('app.navigation.administration');
+        return __('app.navigation.settings');
     }
 
     public static function label(Role $role): string

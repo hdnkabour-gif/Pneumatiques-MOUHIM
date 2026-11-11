@@ -7,6 +7,7 @@ use App\Enums\InventoryCountStatus;
 use App\Filament\Resources\InventoryCounts\Pages\CountInventory;
 use App\Filament\Resources\InventoryCounts\Pages\CreateInventoryCount;
 use App\Filament\Resources\InventoryCounts\Pages\ListInventoryCounts;
+use App\Filament\Support\PageHub;
 use App\Models\Category;
 use App\Models\InventoryCount;
 use App\Models\Site;
@@ -25,6 +26,11 @@ use Illuminate\Database\Eloquent\Builder;
 /** Inventory counts (§6.4): count on tablet/phone, owner validation, adjustments. */
 class InventoryCountResource extends Resource
 {
+    public static function shouldRegisterNavigation(): bool
+    {
+        return PageHub::inMenu(static::class) && parent::shouldRegisterNavigation();
+    }
+
     protected static ?string $model = InventoryCount::class;
 
     /** French labels keep their own capitalisation ("Pneus d'occasion"). */

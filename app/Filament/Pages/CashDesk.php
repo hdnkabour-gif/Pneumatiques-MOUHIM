@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Enums\Permission;
 use App\Exceptions\BusinessRuleException;
 use App\Filament\Support\Fields;
+use App\Filament\Support\PageHub;
 use App\Models\Expense;
 use App\Models\Site;
 use App\Services\Money\CashRegister;
@@ -109,7 +110,7 @@ class CashDesk extends Page
             }
         };
 
-        return [
+        return [...PageHub::actions(static::class),
             Action::make('expense')->label(__('cash.expense'))->icon(Heroicon::OutlinedCamera)
                 ->visible(fn () => auth()->user()->can(Permission::ExpensesCreate->value))
                 ->schema([

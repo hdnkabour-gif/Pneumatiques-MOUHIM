@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Enums\Permission;
+use App\Filament\Support\PageHub;
 use App\Services\Imports\StartupImport;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -17,6 +18,11 @@ use Throwable;
 /** Start-up (§17): customers with their old debt, products, opening stock — from Excel. */
 class StartupImports extends Page
 {
+    public static function shouldRegisterNavigation(): bool
+    {
+        return PageHub::inMenu(static::class) && parent::shouldRegisterNavigation();
+    }
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowUpTray;
 
     protected static ?int $navigationSort = 93;

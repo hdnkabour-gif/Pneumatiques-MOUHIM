@@ -8,6 +8,7 @@ use App\Filament\Resources\Sites\Pages\EditSite;
 use App\Filament\Resources\Sites\Pages\ListSites;
 use App\Filament\Resources\Sites\Schemas\SiteForm;
 use App\Filament\Resources\Sites\Tables\SitesTable;
+use App\Filament\Support\PageHub;
 use App\Models\Site;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -21,7 +22,7 @@ class SiteResource extends Resource
     /** Simplicity (§5): setup pages appear in the menu only for those who manage them. */
     public static function shouldRegisterNavigation(): bool
     {
-        return parent::shouldRegisterNavigation() && (auth()->user()?->canAny([Permission::SitesManage->value]) ?? false);
+        return PageHub::inMenu(static::class) && parent::shouldRegisterNavigation() && (auth()->user()?->canAny([Permission::SitesManage->value]) ?? false);
     }
 
     protected static ?string $model = Site::class;
@@ -47,7 +48,7 @@ class SiteResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('app.navigation.administration');
+        return __('app.navigation.settings');
     }
 
     /** Server-side site scoping: a user only ever loads the sites assigned to them. */

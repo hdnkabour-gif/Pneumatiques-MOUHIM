@@ -33,6 +33,9 @@
 
 ## [Non publié]
 
+### Simplification du menu (D-57)
+- Les pages secondaires sont regroupées derrière un bouton « Plus » sur leur page principale ; le menu du propriétaire passe d'environ 24 à 14 entrées, celui du vendeur à 10, en trois groupes (Ventes, Stock, Paramètres).
+
 ### Ajouté – Rapports (10 novembre 2026)
 - Page « Rapports » (propriétaire, responsables sur leurs sites) : période (aujourd'hui, semaine, mois, mois dernier,
   année ou dates libres) et site ; chiffre d'affaires, nombre de ventes, panier moyen, marge (⚠ si un coût manque) ;

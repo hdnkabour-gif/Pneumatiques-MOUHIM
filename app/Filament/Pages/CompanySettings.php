@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Enums\Permission;
+use App\Filament\Support\PageHub;
 use App\Services\SettingsService;
 use App\Support\Decimal;
 use BackedEnum;
@@ -202,5 +203,10 @@ class CompanySettings extends Page
         ], auth()->user());
 
         Notification::make()->success()->title(__('settings.saved'))->send();
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return PageHub::actions(static::class);
     }
 }

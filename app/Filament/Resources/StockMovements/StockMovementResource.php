@@ -6,6 +6,7 @@ use App\Enums\Permission;
 use App\Enums\StockMovementType;
 use App\Filament\Resources\StockMovements\Pages\ListStockMovements;
 use App\Filament\Support\Fields;
+use App\Filament\Support\PageHub;
 use App\Models\Product;
 use App\Models\Site;
 use App\Models\StockMovement;
@@ -25,7 +26,7 @@ class StockMovementResource extends Resource
     /** Simplicity (§5): setup pages appear in the menu only for those who manage them. */
     public static function shouldRegisterNavigation(): bool
     {
-        return parent::shouldRegisterNavigation() && (auth()->user()?->canAny([Permission::StockReceive->value, Permission::StockAdjust->value]) ?? false);
+        return PageHub::inMenu(static::class) && parent::shouldRegisterNavigation() && (auth()->user()?->canAny([Permission::StockReceive->value, Permission::StockAdjust->value]) ?? false);
     }
 
     protected static ?string $model = StockMovement::class;

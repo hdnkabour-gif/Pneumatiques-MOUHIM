@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Enums\CompatibilityStatus;
 use App\Enums\Permission;
+use App\Filament\Support\PageHub;
 use App\Filament\Support\VehicleFields;
 use App\Models\OilFitment;
 use App\Models\Product;
@@ -29,7 +30,7 @@ class VehicleLookup extends Page
 {
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedMagnifyingGlass;
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 50;
 
     public ?int $modelId = null;
 
@@ -40,7 +41,7 @@ class VehicleLookup extends Page
 
     public static function getNavigationGroup(): ?string
     {
-        return __('app.navigation.vehicles');
+        return __('app.navigation.sales');
     }
 
     public static function getNavigationLabel(): string
@@ -114,5 +115,10 @@ class VehicleLookup extends Page
             $sites->map(fn (Site $s) => $s->code.' '.(int) ($p->stockLevels->firstWhere('site_id', $s->id)?->quantity ?? 0))->implode(' · '),
             Money::format($p->price_retail_cents),
         )))->all();
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return PageHub::actions(static::class);
     }
 }

@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Vehicles\CompatibilitySources;
 
 use App\Enums\Permission;
 use App\Filament\Resources\Vehicles\CompatibilitySources\Pages\ManageCompatibilitySources;
+use App\Filament\Support\PageHub;
 use App\Models\CompatibilitySource;
 use BackedEnum;
 use Filament\Actions\EditAction;
@@ -20,7 +21,7 @@ class CompatibilitySourceResource extends Resource
     /** Simplicity (§5): setup pages appear in the menu only for those who manage them. */
     public static function shouldRegisterNavigation(): bool
     {
-        return parent::shouldRegisterNavigation() && (auth()->user()?->canAny([Permission::CompatibilitiesManage->value]) ?? false);
+        return PageHub::inMenu(static::class) && parent::shouldRegisterNavigation() && (auth()->user()?->canAny([Permission::CompatibilitiesManage->value]) ?? false);
     }
 
     protected static ?string $model = CompatibilitySource::class;

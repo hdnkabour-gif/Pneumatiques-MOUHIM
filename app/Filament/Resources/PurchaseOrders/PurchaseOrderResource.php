@@ -41,7 +41,7 @@ class PurchaseOrderResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
 
-    protected static ?int $navigationSort = 20;
+    protected static ?int $navigationSort = 60;
 
     protected static ?string $recordTitleAttribute = 'number';
 
@@ -77,7 +77,7 @@ class PurchaseOrderResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('app.navigation.purchases');
+        return __('app.navigation.stock');
     }
 
     public static function getEloquentQuery(): Builder

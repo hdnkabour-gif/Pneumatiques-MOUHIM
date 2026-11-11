@@ -5,6 +5,7 @@ return [
     'language' => 'Langue',
     'print' => 'Imprimer',
     'more_details' => 'Plus de détails',
+    'more_pages' => 'Plus',
     'yes' => 'Oui',
     'no' => 'Non',
     'active' => 'Actif',

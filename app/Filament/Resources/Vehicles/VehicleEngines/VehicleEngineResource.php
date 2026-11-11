@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Vehicles\VehicleEngines;
 
 use App\Enums\Permission;
 use App\Filament\Resources\Vehicles\VehicleEngines\Pages\ManageVehicleEngines;
+use App\Filament\Support\PageHub;
 use App\Filament\Support\VehicleFields;
 use App\Models\VehicleEngine;
 use BackedEnum;
@@ -22,7 +23,7 @@ class VehicleEngineResource extends Resource
     /** Simplicity (§5): setup pages appear in the menu only for those who manage them. */
     public static function shouldRegisterNavigation(): bool
     {
-        return parent::shouldRegisterNavigation() && (auth()->user()?->canAny([Permission::CompatibilitiesManage->value]) ?? false);
+        return PageHub::inMenu(static::class) && parent::shouldRegisterNavigation() && (auth()->user()?->canAny([Permission::CompatibilitiesManage->value]) ?? false);
     }
 
     protected static ?string $model = VehicleEngine::class;

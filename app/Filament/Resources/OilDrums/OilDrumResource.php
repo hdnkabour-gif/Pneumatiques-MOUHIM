@@ -9,6 +9,7 @@ use App\Exceptions\BusinessRuleException;
 use App\Filament\Resources\OilDrums\Pages\ListOilDrums;
 use App\Filament\Resources\OilDrums\Pages\ViewOilDrum;
 use App\Filament\Support\Fields;
+use App\Filament\Support\PageHub;
 use App\Models\OilDrum;
 use App\Models\Product;
 use App\Models\Site;
@@ -49,7 +50,7 @@ class OilDrumResource extends Resource
     /** Sellers see drum levels on the sale screen; the menu entry is for stock managers. */
     public static function shouldRegisterNavigation(): bool
     {
-        return parent::shouldRegisterNavigation() && (auth()->user()?->canAny([Permission::StockReceive->value, Permission::StockAdjust->value]) ?? false);
+        return PageHub::inMenu(static::class) && parent::shouldRegisterNavigation() && (auth()->user()?->canAny([Permission::StockReceive->value, Permission::StockAdjust->value]) ?? false);
     }
 
     public static function getModelLabel(): string

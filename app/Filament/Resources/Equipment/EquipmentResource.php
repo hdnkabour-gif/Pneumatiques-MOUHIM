@@ -10,6 +10,7 @@ use App\Filament\Resources\Equipment\Pages\EditEquipment;
 use App\Filament\Resources\Equipment\Pages\ListEquipment;
 use App\Filament\Resources\Equipment\Pages\ViewEquipment;
 use App\Filament\Support\Fields;
+use App\Filament\Support\PageHub;
 use App\Models\Equipment;
 use App\Models\Site;
 use App\Support\Money;
@@ -37,6 +38,11 @@ use Illuminate\Database\Eloquent\Builder;
 /** Workshop equipment and maintenance (§15). */
 class EquipmentResource extends Resource
 {
+    public static function shouldRegisterNavigation(): bool
+    {
+        return PageHub::inMenu(static::class) && parent::shouldRegisterNavigation();
+    }
+
     protected static ?string $model = Equipment::class;
 
     protected static bool $hasTitleCaseModelLabel = false;

@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Vehicles\VehicleMakes;
 
 use App\Enums\Permission;
 use App\Filament\Resources\Vehicles\VehicleMakes\Pages\ManageVehicleMakes;
+use App\Filament\Support\PageHub;
 use App\Models\VehicleMake;
 use BackedEnum;
 use Filament\Actions\EditAction;
@@ -22,7 +23,7 @@ class VehicleMakeResource extends Resource
     /** Simplicity (§5): setup pages appear in the menu only for those who manage them. */
     public static function shouldRegisterNavigation(): bool
     {
-        return parent::shouldRegisterNavigation() && (auth()->user()?->canAny([Permission::CompatibilitiesManage->value]) ?? false);
+        return PageHub::inMenu(static::class) && parent::shouldRegisterNavigation() && (auth()->user()?->canAny([Permission::CompatibilitiesManage->value]) ?? false);
     }
 
     protected static ?string $model = VehicleMake::class;

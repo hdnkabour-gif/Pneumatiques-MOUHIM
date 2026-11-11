@@ -12,6 +12,7 @@ use App\Enums\SaleKind;
 use App\Enums\SaleStatus;
 use App\Enums\TransferStatus;
 use App\Enums\WorkOrderStatus;
+use App\Filament\Support\PageHub;
 use App\Models\ApprovalRequest;
 use App\Models\Customer;
 use App\Models\Payment;
@@ -35,6 +36,11 @@ use Illuminate\Support\Collection;
  */
 class WhatRemains extends Page
 {
+    public static function shouldRegisterNavigation(): bool
+    {
+        return PageHub::inMenu(static::class) && parent::shouldRegisterNavigation();
+    }
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentCheck;
 
     protected static ?int $navigationSort = -9;

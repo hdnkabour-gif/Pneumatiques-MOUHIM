@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Enums\DocumentType;
 use App\Enums\Permission;
 use App\Exceptions\BusinessRuleException;
+use App\Filament\Support\PageHub;
 use App\Services\SequenceService;
 use App\Services\SettingsService;
 use BackedEnum;
@@ -31,6 +32,11 @@ use Illuminate\Support\Facades\DB;
  */
 class DocumentNumbering extends Page
 {
+    public static function shouldRegisterNavigation(): bool
+    {
+        return PageHub::inMenu(static::class) && parent::shouldRegisterNavigation();
+    }
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedHashtag;
 
     protected static ?int $navigationSort = 91;

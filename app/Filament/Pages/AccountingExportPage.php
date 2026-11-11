@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Enums\Permission;
+use App\Filament\Support\PageHub;
 use App\Services\Reports\AccountingExport;
 use BackedEnum;
 use Carbon\CarbonImmutable;
@@ -15,6 +16,11 @@ use Filament\Support\Icons\Heroicon;
 /** Monthly workbook for the accountant (§16.3), owner only. */
 class AccountingExportPage extends Page
 {
+    public static function shouldRegisterNavigation(): bool
+    {
+        return PageHub::inMenu(static::class) && parent::shouldRegisterNavigation();
+    }
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowDownTray;
 
     protected static ?int $navigationSort = 92;

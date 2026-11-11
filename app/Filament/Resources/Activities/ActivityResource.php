@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Activities;
 
 use App\Filament\Resources\Activities\Pages\ListActivities;
 use App\Filament\Resources\Activities\Pages\ViewActivity;
+use App\Filament\Support\PageHub;
 use App\Models\Activity;
 use App\Models\User;
 use BackedEnum;
@@ -24,6 +25,11 @@ use Illuminate\Database\Eloquent\Builder;
 /** Read-only activity journal (§16.4): who, what, when, which site, before / after. */
 class ActivityResource extends Resource
 {
+    public static function shouldRegisterNavigation(): bool
+    {
+        return PageHub::inMenu(static::class) && parent::shouldRegisterNavigation();
+    }
+
     protected static ?string $model = Activity::class;
 
     /** French labels keep their own capitalisation ("Pneus d'occasion"). */

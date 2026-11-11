@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Enums\Permission;
 use App\Enums\RoleName;
 use App\Filament\Support\Fields;
+use App\Filament\Support\PageHub;
 use App\Models\Site;
 use App\Services\Push\PushNotifier;
 use App\Services\Reports\DailyFigures;
@@ -113,7 +114,7 @@ class Today extends Page
 
     protected function getHeaderActions(): array
     {
-        return [
+        return [...PageHub::actions(static::class),
             Action::make('push')->label(__('push.enable'))->icon(Heroicon::OutlinedBellAlert)->color('gray')
                 ->visible(fn () => app(PushNotifier::class)->enabled())
                 ->alpineClickHandler('window.mouhimEnablePush && window.mouhimEnablePush()'),

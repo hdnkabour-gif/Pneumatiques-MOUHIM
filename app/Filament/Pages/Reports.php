@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Enums\Permission;
 use App\Enums\RoleName;
 use App\Filament\Support\Fields;
+use App\Filament\Support\PageHub;
 use App\Models\Site;
 use App\Services\Reports\SalesReport;
 use App\Support\Money;
@@ -21,6 +22,11 @@ use OpenSpout\Writer\XLSX\Writer;
 /** Reports (§16.3): one page, a period, a site — owner and site managers. */
 class Reports extends Page
 {
+    public static function shouldRegisterNavigation(): bool
+    {
+        return PageHub::inMenu(static::class) && parent::shouldRegisterNavigation();
+    }
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChartBar;
 
     protected static ?int $navigationSort = -8;

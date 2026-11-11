@@ -8,6 +8,7 @@ use App\Filament\Resources\Vehicles\TyreFitments\Pages\CreateTyreFitment;
 use App\Filament\Resources\Vehicles\TyreFitments\Pages\EditTyreFitment;
 use App\Filament\Resources\Vehicles\TyreFitments\Pages\ListTyreFitments;
 use App\Filament\Resources\Vehicles\TyreFitments\Pages\ViewTyreFitment;
+use App\Filament\Support\PageHub;
 use App\Filament\Support\VehicleFields;
 use App\Models\TyreFitment;
 use App\Models\VehicleMake;
@@ -34,7 +35,7 @@ class TyreFitmentResource extends Resource
     /** Simplicity (§5): setup pages appear in the menu only for those who manage them. */
     public static function shouldRegisterNavigation(): bool
     {
-        return parent::shouldRegisterNavigation() && (auth()->user()?->canAny([Permission::CompatibilitiesManage->value, Permission::CompatibilitiesVerify->value]) ?? false);
+        return PageHub::inMenu(static::class) && parent::shouldRegisterNavigation() && (auth()->user()?->canAny([Permission::CompatibilitiesManage->value, Permission::CompatibilitiesVerify->value]) ?? false);
     }
 
     protected static ?string $model = TyreFitment::class;

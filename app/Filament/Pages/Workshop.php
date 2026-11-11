@@ -7,6 +7,7 @@ use App\Enums\Permission;
 use App\Enums\RoleName;
 use App\Enums\WorkOrderStatus;
 use App\Exceptions\BusinessRuleException;
+use App\Filament\Support\PageHub;
 use App\Models\Site;
 use App\Models\User;
 use App\Models\WorkOrder;
@@ -149,5 +150,10 @@ class Workshop extends Page
         abort_unless(auth()->user()->can('update', $order), 403);
 
         return $order;
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return PageHub::actions(static::class);
     }
 }

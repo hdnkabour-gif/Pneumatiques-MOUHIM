@@ -6,6 +6,7 @@ use App\Actions\Purchases\PurchaseActions;
 use App\Enums\Permission;
 use App\Filament\Resources\Suppliers\Pages\ManageSuppliers;
 use App\Filament\Support\Fields;
+use App\Filament\Support\PageHub;
 use App\Models\Supplier;
 use App\Support\Money;
 use BackedEnum;
@@ -27,6 +28,11 @@ use Filament\Tables\Table;
 /** Suppliers with what we owe them (§13). */
 class SupplierResource extends Resource
 {
+    public static function shouldRegisterNavigation(): bool
+    {
+        return PageHub::inMenu(static::class) && parent::shouldRegisterNavigation();
+    }
+
     protected static ?string $model = Supplier::class;
 
     protected static bool $hasTitleCaseModelLabel = false;

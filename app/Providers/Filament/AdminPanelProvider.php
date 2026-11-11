@@ -58,12 +58,8 @@ class AdminPanelProvider extends PanelProvider
             ->databaseNotificationsPolling('30s')
             ->navigationGroups([
                 NavigationGroup::make(fn () => __('app.navigation.sales')),
-                NavigationGroup::make(fn () => __('app.navigation.catalog'))->collapsed(),
                 NavigationGroup::make(fn () => __('app.navigation.stock')),
-                NavigationGroup::make(fn () => __('app.navigation.purchases')),
-                NavigationGroup::make(fn () => __('app.navigation.vehicles'))->collapsed(),
-                NavigationGroup::make(fn () => __('app.navigation.administration'))->collapsed(),
-                NavigationGroup::make(fn () => __('app.navigation.settings'))->collapsed(),
+                NavigationGroup::make(fn () => __('app.navigation.settings')),
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
