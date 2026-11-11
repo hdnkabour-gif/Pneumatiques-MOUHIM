@@ -35,6 +35,9 @@ class ImportReferenceWorkbookAction
     /** @var list<string> */
     private array $errors = [];
 
+    /** Deploy-time mode: create what is missing, fill what is empty, overwrite nothing. */
+    private bool $completeOnly = false;
+
     /** @return array{counts: array<string, array{created: int, updated: int, skipped: int}>, errors: list<string>} */
     public function execute(string $path, User $user): array
     {
@@ -50,19 +53,55 @@ class ImportReferenceWorkbookAction
             }
         }
 
+        return $this->import($sheets, $user, basename($path));
+    }
+
+    /**
+     * Reference data shipped with the application (workbook, then the sourced
+     * Morocco supplement), loaded at deploy time with no user involved.
+     * It only completes: missing rows are created, empty fields of existing
+     * generations / engines are filled, and nothing already in the database
+     * is overwritten (owner edits, verified or obsolete compatibilities).
+     *
+     * @param  array<string, list<array<string, mixed>>>  $supplement  sheet name => rows keyed like the workbook columns
+     * @return array{counts: array<string, array{created: int, updated: int, skipped: int}>, errors: list<string>}
+     */
+    public function executeSystem(?string $workbookPath, array $supplement = [], string $label = 'system'): array
+    {
+        $this->completeOnly = true;
+        $sheets = $workbookPath !== null && is_file($workbookPath) ? $this->read($workbookPath) : [];
+
+        foreach ($supplement as $name => $rows) {
+            foreach (array_values($rows) as $i => $data) {
+                $sheets[$name][] = ['line' => $i + 1, 'data' => $data];
+            }
+        }
+
+        return $this->import($sheets, null, $label);
+    }
+
+    /**
+     * @param  array<string, list<array{line: int, data: array<string, mixed>}>>  $sheets
+     * @return array{counts: array<string, array{created: int, updated: int, skipped: int}>, errors: list<string>}
+     */
+    private function import(array $sheets, ?User $user, string $label): array
+    {
         DB::transaction(function () use ($sheets, $user) {
-            $this->makes($sheets['CAR_BRANDS']);
-            $this->models($sheets['CAR_MODELS']);
-            $this->sources($sheets['TECH_SOURCES']);
-            $this->generations($sheets['CAR_GENERATIONS']);
-            $this->engines($sheets['CAR_ENGINES']);
-            $this->tyres($sheets['VEHICLE_TIRE_FITMENTS'], $user);
-            $this->oils($sheets['VEHICLE_OIL_FITMENTS'], $user);
+            $this->makes($sheets['CAR_BRANDS'] ?? []);
+            $this->models($sheets['CAR_MODELS'] ?? []);
+            $this->sources($sheets['TECH_SOURCES'] ?? []);
+            $this->generations($sheets['CAR_GENERATIONS'] ?? []);
+            $this->engines($sheets['CAR_ENGINES'] ?? []);
+            $this->tyres($sheets['VEHICLE_TIRE_FITMENTS'] ?? [], $user);
+            $this->oils($sheets['VEHICLE_OIL_FITMENTS'] ?? [], $user);
         });
 
-        activity('vehicles')->causedBy($user)->event('reference_imported')
-            ->withProperties(['file' => basename($path), 'counts' => $this->counts, 'errors' => count($this->errors)])
-            ->log('reference_imported');
+        $created = array_sum(array_column($this->counts, 'created')) + array_sum(array_column($this->counts, 'updated'));
+        if ($user || $created > 0) {
+            activity('vehicles')->causedBy($user)->event('reference_imported')
+                ->withProperties(['file' => $label, 'counts' => $this->counts, 'errors' => count($this->errors)])
+                ->log('reference_imported');
+        }
 
         return ['counts' => $this->counts, 'errors' => $this->errors];
     }
@@ -128,6 +167,12 @@ class ImportReferenceWorkbookAction
     private function upsert(string $sheet, string $class, array $match, array $values): object
     {
         $model = $class::query()->firstOrNew($match);
+        if ($this->completeOnly && $model->exists) {
+            // Fitments are never touched once they exist; other rows only get their empty fields filled.
+            $values = in_array($class, [TyreFitment::class, OilFitment::class], true)
+                ? []
+                : array_filter($values, fn ($v, $k) => $v !== null && $model->getAttribute($k) === null, ARRAY_FILTER_USE_BOTH);
+        }
         $model->fill($values);
         $this->count($sheet, $model->exists ? ($model->isDirty() ? 'updated' : 'skipped') : 'created');
         $model->save();
@@ -253,7 +298,7 @@ class ImportReferenceWorkbookAction
         }
     }
 
-    private function tyres(array $rows, User $user): void
+    private function tyres(array $rows, ?User $user): void
     {
         foreach ($rows as $r) {
             $d = $r['data'];
@@ -291,12 +336,12 @@ class ImportReferenceWorkbookAction
                 'notes' => $d['Notes'] ?? null,
             ]);
             if ($fitment->wasRecentlyCreated) {
-                $fitment->forceFill(['created_by' => $user->id])->saveQuietly();
+                $fitment->forceFill(['created_by' => $user?->id])->saveQuietly();
             }
         }
     }
 
-    private function oils(array $rows, User $user): void
+    private function oils(array $rows, ?User $user): void
     {
         foreach ($rows as $r) {
             $d = $r['data'];
@@ -323,7 +368,7 @@ class ImportReferenceWorkbookAction
                 'notes' => $d['Notes'] ?? null,
             ]);
             if ($fitment->wasRecentlyCreated) {
-                $fitment->forceFill(['created_by' => $user->id])->saveQuietly();
+                $fitment->forceFill(['created_by' => $user?->id])->saveQuietly();
             }
         }
     }

@@ -33,6 +33,14 @@
 
 ## [Non publié]
 
+### Référentiel véhicules Maroc (D-59) – 2026-11-11
+- Complément sourcé du référentiel véhicules : 35 sources officielles marocaines (Dacia, Renault, Kia, Hyundai,
+  Nissan), 29 gammes, 42 motorisations, 29 montes de pneus, 2 préconisations d'huile, 11 dimensions ;
+  7 nouveaux modèles (Dacia Bigster, Kia Sonet, Carnival, K5, Tasman, Hyundai Staria, Sonata).
+- Le classeur de référence et ce complément sont chargés automatiquement au démarrage, sans rien écraser et
+  sans jamais rien marquer « Vérifié ». Les motorisations du classeur sont complétées (cylindrée, couple, kW).
+- Détail, valeurs douteuses et données restant à obtenir : `docs/MOROCCO_REFERENCE_SUPPLEMENT_2026_11.md`.
+
 ### Numéro de facture « 219/26 » (D-58)
 - Variable `{YY}` (année sur deux chiffres), préfixe de facture vide autorisé, format vérifié, préfixes en double refusés ; appliqué à l'installation en service.
 

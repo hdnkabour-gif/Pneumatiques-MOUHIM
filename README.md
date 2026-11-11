@@ -98,8 +98,12 @@ docker/            entrypoint, php.ini
 
 ### Référentiel véhicules et compatibilités (D-48)
 
-- Données de référence : `docs/data/PNEU_MOUHIM_Manager_Catalogue_Operations_V1_3.xlsx` (source de vérité unique).
-- Import : *Véhicules › Compatibilités pneus › Importer le classeur* (permission `compatibilities.manage`).
+- Données de référence : `docs/data/PNEU_MOUHIM_Manager_Catalogue_Operations_V1_3.xlsx`, complété par
+  `database/data/morocco_reference_supplement.json` (documents officiels marocains, D-59 ; détail dans
+  `docs/MOROCCO_REFERENCE_SUPPLEMENT_2026_11.md`).
+- Chargement automatique au démarrage (`MoroccoVehicleReferenceSeeder`) : il complète sans rien écraser.
+- Import manuel d'un classeur mis à jour : *Véhicules › Compatibilités pneus › Importer le classeur*
+  (permission `compatibilities.manage`).
 - Statuts : Vérifié / Non vérifié / À contrôler / Obsolète ; l'import n'attribue jamais « Vérifié ».
 
 ### Ajouter une permission (phases suivantes)

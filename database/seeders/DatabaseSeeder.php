@@ -21,5 +21,11 @@ class DatabaseSeeder extends Seeder
             ChineseMarketVehicleCatalogueSeeder::class,
             TyreOilReferenceCatalogueSeeder::class,
         ]);
+
+        // Vehicle reference for Morocco (D-59). It takes about a second, so the test suite, which
+        // seeds before every test, loads it only in the tests that are about it.
+        if (! app()->runningUnitTests()) {
+            $this->call(MoroccoVehicleReferenceSeeder::class);
+        }
     }
 }
