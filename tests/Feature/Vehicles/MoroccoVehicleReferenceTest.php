@@ -13,6 +13,7 @@ use App\Models\VehicleGeneration;
 use App\Models\VehicleModel;
 use App\Support\TyreSize;
 use Database\Seeders\MoroccoVehicleReferenceSeeder;
+use Illuminate\Support\Facades\DB;
 use OpenSpout\Reader\XLSX\Reader;
 
 beforeEach(fn () => $this->seed(MoroccoVehicleReferenceSeeder::class));
@@ -94,6 +95,13 @@ it('ships a supplement where every row is sourced and nothing is verified', func
         }
     }
 
+    foreach ($data['TYRE_PRODUCTS_MA'] as $product) {
+        expect($product['Source'])->toStartWith('https://www.pneu.ma/')
+            ->and(TyreSize::parse(rtrim($product['Dimension'], 'C')))->not->toBeNull()
+            ->and($product['Indice de charge'])->not->toBeEmpty()
+            ->and(array_keys($product))->not->toContain('Prix'); // reference only: never a price
+    }
+
     foreach ($data['OIL_PRODUCTS'] as $product) {
         expect($product['Source'])->toStartWith('https://lubricants.catalog.totalenergies.com/MAROC/')
             ->and($product['Viscosité'])->not->toBeEmpty()
@@ -142,13 +150,25 @@ it('loads the workbook and the supplement at deploy time, with nothing verified'
         ->and(VehicleGeneration::query()->whereNotNull('year_from')->count())->toBe(0);
 
     expect(VehicleModel::query()->whereHas('make', fn ($q) => $q->where('name', 'Dacia'))->where('name', 'Bigster')->exists())->toBeTrue()
-        ->and(TyreCatalogueReference::query()->where('source_sheet', MoroccoVehicleReferenceSeeder::SIZES_SHEET)->count())->toBe(count($data['TIRE_SIZES']))
+        ->and(TyreCatalogueReference::query()->where('source_sheet', MoroccoVehicleReferenceSeeder::SIZES_SHEET)->count())
+        ->toBe(count($data['TIRE_SIZES']) + count($data['TYRE_BRANDS_MA']) + count($data['TYRE_PRODUCTS_MA']))
+        ->and(DB::table('products')->count())->toBe(0)
+        ->and(DB::table('stock_movements')->count())->toBe(0)
         ->and(OilCatalogueReference::query()->where('source_sheet', MoroccoVehicleReferenceSeeder::SIZES_SHEET)->count())->toBe(count($data['OIL_PRODUCTS']));
 
     // Official Moroccan oil catalogue: norms and approvals as published.
     $quartz = OilCatalogueReference::query()->where('brand', 'TotalEnergies')->where('model', 'QUARTZ 9000 5W-40')->firstOrFail();
     expect($quartz->specifications['Norme ACEA'])->toBe('A3/B4')
         ->and($quartz->specifications['Homologations constructeur (approuvé)'])->toContain('VW 502.00');
+
+    // Engines of the versions sold in Morocco (Moroccan buyer's guide): sourced, no engine code invented.
+    $bluehdi = VehicleEngine::query()->where('external_id', 'ENG-MA-PEU-208-15BLUEHDI100')->firstOrFail();
+    expect($bluehdi->displacement_cc)->toBe(1499)->and($bluehdi->fuel)->toBe('Diesel')->and($bluehdi->engine_code)->toBeNull()
+        ->and($bluehdi->notes)->toContain('[Source : WAND-PEU-208]')
+        ->and(CompatibilitySource::query()->where('external_id', 'WAND-PEU-208')->value('url'))->toBe('https://www.wandaloo.com/neuf/peugeot/208/');
+
+    // Tyres seen on sale in Morocco: brand, range, size and indices in the reference catalogue.
+    expect(TyreCatalogueReference::query()->where('record_type', 'model')->where('brand', 'Michelin')->where('dimension', '205/55 R16')->exists())->toBeTrue();
 
     // Same model, French-market sheet: present, but only as "unverified".
     $peugeot = TyreFitment::query()->where('external_id', 'TIR-FR-PEU-208-II-19555R16')->firstOrFail();

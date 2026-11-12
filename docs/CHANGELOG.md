@@ -33,6 +33,13 @@
 
 ## [Non publié]
 
+### Référentiel : motorisations du marché marocain et pneus vendus au Maroc (D-61) – 2026-11-12
+- 418 motorisations des versions vendues au Maroc (guide d'achat Wandaloo) : Peugeot, Citroën, Opel, Fiat,
+  Volkswagen, Škoda, SEAT, Audi, BMW, Mercedes-Benz, Toyota, marques chinoises… sans code moteur inventé.
+- 1117 références de pneus proposées à la vente au Maroc (14 marques : gamme, dimension, indices) dans
+  « Références pneus », sans prix ni stock.
+- Chaque monte « marché France » indique maintenant si son diamètre de jante existe sur les versions marocaines.
+
 ### Référentiel : huiles officielles Maroc, pneus d'un autre marché, corrections (D-60) – 2026-11-11
 - Huiles moteur TotalEnergies Quartz et Elf Evolution du catalogue officiel TotalEnergies Maroc (viscosité,
   ACEA / API, homologations constructeur, conditionnements) dans « Références huiles ».

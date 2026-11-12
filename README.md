@@ -103,6 +103,7 @@ docker/            entrypoint, php.ini
   `docs/MOROCCO_REFERENCE_SUPPLEMENT_2026_11.md`).
 - Chargement automatique au démarrage (`MoroccoVehicleReferenceSeeder`) : il complète sans rien écraser.
 - Données d'un autre marché (D-60) : dimensions de pneus uniquement, toujours « Non vérifié », corrigeables.
+- Sources marocaines non constructeur (D-61) : motorisations (guide Wandaloo), pneus vendus au Maroc (pneu.ma).
 - Références pneus et huiles corrigeables dans l'application ; une correction survit aux imports.
 - Import manuel d'un classeur mis à jour : *Véhicules › Compatibilités pneus › Importer le classeur*
   (permission `compatibilities.manage`).

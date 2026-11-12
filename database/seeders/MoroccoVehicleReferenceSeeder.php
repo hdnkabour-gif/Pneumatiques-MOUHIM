@@ -32,7 +32,9 @@ class MoroccoVehicleReferenceSeeder extends Seeder
             $supplement = self::supplement();
             $sizes = $supplement['TIRE_SIZES'] ?? [];
             $oils = $supplement['OIL_PRODUCTS'] ?? [];
-            unset($supplement['_meta'], $supplement['TIRE_SIZES'], $supplement['OIL_PRODUCTS']);
+            $tyreBrands = $supplement['TYRE_BRANDS_MA'] ?? [];
+            $tyreProducts = $supplement['TYRE_PRODUCTS_MA'] ?? [];
+            unset($supplement['_meta'], $supplement['TIRE_SIZES'], $supplement['OIL_PRODUCTS'], $supplement['TYRE_BRANDS_MA'], $supplement['TYRE_PRODUCTS_MA']);
 
             $report = app(ImportReferenceWorkbookAction::class)->executeSystem(
                 base_path(self::WORKBOOK),
@@ -42,6 +44,7 @@ class MoroccoVehicleReferenceSeeder extends Seeder
 
             $this->tyreSizes($sizes);
             $this->oilProducts($oils);
+            $this->tyresSoldInMorocco($tyreBrands, $tyreProducts);
 
             foreach ($report['errors'] as $error) {
                 Log::warning('Vehicle reference import: '.$error);
@@ -88,6 +91,51 @@ class MoroccoVehicleReferenceSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+        }
+    }
+
+    /**
+     * Tyre brands, ranges and sizes seen on sale in Morocco (information only:
+     * no product, price or stock). Inserted once, in one query per batch.
+     *
+     * @param  list<array<string, mixed>>  $brands
+     * @param  list<array<string, mixed>>  $products
+     */
+    private function tyresSoldInMorocco(array $brands, array $products): void
+    {
+        $rows = [];
+        foreach (array_values($brands) as $i => $brand) {
+            $rows[hash('sha256', self::SIZES_SHEET.'|TYRE_BRAND|'.$brand['Marque'])] = ['brand', $brand['Marque'], null, null, $brand, $i + 1];
+        }
+        foreach (array_values($products) as $i => $product) {
+            $identity = implode('|', [$product['Marque'], $product['Gamme'], $product['Dimension'], $product['Indice de charge'], $product['Indice de vitesse'], $product['Mentions'] ?? '']);
+            $rows[hash('sha256', self::SIZES_SHEET.'|TYRE|'.$identity)] = ['model', $product['Marque'], $product['Gamme'], $product['Dimension'], $product, $i + 1];
+        }
+
+        foreach (array_chunk($rows, 500, true) as $chunk) {
+            $existing = DB::table('tyre_catalogue_references')->whereIn('unique_key', array_keys($chunk))->pluck('unique_key')->flip();
+            $insert = [];
+            foreach ($chunk as $key => [$type, $brand, $model, $dimension, $specifications, $line]) {
+                if ($existing->has($key)) {
+                    continue;
+                }
+                $insert[] = [
+                    'record_type' => $type,
+                    'brand' => $brand,
+                    'model' => $model,
+                    'dimension' => $dimension,
+                    'specifications' => json_encode($specifications, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                    'verification_status' => 'to_verify',
+                    'source_sheet' => self::SIZES_SHEET,
+                    'source_row' => $line,
+                    'unique_key' => $key,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+            if ($insert !== []) {
+                DB::table('tyre_catalogue_references')->insert($insert);
+            }
         }
     }
 
