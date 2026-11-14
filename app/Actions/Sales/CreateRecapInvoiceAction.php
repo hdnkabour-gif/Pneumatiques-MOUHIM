@@ -10,6 +10,7 @@ use App\Exceptions\BusinessRuleException;
 use App\Models\Customer;
 use App\Models\Sale;
 use App\Models\User;
+use App\Services\Sales\SaleDocuments;
 use App\Services\SequenceService;
 use Illuminate\Support\Facades\DB;
 
@@ -74,6 +75,8 @@ class CreateRecapInvoiceAction
             activity('sales')->causedBy($user)->performedOn($invoice)->event('recap_invoice')
                 ->withProperties(['number' => $invoice->number, 'notes' => $notes->pluck('number')->all()])
                 ->tap(fn ($a) => $a->site_id = $invoice->site_id)->log('recap_invoice');
+
+            app(SaleDocuments::class)->archiveInvoice($invoice);
 
             return $invoice->load('lines');
         });

@@ -27,6 +27,7 @@ use App\Models\User;
 use App\Models\WorkOrder;
 use App\Services\Money\CashRegister;
 use App\Services\Oil\OilDrumService;
+use App\Services\Sales\SaleDocuments;
 use App\Services\Sales\SaleRules;
 use App\Services\SequenceService;
 use App\Services\SettingsService;
@@ -77,10 +78,16 @@ class ConfirmSaleAction
                 throw BusinessRuleException::make('sales.errors.overpaid');
             }
             $credit = $sale->total_ttc_cents - $paid;
-            foreach ($payments as $p) {
-                if ($p['method'] === PaymentMethod::CreditNote) {
-                    $this->checkVoucher($sale, $p);
+            $voucherTotals = [];
+            foreach ($payments as $payment) {
+                if ($payment['method'] === PaymentMethod::CreditNote) {
+                    $id = $payment['credit_note_id'];
+                    $voucherTotals[$id] = ($voucherTotals[$id] ?? 0) + $payment['amount_cents'];
                 }
+            }
+            ksort($voucherTotals);
+            foreach ($voucherTotals as $id => $amount) {
+                $this->checkVoucher($sale, $id, $amount);
             }
 
             if ($credit > 0 && ! $sale->customer) {
@@ -144,6 +151,10 @@ class ConfirmSaleAction
                     'paid_cents' => $paid, 'credit_cents' => $credit, 'approvals' => $sale->approvals,
                 ])
                 ->tap(fn ($a) => $a->site_id = $sale->site_id)->log('sale_confirmed');
+
+            if ($sale->isKind(SaleKind::Invoice)) {
+                app(SaleDocuments::class)->archiveInvoice($sale);
+            }
 
             return $sale->refresh()->load(['lines', 'payments', 'workOrder']);
         });
@@ -260,11 +271,11 @@ class ConfirmSaleAction
     }
 
     /** Exchange voucher (credit note) of the same customer, with enough left on it. */
-    private function checkVoucher(Sale $sale, array $payment): void
+    private function checkVoucher(Sale $sale, int $id, int $amount): void
     {
-        $voucher = Sale::query()->lockForUpdate()->find($payment['credit_note_id']);
+        $voucher = Sale::query()->lockForUpdate()->find($id);
 
-        if (! $voucher || $voucher->customer_id !== $sale->customer_id || $voucher->voucherBalanceCents() < $payment['amount_cents']) {
+        if (! $voucher || $voucher->customer_id !== $sale->customer_id || $voucher->voucherBalanceCents() < $amount) {
             throw BusinessRuleException::make('sales.errors.voucher_invalid');
         }
     }

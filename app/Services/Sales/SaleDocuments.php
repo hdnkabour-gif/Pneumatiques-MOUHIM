@@ -7,6 +7,7 @@ use App\Models\Sale;
 use App\Services\SettingsService;
 use App\Support\Money;
 use App\Support\Normalize;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Mpdf\Mpdf;
@@ -16,7 +17,28 @@ class SaleDocuments
 {
     public function __construct(private SettingsService $settings) {}
 
+    /** Store the issued PDF in the same database transaction as the invoice. */
+    public function archiveInvoice(Sale $sale): void
+    {
+        DB::table('issued_invoice_documents')->insert([
+            'sale_id' => $sale->id,
+            'pdf_base64' => base64_encode($this->render($sale->fresh())),
+        ]);
+    }
+
     public function pdf(Sale $sale): string
+    {
+        if ($sale->isKind(SaleKind::Invoice) && ! $sale->isDraft()) {
+            $archive = DB::table('issued_invoice_documents')->where('sale_id', $sale->id)->value('pdf_base64');
+            if ($archive !== null) {
+                return base64_decode($archive, true);
+            }
+        }
+
+        return $this->render($sale);
+    }
+
+    private function render(Sale $sale): string
     {
         $previous = app()->getLocale();
         app()->setLocale('fr'); // commercial documents in French by default (§5)
