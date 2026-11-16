@@ -21,7 +21,8 @@ use Spatie\Permission\PermissionRegistrar;
 
 /*
 | A realistic business day on the three sites, backed up and restored into a new database:
-| every table must come back identical, and the restored copy must keep working.
+| every row, sequence value and the exact definition of every constraint, trigger, index and
+| function must come back identical, and the restored copy must keep working.
 | Runs on scratch databases with committed data (pg_dump cannot see the test transaction).
 */
 
@@ -64,8 +65,8 @@ function useConnection(string $connection): void
 }
 
 /**
- * Exact content of a database: per table its row count and an MD5 of every row, plus the
- * sequences, foreign keys, triggers and indexes.
+ * Exact content of a database: per table its row count and an MD5 of every row, the value of
+ * every sequence, and the exact definition of every constraint, trigger, index and function.
  */
 function databaseFingerprint(string $connection): array
 {
@@ -79,9 +80,15 @@ function databaseFingerprint(string $connection): array
     }
     $fingerprint['sequences'] = $db->table('pg_sequences')->where('schemaname', 'public')->orderBy('sequencename')
         ->pluck('last_value', 'sequencename')->all();
-    $fingerprint['foreign_keys'] = $db->selectOne("SELECT count(*) AS n FROM pg_constraint c JOIN pg_namespace s ON s.oid = c.connamespace WHERE s.nspname = 'public' AND c.contype = 'f'")->n;
-    $fingerprint['triggers'] = $db->selectOne("SELECT count(*) AS n FROM pg_trigger t JOIN pg_class c ON c.oid = t.tgrelid JOIN pg_namespace s ON s.oid = c.relnamespace WHERE s.nspname = 'public' AND NOT t.tgisinternal")->n;
-    $fingerprint['indexes'] = $db->table('pg_indexes')->where('schemaname', 'public')->count();
+
+    $definitions = fn (string $sql) => collect($db->select($sql))->map(fn ($r) => $r->definition)->sort()->values()->all();
+    $fingerprint['constraints'] = $definitions("SELECT c.conrelid::regclass || ' ' || c.conname || ' ' || pg_get_constraintdef(c.oid) AS definition
+        FROM pg_constraint c JOIN pg_namespace s ON s.oid = c.connamespace WHERE s.nspname = 'public'");
+    $fingerprint['triggers'] = $definitions("SELECT pg_get_triggerdef(t.oid) AS definition
+        FROM pg_trigger t JOIN pg_class c ON c.oid = t.tgrelid JOIN pg_namespace s ON s.oid = c.relnamespace WHERE s.nspname = 'public' AND NOT t.tgisinternal");
+    $fingerprint['indexes'] = $definitions("SELECT indexdef AS definition FROM pg_indexes WHERE schemaname = 'public'");
+    $fingerprint['functions'] = $definitions("SELECT pg_get_functiondef(p.oid) AS definition
+        FROM pg_proc p JOIN pg_namespace s ON s.oid = p.pronamespace WHERE s.nspname = 'public'");
 
     return $fingerprint;
 }
@@ -135,8 +142,10 @@ it('backs up and restores a three-site business day figure for figure', function
     $after = databaseFingerprint('business_restored');
     expect($after)->toBe($before)
         ->and(count($before['tables']))->toBeGreaterThan(50)
-        ->and($before['foreign_keys'])->toBeGreaterThan(0)
-        ->and($before['triggers'])->toBeGreaterThan(0);
+        ->and(collect($before['constraints'])->filter(fn ($d) => str_contains($d, 'FOREIGN KEY'))->count())->toBeGreaterThan(50)
+        ->and($before['triggers'])->not->toBeEmpty()
+        ->and($before['functions'])->not->toBeEmpty()
+        ->and(count($before['indexes']))->toBeGreaterThan(50);
 
     // The restored copy works: stock ledger consistent, debts and invoices intact,
     // and a new invoice does not reuse a number.
@@ -149,6 +158,14 @@ it('backs up and restores a three-site business day figure for figure', function
         ->and($stock->quantityAt($oil, site('M01')))->toBe(9)
         ->and(Customer::query()->find($company->id)->outstandingCents())->toBe($debt)
         ->and(DB::table('issued_invoice_documents')->whereIn('sale_id', [$cashSale->id, $creditSale->id])->count())->toBe(2);
+
+    // The archived invoices are the same bytes (table hashes above) and complete PDF files.
+    foreach ([$cashSale, $creditSale] as $sale) {
+        $pdf = base64_decode(DB::table('issued_invoice_documents')->where('sale_id', $sale->id)->value('pdf_base64'), true);
+        expect($pdf)->toStartWith('%PDF-')
+            ->and(rtrim($pdf))->toEndWith('%%EOF')
+            ->and(strlen($pdf))->toBeGreaterThan(1000);
+    }
     test()->artisan('stock:verify')->assertSuccessful();
 
     $next = app(SaveSaleDraftAction::class)->execute(['site_id' => site('M01')->id, 'lines' => [['product_id' => $tyre->id, 'quantity' => 1]]], $sellerM01);

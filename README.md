@@ -162,9 +162,14 @@ Premier déploiement – compte propriétaire, au choix :
   2 ans). Le nettoyage des anciennes sauvegardes n'a lieu **qu'après une sauvegarde réussie** : des nuits
   en échec ne réduisent jamais les sauvegardes existantes, et la plus récente n'est jamais supprimée.
 - Contrôle de santé à 08:00. Tout échec (sauvegarde, nettoyage, sauvegarde trop ancienne) est
-  signalé immédiatement aux propriétaires actifs : notification dans l'application (et sur le
-  téléphone si Web Push est configuré), sans dépendre de la file d'attente. Email en plus si
+  signalé aux propriétaires actifs : notification enregistrée immédiatement dans l'application (sans
+  dépendre de la file d'attente) et envoyée sur le téléphone si Web Push est configuré. Email en plus si
   `MAIL_*` et `BACKUP_NOTIFY_EMAIL` sont configurés.
+- Limites : si l'application, la base ou le planificateur sont arrêtés, aucune alerte ne part ; seule
+  une surveillance externe (à décider) peut le détecter. La réception sur le téléphone dépend de la
+  configuration Web Push et n'est pas prouvée par les tests.
+- Non encore prouvé en conditions réelles : sauvegarde vers Cloudflare R2 et restauration sur un
+  environnement Railway de test. C'est une condition avant l'utilisation en production.
 - Si une variable `BACKUP_S3_*` manque, la sauvegarde échoue avec un message qui nomme les
   variables manquantes (jamais leurs valeurs) et l'échec est signalé.
 - Les tests automatisés `BackupRestoreTest` sauvegardent une base, la détruisent puis la restaurent,

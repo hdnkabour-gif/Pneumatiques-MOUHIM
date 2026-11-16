@@ -12,15 +12,33 @@
   maintenant de la connexion active.
 
 ### Modifié
-- `app:backup-restore` demande un mode explicite : `--into=<nouvelle_base>` (recommandé, la base et les
-  fichiers actuels ne sont pas touchés) ou `--replace-current` (archive contrôlée d'abord, une seule
-  transaction : en cas d'erreur rien ne change ; en production, nom de la base à taper).
+- `app:backup-restore` demande un mode explicite :
+  - `--into=<nouvelle_base>` (recommandé) : nouvelle base et nouveau dossier de fichiers
+    (`storage/app/public/_restored/<base>`, sur le volume persistant, exclu des sauvegardes) ; la base et
+    les fichiers actuels ne sont pas touchés ; en cas d'échec, les deux sont supprimés.
+  - `--replace-current` : archive contrôlée et fichiers copiés puis vérifiés **avant** toute modification,
+    base remplacée en une seule transaction, puis fichiers mis en place. Base et fichiers ne forment pas
+    une opération atomique : si seule la mise en place des fichiers échoue, la base a déjà été restaurée,
+    le message le dit et conserve la copie vérifiée. En production, nom de la base à taper.
+- Les anciennes sauvegardes ne sont nettoyées qu'après une sauvegarde réussie (plus de nettoyage à 01:30
+  les nuits où la sauvegarde échoue).
 
 ### Ajouté
-- Alerte immédiate aux propriétaires actifs (dans l'application, et sur le téléphone si Web Push est
-  configuré) quand une tâche de sauvegarde échoue, sans dépendre de la file d'attente.
+- Alerte aux propriétaires actifs quand une tâche de sauvegarde échoue : notification enregistrée
+  immédiatement dans l'application (sans file d'attente) et envoi Web Push si configuré. Limites : la
+  réception sur le téléphone n'est pas prouvée par les tests, et aucune alerte n'est possible si
+  l'application, la base ou le planificateur sont arrêtés (surveillance externe à décider).
 - Tests : `DB_URL`, archive endommagée ou tronquée, dump en échec en cours de route, archive chiffrée,
-  journée de travail réaliste sur les trois sites restaurée à l'identique (contenu de chaque table).
+  pannes injectées à chaque étape (copie, obstacle, mise en place, base), dossier de restauration isolé,
+  droit `CREATEDB`, conservation des sauvegardes ; journée de travail réaliste sur les trois sites
+  restaurée à l'identique : contenu de chaque table, valeurs des séquences, définitions exactes des
+  contraintes, déclencheurs, index et fonctions, factures PDF complètes.
+
+### Reste à prouver (avant production)
+- Sauvegarde et restauration réelles avec Cloudflare R2 sur un environnement Railway de test (droits du
+  bucket, image construite, volume, droit `CREATEDB`).
+- Valeur réelle de `QUEUE_CONNECTION` sur Railway (aucun worker séparé n'y tourne) : si c'est `database`,
+  les autres notifications (approbations…), qui passent par la file d'attente, ne seraient jamais affichées.
 
 ## [Phase 2 – Catalogue et stock] – 2026-11-05
 
