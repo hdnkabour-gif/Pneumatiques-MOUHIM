@@ -6,17 +6,21 @@ use RuntimeException;
 use Throwable;
 
 /**
- * The database WAS restored, but the uploaded files could not all be put back.
- * The verified copy of the files is kept, so they can be moved back without the archive.
+ * The database WAS restored, but the uploaded files were not all put back. The archive is
+ * unchanged: putting its files in place again (--files-only) finishes the restore.
  */
 class PartialRestoreException extends RuntimeException
 {
-    public function __construct(public readonly string $stagedFiles, public readonly string $target, Throwable $previous)
-    {
+    public function __construct(
+        public readonly string $archive,
+        public readonly string $target,
+        public readonly int $placed,
+        public readonly int $total,
+        Throwable $previous,
+    ) {
         parent::__construct(
-            "The database WAS restored, but the uploaded files were not all moved into [{$target}]: {$previous->getMessage()} "
-            ."A complete, verified copy of the files is kept in [{$stagedFiles}]: copy its content into [{$target}] "
-            ."(cp -a {$stagedFiles}/. {$target}/), then delete it.",
+            "The database WAS restored, but only {$placed} of {$total} uploaded files were put into [{$target}]: {$previous->getMessage()} "
+            ."Finish with: php artisan app:backup-restore {$archive} --files-only (repeatable; it uses the unchanged archive).",
             previous: $previous,
         );
     }

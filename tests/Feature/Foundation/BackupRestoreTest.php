@@ -8,6 +8,7 @@ use Illuminate\Process\Exceptions\ProcessFailedException;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 /*
@@ -292,7 +293,7 @@ it('never replaces the current database in production without a typed confirmati
 });
 
 /*
-| Review of PR #8: database and files are two resources. Each failure point is injected and
+| Reviews of PR #8: database and files are two resources. Each failure point is injected and
 | the exact resulting state is checked.
 */
 
@@ -311,33 +312,79 @@ function liveFilesForBackup(string $content = 'PHOTO'): string
     return $live;
 }
 
-/** Restore action whose given step fails, as a full disk or a broken mount would. */
+/** Restore action whose given step fails, as a full disk, a broken mount or a bad copy would. */
 function restoreFailingAt(string $step): RestoreDatabaseBackupAction
 {
     return match ($step) {
+        // --into: the copy of the files into the new private folder fails half-way.
         'copy' => new class extends RestoreDatabaseBackupAction
         {
             protected function copyVerified(string $source, string $target): void
             {
-                mkdir($target, 0775, true);
+                mkdir($target, 0700, true);
                 file_put_contents($target.'/half-copied.jpg', 'X');
 
                 throw new RuntimeException('No space left on device (injected)');
             }
         },
-        'move' => new class extends RestoreDatabaseBackupAction
+        // A copy silently altered (same size, different bytes): the SHA-256 check must catch it.
+        'corrupt-tree' => new class extends RestoreDatabaseBackupAction
         {
-            protected function moveFiles(string $staging, string $target): void
+            protected function copyTree(string $source, string $target): void
             {
-                throw new RuntimeException('No space left on device (injected)');
+                parent::copyTree($source, $target);
+                // One byte changed, same size.
+                $file = collect(File::allFiles($target))->first()->getPathname();
+                $content = file_get_contents($file);
+                $content[0] = $content[0] === 'Z' ? 'Y' : 'Z';
+                file_put_contents($file, $content);
+            }
+        },
+        'corrupt-file' => new class extends RestoreDatabaseBackupAction
+        {
+            protected function copyFile(string $from, string $to): void
+            {
+                parent::copyFile($from, $to);
+                $content = file_get_contents($to);
+                $content[0] = $content[0] === 'Z' ? 'Y' : 'Z'; // one byte changed, same size
+                file_put_contents($to, $content);
+            }
+        },
+        // --into: removing the new database fails during the cleanup.
+        'drop' => new class extends RestoreDatabaseBackupAction
+        {
+            protected function dropDatabase(?string $connection, string $database): void
+            {
+                throw new RuntimeException('Cannot drop the database (injected)');
             }
         },
     };
 }
 
-function stagingFolders(): array
+/** Restore action whose second file fails to be put in place, after the first one succeeded. */
+function restoreFailingOnSecondFile(): RestoreDatabaseBackupAction
 {
-    return glob(storage_path('app/public/.restore-staging-*'), GLOB_ONLYDIR) ?: [];
+    return new class extends RestoreDatabaseBackupAction
+    {
+        public int $calls = 0;
+
+        protected function placeFile(string $from, string $to, string $sha256): void
+        {
+            if (++$this->calls === 2) {
+                throw new RuntimeException('No space left on device (injected on file 2)');
+            }
+            parent::placeFile($from, $to, $sha256);
+        }
+    };
+}
+
+/** Temporary copies left anywhere in the public web tree. */
+function leftoversInPublicTree(): array
+{
+    return collect(File::allFiles(storage_path('app/public'), true))
+        ->map(fn ($f) => $f->getRelativePathname())
+        ->filter(fn ($p) => str_contains($p, '.restore-'))
+        ->values()->all();
 }
 
 it('changes neither the database nor the live files when the files cannot be put in place (replace)', function () {
@@ -346,7 +393,6 @@ it('changes neither the database nor the live files when the files cannot be put
         $path = backupNow();
         DB::connection('backup_test')->table('sites')->where('code', 'M01')->update(['name' => 'Après la sauvegarde']);
         // A file now stands where the archive has a folder.
-        $stagingBefore = stagingFolders();
         File::deleteDirectory($live);
         file_put_contents($live, 'NOT A FOLDER');
 
@@ -355,32 +401,13 @@ it('changes neither the database nor the live files when the files cannot be put
 
         expect(siteNames('backup_test'))->toBe(['Dépôt Central', 'Après la sauvegarde'])
             ->and(file_get_contents($live))->toBe('NOT A FOLDER')
-            ->and(stagingFolders())->toBe($stagingBefore);
+            ->and(leftoversInPublicTree())->toBe([]);
     } finally {
         is_dir($live) ? File::deleteDirectory($live) : @unlink($live);
     }
 });
 
-it('changes neither the database nor the live files when copying the files fails (replace)', function () {
-    $live = liveFilesForBackup();
-    try {
-        $path = backupNow();
-        DB::connection('backup_test')->table('sites')->where('code', 'M01')->update(['name' => 'Après la sauvegarde']);
-        file_put_contents($live.'/photo.jpg', 'CURRENT');
-        $stagingBefore = stagingFolders();
-
-        expect(fn () => restoreFailingAt('copy')->replacingCurrent('backups_local', $path, 'backup_test'))
-            ->toThrow(RuntimeException::class, 'injected');
-
-        expect(siteNames('backup_test'))->toBe(['Dépôt Central', 'Après la sauvegarde'])
-            ->and(file_get_contents($live.'/photo.jpg'))->toBe('CURRENT')
-            ->and(stagingFolders())->toBe($stagingBefore);
-    } finally {
-        File::deleteDirectory($live);
-    }
-});
-
-it('says the database WAS replaced and keeps a verified copy when moving the files fails afterwards (replace)', function () {
+it('says exactly how far it got when file 2 fails after file 1 was put in place, and the archive finishes the job (replace)', function () {
     $live = liveFilesForBackup();
     try {
         $path = backupNow();
@@ -388,19 +415,46 @@ it('says the database WAS replaced and keeps a verified copy when moving the fil
         File::deleteDirectory($live);
 
         try {
-            restoreFailingAt('move')->replacingCurrent('backups_local', $path, 'backup_test');
+            restoreFailingOnSecondFile()->replacingCurrent('backups_local', $path, 'backup_test');
             $this->fail('A partial restore must not pass silently.');
         } catch (PartialRestoreException $e) {
-            expect($e->getMessage())->toContain('The database WAS restored');
-            $staged = $e->stagedFiles;
+            expect($e->getMessage())->toContain('The database WAS restored')
+                ->toContain('only 1 of 2 uploaded files')
+                ->toContain("app:backup-restore {$path} --files-only")
+                ->and([$e->placed, $e->total])->toBe([1, 2]);
         }
 
-        // Documented state: database restored, live files missing, complete copy kept for the retry.
+        // Documented state: database restored, file 1 in place (complete, never half-written), file 2 missing.
+        $placed = collect(['photo.jpg', 'sub/doc.pdf'])->filter(fn ($f) => file_exists("{$live}/{$f}"))->values()->all();
         expect(siteNames('backup_test'))->toBe(['Dépôt Central', 'Magasin 01'])
-            ->and(is_dir($live))->toBeFalse()
-            ->and(file_get_contents($staged.'/'.basename($live).'/photo.jpg'))->toBe('PHOTO')
-            ->and(file_get_contents($staged.'/'.basename($live).'/sub/doc.pdf'))->toBe('PHOTO-PDF');
-        File::deleteDirectory($staged);
+            ->and($placed)->toHaveCount(1)
+            ->and(file_get_contents("{$live}/{$placed[0]}"))->toBe($placed[0] === 'photo.jpg' ? 'PHOTO' : 'PHOTO-PDF')
+            ->and(leftoversInPublicTree())->toBe([]);
+
+        // The recovery named in the message, from the unchanged archive, completes the files.
+        app(RestoreDatabaseBackupAction::class)->filesOnly('backups_local', $path);
+        expect(file_get_contents($live.'/photo.jpg'))->toBe('PHOTO')
+            ->and(file_get_contents($live.'/sub/doc.pdf'))->toBe('PHOTO-PDF')
+            ->and(siteNames('backup_test'))->toBe(['Dépôt Central', 'Magasin 01'])
+            ->and(leftoversInPublicTree())->toBe([]);
+    } finally {
+        File::deleteDirectory($live);
+    }
+});
+
+it('never replaces a live file with a copy that does not match the archive (SHA-256)', function () {
+    $live = liveFilesForBackup('ORIGINAL');
+    try {
+        $path = backupNow();
+        file_put_contents($live.'/photo.jpg', 'CURRENT');
+        file_put_contents($live.'/sub/doc.pdf', 'CURRENT-PDF');
+
+        expect(fn () => restoreFailingAt('corrupt-file')->filesOnly('backups_local', $path))
+            ->toThrow(RuntimeException::class, 'does not match the archive (SHA-256)');
+
+        expect(file_get_contents($live.'/photo.jpg'))->toBe('CURRENT')
+            ->and(file_get_contents($live.'/sub/doc.pdf'))->toBe('CURRENT-PDF')
+            ->and(leftoversInPublicTree())->toBe([]);
     } finally {
         File::deleteDirectory($live);
     }
@@ -410,7 +464,7 @@ it('removes both the new database and the new files folder when restoring into t
     $live = liveFilesForBackup();
     try {
         $path = backupNow();
-        $restore = $step === 'copy' ? restoreFailingAt('copy') : app(RestoreDatabaseBackupAction::class);
+        $restore = in_array($step, ['copy', 'corrupt-tree'], true) ? restoreFailingAt($step) : app(RestoreDatabaseBackupAction::class);
         if ($step === 'database') {
             $path = archiveWithDump($path, fn (string $sql) => str_replace(
                 '-- PostgreSQL database dump complete',
@@ -432,47 +486,79 @@ it('removes both the new database and the new files folder when restoring into t
     } finally {
         File::deleteDirectory($live);
     }
-})->with(['copy', 'database']);
+})->with(['copy', 'corrupt-tree', 'database']);
 
-it('never lets a restore into a new database write over the live files', function (string $target) {
+it('still removes the new files folder, reports the leftover database and keeps the original error when the database cannot be dropped', function () {
+    $live = liveFilesForBackup();
+    Log::spy();
+    try {
+        $path = archiveWithDump(backupNow(), fn (string $sql) => str_replace(
+            '-- PostgreSQL database dump complete',
+            "SELECT * FROM table_that_does_not_exist;\n-- PostgreSQL database dump complete",
+            $sql,
+        ));
+        $zip = new ZipArchive;
+        $zip->open(Storage::disk('backups_local')->path($path));
+        $zip->addFromString('public/'.basename($live).'/photo.jpg', 'PHOTO');
+        $zip->close();
+
+        expect(fn () => restoreFailingAt('drop')->intoNewDatabase('backups_local', $path, RESTORED_DB, 'backup_test'))
+            ->toThrow(ProcessFailedException::class); // the original error, not the cleanup one
+
+        expect(file_exists(RestoreDatabaseBackupAction::restoredFilesRoot().'/'.RESTORED_DB))->toBeFalse();
+        Log::shouldHaveReceived('error')->withArgs(fn ($message) => str_contains($message, 'could not remove: database ['.RESTORED_DB.']'))->once();
+    } finally {
+        File::deleteDirectory($live);
+    }
+});
+
+it('never writes restored copies into the public web tree', function (string $target) {
     $path = backupNow(['--only-db' => true]);
 
     expect(fn () => app(RestoreDatabaseBackupAction::class)->intoNewDatabase('backups_local', $path, RESTORED_DB, 'backup_test', filesTarget: $target))
-        ->toThrow(RuntimeException::class, 'overlaps the live uploaded files');
+        ->toThrow(RuntimeException::class, 'public web tree');
 
     expect(DB::connection('pg_admin')->table('pg_database')->where('datname', RESTORED_DB)->exists())->toBeFalse();
 })->with([
     'the live folder' => fn () => storage_path('app/public'),
     'its parent' => fn () => storage_path('app'),
     'a live sub-folder' => fn () => storage_path('app/public/used-tyres'),
-    'a path escaping _restored' => fn () => storage_path('app/public/_restored/../used-tyres'),
-    'a relative path to it' => 'storage/app/public',
+    'the old _restored folder' => fn () => storage_path('app/public/_restored/db'),
+    'a path escaping the private folder' => fn () => storage_path('app/private/restored/../../public/x'),
+    'a relative path to it' => 'storage/app/public/x',
+    'the document root' => fn () => public_path('restored'),
 ]);
 
-it('keeps restored files on the persistent volume, apart from the live files, and out of the backups', function () {
-    expect(RestoreDatabaseBackupAction::restoredFilesRoot())->toStartWith(storage_path('app/public').'/');
+it('keeps restored copies private: outside the public tree, even with the storage link, and refused over HTTP', function () {
+    $private = RestoreDatabaseBackupAction::restoredFilesRoot();
+    $public = realpath(storage_path('app/public'));
 
-    $copy = RestoreDatabaseBackupAction::restoredFilesRoot().'/old_restore';
-    $live = storage_path('app/public/backup-test-'.uniqid());
-    mkdir($copy, 0775, true);
-    mkdir($live, 0775, true);
-    file_put_contents($copy.'/restored.jpg', 'COPY');
-    file_put_contents($live.'/live.jpg', 'LIVE');
+    // With the usual "php artisan storage:link", only storage/app/public is reachable as /storage.
+    expect(str_starts_with($private.'/', $public.'/'))->toBeFalse()
+        ->and(str_starts_with($private.'/', public_path().'/'))->toBeFalse();
 
-    // The real include / exclude settings, written to the test disk.
-    $config = config('backup_restore_test');
-    $config['backup']['source']['files'] = config('backup.backup.source.files');
-    config(['backup_restore_test' => $config]);
+    // A restored copy is not served, not even through the private disk's route (signed URLs only).
+    $copy = $private.'/'.RESTORED_DB.'/used-tyres/receipt.jpg';
+    File::ensureDirectoryExists(dirname($copy));
+    file_put_contents($copy, 'PRIVATE');
 
+    foreach (['/storage/restored/'.RESTORED_DB.'/used-tyres/receipt.jpg', '/storage/app/private/restored/'.RESTORED_DB.'/used-tyres/receipt.jpg'] as $url) {
+        expect($this->get($url)->status())->toBeIn([403, 404]);
+    }
+});
+
+it('never puts archive files over the live files in production without a person confirming', function () {
+    $live = liveFilesForBackup('ARCHIVE');
     try {
-        $path = backupNow();
-        $zip = new ZipArchive;
-        $zip->open(Storage::disk('backups_local')->path($path));
-        $names = collect(range(0, $zip->numFiles - 1))->map(fn ($i) => $zip->getNameIndex($i));
-        $zip->close();
+        backupNow();
+        file_put_contents($live.'/photo.jpg', 'CURRENT');
+        app()->detectEnvironment(fn () => 'production');
 
-        expect($names->contains('public/'.basename($live).'/live.jpg'))->toBeTrue()
-            ->and($names->contains(fn ($n) => str_contains($n, '_restored')))->toBeFalse();
+        $this->artisan('app:backup-restore', ['--files-only' => true, '--force' => true, '--disk' => 'backups_local', '--no-interaction' => true])
+            ->expectsOutputToContain('needs an interactive confirmation')
+            ->assertFailed();
+
+        expect(file_get_contents($live.'/photo.jpg'))->toBe('CURRENT');
     } finally {
         File::deleteDirectory($live);
     }
