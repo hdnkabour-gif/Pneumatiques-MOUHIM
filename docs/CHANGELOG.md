@@ -13,13 +13,19 @@
 
 ### Modifié
 - `app:backup-restore` demande un mode explicite :
-  - `--into=<nouvelle_base>` (recommandé) : nouvelle base et nouveau dossier de fichiers
-    (`storage/app/public/_restored/<base>`, sur le volume persistant, exclu des sauvegardes) ; la base et
-    les fichiers actuels ne sont pas touchés ; en cas d'échec, les deux sont supprimés.
-  - `--replace-current` : archive contrôlée et fichiers copiés puis vérifiés **avant** toute modification,
+  - `--into=<nouvelle_base>` (recommandé) : nouvelle base ; fichiers copiés pour vérification dans un
+    dossier **privé** (`storage/app/private/restored/<base>`, hors de l'arborescence web publique) ; la
+    base et les fichiers actuels ne sont pas touchés ; en cas d'échec, la base et le dossier créés sont
+    supprimés, chacun indépendamment, et ce qui reste est signalé sans masquer l'erreur d'origine.
+  - `--replace-current` : archive contrôlée et absence d'obstacle vérifiée **avant** toute modification,
     base remplacée en une seule transaction, puis fichiers mis en place. Base et fichiers ne forment pas
-    une opération atomique : si seule la mise en place des fichiers échoue, la base a déjà été restaurée,
-    le message le dit et conserve la copie vérifiée. En production, nom de la base à taper.
+    une opération atomique : si la mise en place des fichiers échoue, la base a déjà été restaurée et le
+    message indique combien de fichiers sont en place et la commande qui termine à partir de l'archive.
+    En production, nom de la base à taper.
+  - `--files-only` (nouveau) : remet en place les fichiers d'une archive sans toucher à la base ;
+    répétable ; termine une restauration partielle ou sert à la bascule. Confirmation en production.
+  - Chaque fichier est copié à côté de sa destination, contrôlé par empreinte SHA-256, puis renommé
+    par-dessus en une opération : jamais de fichier actuel remplacé par une copie incomplète.
 - Les anciennes sauvegardes ne sont nettoyées qu'après une sauvegarde réussie (plus de nettoyage à 01:30
   les nuits où la sauvegarde échoue).
 
@@ -29,7 +35,8 @@
   réception sur le téléphone n'est pas prouvée par les tests, et aucune alerte n'est possible si
   l'application, la base ou le planificateur sont arrêtés (surveillance externe à décider).
 - Tests : `DB_URL`, archive endommagée ou tronquée, dump en échec en cours de route, archive chiffrée,
-  pannes injectées à chaque étape (copie, obstacle, mise en place, base), dossier de restauration isolé,
+  pannes injectées à chaque étape (copie, copie altérée, obstacle, échec au 2e fichier après la mise en
+  place du 1er, base, suppression de la base), copies de restauration hors de l'arborescence publique,
   droit `CREATEDB`, conservation des sauvegardes ; journée de travail réaliste sur les trois sites
   restaurée à l'identique : contenu de chaque table, valeurs des séquences, définitions exactes des
   contraintes, déclencheurs, index et fonctions, factures PDF complètes.

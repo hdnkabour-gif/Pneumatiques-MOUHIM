@@ -175,26 +175,40 @@ Premier déploiement – compte propriétaire, au choix :
 - Les tests automatisés `BackupRestoreTest` sauvegardent une base, la détruisent puis la restaurent,
   et vérifient qu'une restauration ratée ne modifie rien.
 
-Restauration – méthode recommandée : dans une **nouvelle** base et un **nouveau** dossier de fichiers,
-sans toucher à la base ni aux fichiers actuels.
+Restauration – méthode recommandée : dans une **nouvelle** base, sans toucher à la base ni aux
+fichiers actuels.
 
 ```bash
 php artisan app:backup-restore --into=restore_20261116          # dernière sauvegarde (ou choisir dans la liste)
 php artisan app:backup-restore chemin/archive.zip --into=restore_20261116 --without-files
 ```
 
-- Fichiers restaurés dans `storage/app/public/_restored/<base>` : sur le volume persistant de Railway
-  (ils survivent à un redéploiement), à part des fichiers actuels, que l'application ne lit pas, et
-  exclus des sauvegardes. `--files-to=` choisit un autre **nouveau** dossier ; un dossier qui est, contient
-  ou se trouve dans les fichiers actuels (hors `_restored`) est refusé.
-- En cas d'échec (copie des fichiers vérifiée fichier par fichier, ou chargement de la base), la nouvelle
-  base et le nouveau dossier sont supprimés : il ne reste rien à moitié restauré.
+- Les fichiers de l'archive sont copiés, pour vérification, dans le dossier **privé**
+  `storage/app/private/restored/<base>` : hors de l'arborescence web publique (rien sous
+  `storage/app/public`, servi comme `/storage` quand le lien `storage:link` existe, ni sous `public/`),
+  et refusé par la route des fichiers privés sans URL signée. Ce dossier n'est **pas** sur le volume
+  Railway : la copie durable, c'est l'archive elle-même (R2). `--files-to=` choisit un autre dossier
+  privé ; tout dossier dans, ou contenant, l'arborescence publique est refusé.
+- Copie vérifiée fichier par fichier (empreinte SHA-256). En cas d'échec (copie ou chargement de la
+  base), la nouvelle base et le nouveau dossier sont supprimés, chacun indépendamment ; ce qui n'a pas
+  pu être supprimé est signalé dans le journal, sans masquer l'erreur d'origine.
 - L'utilisateur PostgreSQL doit pouvoir créer une base (`CREATEDB`) ; sinon un message le dit, et il faut
   restaurer dans un service PostgreSQL séparé.
 - **Bascule** (après vérification de la base restaurée) : mettre l'application en maintenance
-  (`php artisan down`), copier les fichiers restaurés vers les fichiers actuels
-  (`cp -a storage/app/public/_restored/<base>/. storage/app/public/`), pointer `DB_URL` vers la nouvelle
+  (`php artisan down`), remettre les fichiers de la même archive en place
+  (`php artisan app:backup-restore chemin/archive.zip --files-only`), pointer `DB_URL` vers la nouvelle
   base, redéployer, puis `php artisan up`. L'ancienne base reste intacte tant qu'on ne la supprime pas.
+
+Remettre seulement les fichiers d'une archive (aucun effet sur la base ; répétable) :
+
+```bash
+php artisan app:backup-restore chemin/archive.zip --files-only
+```
+
+Chaque fichier est copié à côté de sa destination, contrôlé (SHA-256), puis renommé par-dessus en une
+seule opération : un fichier actuel n'est jamais remplacé par une copie incomplète ou différente de
+l'archive. Les fichiers présents de même nom sont remplacés, aucun n'est supprimé. En production, une
+personne doit confirmer.
 
 Remplacer la base actuelle (à éviter ; mettre l'application en maintenance avec `php artisan down`) :
 
@@ -204,18 +218,20 @@ php artisan app:backup-restore --replace-current
 
 Ce qui est garanti, étape par étape :
 
-1. Avant toute modification : archive contrôlée (lisible, mot de passe, dump complet) ; fichiers copiés
-   à côté de leur destination puis vérifiés (liste et taille de chaque fichier), et aucun obstacle pour
-   les mettre en place. Un échec ici ne change **ni la base ni les fichiers**.
+1. Avant toute modification : archive contrôlée (lisible, mot de passe, dump complet) et aucun obstacle
+   pour mettre les fichiers en place. Un échec ici ne change **ni la base ni les fichiers**.
 2. Suppression de l'ancien schéma et chargement de la base dans **une seule transaction** : en cas
    d'erreur, la base et les fichiers restent comme avant.
-3. Mise en place des fichiers vérifiés (déplacements sur le même disque ; les fichiers présents sont
-   remplacés, aucun n'est supprimé). Si cette dernière étape échoue, **la base a déjà été restaurée** :
-   le message le dit et indique le dossier où la copie complète des fichiers est conservée pour finir
-   à la main. Base et fichiers ne forment donc pas une seule opération atomique.
+3. Mise en place des fichiers un par un, comme `--files-only` ; la source extraite n'est jamais
+   consommée. Si cette étape échoue, **la base a déjà été restaurée** : le message dit combien de
+   fichiers sont en place sur combien, et donne la commande `--files-only` qui termine le travail à
+   partir de l'archive, inchangée. Base et fichiers ne forment donc pas une seule opération atomique.
 
 - En production, il faut taper le nom de la base pour confirmer (`--force` ne suffit pas).
 - Les paramètres du serveur viennent de la connexion active (`DB_URL` compris).
+- Aucune copie de restauration n'est écrite dans l'arborescence publique, sauf la copie temporaire de
+  chaque fichier, à côté de sa place finale et le temps de cette copie (elle porte le contenu qui y
+  devient public juste après, et elle est supprimée en cas d'échec).
 
 Sauvegarde manuelle : `php artisan backup:run`.
 
