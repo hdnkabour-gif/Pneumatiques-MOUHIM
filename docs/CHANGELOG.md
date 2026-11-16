@@ -1,5 +1,27 @@
 # Changelog
 
+## [Fiabilité des sauvegardes – audit de sécurité, phase A] – 2026-11-16
+
+### Corrigé
+- Sauvegarde quotidienne en échec chaque nuit (code 1) : le client PostgreSQL de l'image (17) refusait
+  le serveur Railway (18). L'image, la CI et Docker local passent à PostgreSQL 18.
+- Variables `BACKUP_S3_*` absentes : l'erreur n'était pas signalée (TypeError non interceptée par
+  spatie/laravel-backup). Elle devient un échec clair, qui nomme les variables manquantes.
+- Restauration : avec `DB_URL` seul (configuration Railway), l'ancienne commande supprimait le schéma
+  de la vraie base puis restaurait sur un autre serveur, laissant la base vide. Les paramètres viennent
+  maintenant de la connexion active.
+
+### Modifié
+- `app:backup-restore` demande un mode explicite : `--into=<nouvelle_base>` (recommandé, la base et les
+  fichiers actuels ne sont pas touchés) ou `--replace-current` (archive contrôlée d'abord, une seule
+  transaction : en cas d'erreur rien ne change ; en production, nom de la base à taper).
+
+### Ajouté
+- Alerte immédiate aux propriétaires actifs (dans l'application, et sur le téléphone si Web Push est
+  configuré) quand une tâche de sauvegarde échoue, sans dépendre de la file d'attente.
+- Tests : `DB_URL`, archive endommagée ou tronquée, dump en échec en cours de route, archive chiffrée,
+  journée de travail réaliste sur les trois sites restaurée à l'identique (contenu de chaque table).
+
 ## [Phase 2 – Catalogue et stock] – 2026-11-05
 
 ### Ajouté
