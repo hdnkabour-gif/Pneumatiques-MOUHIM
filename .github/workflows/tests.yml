@@ -43,6 +43,9 @@ jobs:
           sudo install -d /usr/share/postgresql-common/pgdg
           sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
           echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt noble-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          # The runner's libpq-dev would be upgraded too and clash with postgresql-common over
+          # /usr/bin/pg_config; it is not needed (PHP extensions are already installed).
+          sudo apt-get remove -y libpq-dev
           sudo apt-get update && sudo apt-get install -y postgresql-client-18
           echo /usr/lib/postgresql/18/bin >> "$GITHUB_PATH"
 
