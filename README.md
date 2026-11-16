@@ -168,16 +168,26 @@ Premier déploiement – compte propriétaire, au choix :
 - Les tests automatisés `BackupRestoreTest` sauvegardent une base, la détruisent puis la restaurent,
   et vérifient qu'une restauration ratée ne modifie rien.
 
-Restauration – méthode recommandée : dans une **nouvelle** base, sans toucher à la base actuelle.
-On vérifie la base restaurée, puis on bascule `DB_URL` vers elle si c'est nécessaire.
+Restauration – méthode recommandée : dans une **nouvelle** base et un **nouveau** dossier de fichiers,
+sans toucher à la base ni aux fichiers actuels.
 
 ```bash
 php artisan app:backup-restore --into=restore_20261116          # dernière sauvegarde (ou choisir dans la liste)
 php artisan app:backup-restore chemin/archive.zip --into=restore_20261116 --without-files
 ```
 
-Les fichiers envoyés sont restaurés dans `storage/app/restored/<base>/public` (jamais par-dessus les
-fichiers actuels) ; `--files-to=` choisit un autre dossier.
+- Fichiers restaurés dans `storage/app/public/_restored/<base>` : sur le volume persistant de Railway
+  (ils survivent à un redéploiement), à part des fichiers actuels, que l'application ne lit pas, et
+  exclus des sauvegardes. `--files-to=` choisit un autre **nouveau** dossier ; un dossier qui est, contient
+  ou se trouve dans les fichiers actuels (hors `_restored`) est refusé.
+- En cas d'échec (copie des fichiers vérifiée fichier par fichier, ou chargement de la base), la nouvelle
+  base et le nouveau dossier sont supprimés : il ne reste rien à moitié restauré.
+- L'utilisateur PostgreSQL doit pouvoir créer une base (`CREATEDB`) ; sinon un message le dit, et il faut
+  restaurer dans un service PostgreSQL séparé.
+- **Bascule** (après vérification de la base restaurée) : mettre l'application en maintenance
+  (`php artisan down`), copier les fichiers restaurés vers les fichiers actuels
+  (`cp -a storage/app/public/_restored/<base>/. storage/app/public/`), pointer `DB_URL` vers la nouvelle
+  base, redéployer, puis `php artisan up`. L'ancienne base reste intacte tant qu'on ne la supprime pas.
 
 Remplacer la base actuelle (à éviter ; mettre l'application en maintenance avec `php artisan down`) :
 
@@ -185,9 +195,18 @@ Remplacer la base actuelle (à éviter ; mettre l'application en maintenance ave
 php artisan app:backup-restore --replace-current
 ```
 
-- L'archive est contrôlée avant toute modification (archive lisible, mot de passe, dump complet).
-- La suppression de l'ancien schéma et le chargement se font dans **une seule transaction** :
-  en cas d'erreur, la base reste exactement comme avant.
+Ce qui est garanti, étape par étape :
+
+1. Avant toute modification : archive contrôlée (lisible, mot de passe, dump complet) ; fichiers copiés
+   à côté de leur destination puis vérifiés (liste et taille de chaque fichier), et aucun obstacle pour
+   les mettre en place. Un échec ici ne change **ni la base ni les fichiers**.
+2. Suppression de l'ancien schéma et chargement de la base dans **une seule transaction** : en cas
+   d'erreur, la base et les fichiers restent comme avant.
+3. Mise en place des fichiers vérifiés (déplacements sur le même disque ; les fichiers présents sont
+   remplacés, aucun n'est supprimé). Si cette dernière étape échoue, **la base a déjà été restaurée** :
+   le message le dit et indique le dossier où la copie complète des fichiers est conservée pour finir
+   à la main. Base et fichiers ne forment donc pas une seule opération atomique.
+
 - En production, il faut taper le nom de la base pour confirmer (`--force` ne suffit pas).
 - Les paramètres du serveur viennent de la connexion active (`DB_URL` compris).
 

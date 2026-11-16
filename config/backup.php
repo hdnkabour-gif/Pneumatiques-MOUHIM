@@ -40,6 +40,8 @@ return [
                     base_path('vendor'),
                     base_path('node_modules'),
                     storage_path('framework'),
+                    // Copies made by app:backup-restore --into (not live data).
+                    storage_path('app/public/_restored'),
                 ],
 
                 /*

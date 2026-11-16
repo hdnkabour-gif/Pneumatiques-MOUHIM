@@ -2,7 +2,9 @@
 
 namespace App\Actions\Backups;
 
+use App\Exceptions\PartialRestoreException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -13,18 +15,30 @@ use ZipArchive;
 /**
  * Restores a backup archive produced by spatie/laravel-backup (PostgreSQL only).
  *
- * Two ways, both safe when something goes wrong:
- * - intoNewDatabase(): the recommended way. The archive goes into a NEW database on the same
- *   server and the current database is never touched; it can be checked before switching to it.
- * - replacingCurrent(): replaces the current database. The archive is fully checked first, then
- *   the old schema is dropped and the dump is loaded in ONE transaction: if anything fails, the
- *   database stays exactly as it was.
+ * - intoNewDatabase() (recommended): the archive goes into a NEW database and a NEW folder of
+ *   files; the current database and the live files are never touched. If anything fails, both
+ *   the new database and the new folder are removed.
+ * - replacingCurrent(): replaces the current database. Before anything is changed, the archive
+ *   is checked and the files are copied and verified next to their destination. The old schema
+ *   is then dropped and the dump loaded in ONE transaction: if that fails, the database and the
+ *   live files are unchanged. Only the last step, moving the verified files into place, can fail
+ *   after the database was replaced: a PartialRestoreException then says so and keeps the copy.
  *
  * Server settings come from the live connection, so a connection configured with DB_URL
  * (Railway) is restored on the right server.
  */
 class RestoreDatabaseBackupAction
 {
+    /**
+     * Restored copies of the uploaded files: inside storage/app/public, which is the persistent
+     * volume on Railway, but apart from the live files (the app never reads them, and they are
+     * excluded from the backups).
+     */
+    public static function restoredFilesRoot(): string
+    {
+        return storage_path('app/public/_restored');
+    }
+
     /** @return list<string> backup paths on the disk, newest first */
     public function available(string $disk): array
     {
@@ -36,8 +50,8 @@ class RestoreDatabaseBackupAction
     }
 
     /**
-     * @param  string|null  $filesTarget  where uploaded files go (default storage/app/restored/{database}/public,
-     *                                    never the live storage/app/public)
+     * @param  string|null  $filesTarget  new folder for the uploaded files (default {restoredFilesRoot}/{database});
+     *                                    it must not exist and must not overlap the live files
      */
     public function intoNewDatabase(string $disk, string $path, string $database, ?string $connection = null, bool $withFiles = true, ?string $filesTarget = null): void
     {
@@ -52,26 +66,43 @@ class RestoreDatabaseBackupAction
         if (DB::connection($connection)->table('pg_database')->where('datname', $database)->exists()) {
             throw new RuntimeException("Database [{$database}] already exists: choose a new name.");
         }
+        $canCreate = DB::connection($connection)->selectOne('SELECT rolsuper OR rolcreatedb AS allowed FROM pg_roles WHERE rolname = current_user');
+        if (! ($canCreate?->allowed ?? false)) {
+            throw new RuntimeException('The database user may not create databases (CREATEDB): restore into a separate PostgreSQL service instead.');
+        }
 
-        $filesTarget ??= storage_path("app/restored/{$database}/public");
-        if ($withFiles && file_exists($filesTarget)) {
-            throw new RuntimeException("Files target [{$filesTarget}] already exists.");
+        $filesTarget ??= self::restoredFilesRoot().'/'.$database;
+        if ($withFiles) {
+            $this->assertApartFromLiveFiles($filesTarget);
+            if (file_exists($filesTarget)) {
+                throw new RuntimeException("Files target [{$filesTarget}] already exists.");
+            }
         }
 
         $this->withExtractedArchive($disk, $path, function (string $workDir, string $dump) use ($config, $connection, $database, $withFiles, $filesTarget) {
-            DB::connection($connection)->statement('CREATE DATABASE "'.$database.'"');
+            $createdFiles = false;
+            $createdDatabase = false;
 
             try {
+                $source = $withFiles ? $this->filesSource($workDir) : null;
+                if ($source) {
+                    $createdFiles = true;
+                    $this->copyVerified($source, $filesTarget);
+                }
+
+                DB::connection($connection)->statement('CREATE DATABASE "'.$database.'"');
+                $createdDatabase = true;
                 $this->psql([...$config, 'database' => $database], [$dump]);
             } catch (Throwable $e) {
-                // Only the database created just above is removed.
-                DB::connection($connection)->statement('DROP DATABASE IF EXISTS "'.$database.'" WITH (FORCE)');
+                // Only what was created just above is removed.
+                if ($createdDatabase) {
+                    DB::connection($connection)->statement('DROP DATABASE IF EXISTS "'.$database.'" WITH (FORCE)');
+                }
+                if ($createdFiles) {
+                    File::deleteDirectory($filesTarget);
+                }
 
                 throw $e;
-            }
-
-            if ($withFiles) {
-                $this->restoreFiles($workDir, $filesTarget);
             }
         });
     }
@@ -79,20 +110,52 @@ class RestoreDatabaseBackupAction
     /**
      * @param  string|null  $filesTarget  where uploaded files go back (default storage/app/public);
      *                                    files are added or replaced, never deleted.
+     *
+     * @throws PartialRestoreException when the database was replaced but the files could not all be moved into place
      */
     public function replacingCurrent(string $disk, string $path, ?string $connection = null, bool $withFiles = true, ?string $filesTarget = null): void
     {
         $config = $this->connectionConfig($connection);
+        $target = $filesTarget ?? storage_path('app/public');
 
-        $this->withExtractedArchive($disk, $path, function (string $workDir, string $dump) use ($config, $connection, $withFiles, $filesTarget) {
-            $prelude = $workDir.'/replace-schema.sql';
-            file_put_contents($prelude, "DROP SCHEMA public CASCADE;\nCREATE SCHEMA public;\n");
+        $this->withExtractedArchive($disk, $path, function (string $workDir, string $dump) use ($config, $connection, $withFiles, $target) {
+            // 1. Files copied and verified next to their destination (same disk), before any change.
+            $staging = null;
+            $source = $withFiles ? $this->filesSource($workDir) : null;
+            if ($source) {
+                $staging = rtrim($target, '/').'/.restore-staging-'.Str::random(8);
+                try {
+                    $this->copyVerified($source, $staging);
+                    $this->assertMovable($staging, $target);
+                } catch (Throwable $e) {
+                    File::deleteDirectory($staging);
 
-            DB::connection($connection)->disconnect();
-            $this->psql($config, [$prelude, $dump]);
+                    throw $e;
+                }
+            }
 
-            if ($withFiles) {
-                $this->restoreFiles($workDir, $filesTarget ?? storage_path('app/public'));
+            // 2. Database replaced in one transaction: on error, nothing changed.
+            try {
+                $prelude = $workDir.'/replace-schema.sql';
+                file_put_contents($prelude, "DROP SCHEMA public CASCADE;\nCREATE SCHEMA public;\n");
+                DB::connection($connection)->disconnect();
+                $this->psql($config, [$prelude, $dump]);
+            } catch (Throwable $e) {
+                if ($staging) {
+                    File::deleteDirectory($staging);
+                }
+
+                throw $e;
+            }
+
+            // 3. Verified files moved into place (renames on the same disk).
+            if ($staging) {
+                try {
+                    $this->moveFiles($staging, $target);
+                } catch (Throwable $e) {
+                    throw new PartialRestoreException($staging, $target, $e);
+                }
+                File::deleteDirectory($staging);
             }
         });
     }
@@ -219,22 +282,108 @@ class RestoreDatabaseBackupAction
     }
 
     /**
-     * Uploaded files (logo, used tyre photos…) are in "public/" inside the
-     * archive; older archives used absolute paths ending in storage/app/public.
+     * Uploaded files (logo, used tyre photos…) are in "public/" inside the archive; older
+     * archives used absolute paths ending in storage/app/public. Null for a database-only backup.
      */
-    private function restoreFiles(string $workDir, string $target): void
+    private function filesSource(string $workDir): ?string
     {
-        $source = is_dir($workDir.'/public') ? $workDir.'/public'
+        return is_dir($workDir.'/public') ? $workDir.'/public'
             : (collect(glob($workDir.'/{,*/,*/*/,*/*/*/}storage/app/public', GLOB_BRACE | GLOB_ONLYDIR) ?: [])->first());
+    }
 
-        if (! $source) {
-            return; // database-only backup
-        }
-
-        if (! is_dir($target)) {
-            mkdir($target, 0775, true);
-        }
-
+    /** Copies a folder and checks that every file arrived with its exact size. */
+    protected function copyVerified(string $source, string $target): void
+    {
+        File::ensureDirectoryExists($target, 0775);
         Process::run(['cp', '-a', rtrim($source, '/').'/.', rtrim($target, '/').'/'])->throw();
+
+        if ($this->manifest($target) !== $this->manifest($source)) {
+            throw new RuntimeException("The files copied into [{$target}] do not match the archive.");
+        }
+    }
+
+    /** Refuses, before anything changes, a file that cannot be moved into place (e.g. a folder in the way). */
+    private function assertMovable(string $staging, string $target): void
+    {
+        foreach (array_keys($this->manifest($staging)) as $relative) {
+            $path = rtrim($target, '/');
+            foreach (explode('/', dirname($relative)) as $segment) {
+                if ($segment === '.') {
+                    continue;
+                }
+                $path .= '/'.$segment;
+                if (file_exists($path) && ! is_dir($path)) {
+                    throw new RuntimeException("Cannot restore files: [{$path}] is a file where the archive has a folder.");
+                }
+            }
+            if (is_dir($target.'/'.$relative)) {
+                throw new RuntimeException("Cannot restore files: [{$target}/{$relative}] is a folder where the archive has a file.");
+            }
+        }
+    }
+
+    /** Moves every verified file into place; files already there are replaced, none is deleted. */
+    protected function moveFiles(string $staging, string $target): void
+    {
+        foreach (array_keys($this->manifest($staging)) as $relative) {
+            $destination = $target.'/'.$relative;
+            File::ensureDirectoryExists(dirname($destination), 0775);
+            if (! @rename($staging.'/'.$relative, $destination)) {
+                throw new RuntimeException("Could not move [{$relative}] into [{$target}].");
+            }
+        }
+    }
+
+    /** @return array<string, int> relative path => size, sorted */
+    private function manifest(string $directory): array
+    {
+        $files = [];
+        foreach (File::allFiles($directory, true) as $file) {
+            $files[$file->getRelativePathname()] = $file->getSize();
+        }
+        ksort($files);
+
+        return $files;
+    }
+
+    /**
+     * A new restore must never write over the live files: the target may not be, contain, or
+     * sit inside storage/app/public, except inside the dedicated _restored folder.
+     */
+    private function assertApartFromLiveFiles(string $target): void
+    {
+        $live = $this->normalizePath(storage_path('app/public'));
+        $restored = $this->normalizePath(self::restoredFilesRoot());
+        $target = $this->normalizePath($target);
+
+        $overlaps = $target === $live
+            || str_starts_with($live.'/', $target.'/')
+            || (str_starts_with($target, $live.'/') && ! str_starts_with($target, $restored.'/'));
+
+        if ($overlaps) {
+            throw new RuntimeException("Files target [{$target}] overlaps the live uploaded files: choose a new folder (default: {$restored}/<database>).");
+        }
+    }
+
+    /** Absolute path with "." / ".." resolved and symbolic links of the existing part followed. */
+    private function normalizePath(string $path): string
+    {
+        $path = str_starts_with($path, '/') ? $path : base_path($path);
+        $segments = [];
+        foreach (explode('/', $path) as $segment) {
+            if ($segment === '' || $segment === '.') {
+                continue;
+            }
+            $segment === '..' ? array_pop($segments) : $segments[] = $segment;
+        }
+
+        $existing = '/';
+        $rest = $segments;
+        while ($rest !== [] && file_exists($existing.(($existing === '/') ? '' : '/').$rest[0])) {
+            $existing .= ($existing === '/' ? '' : '/').array_shift($rest);
+        }
+        $existing = realpath($existing) ?: $existing;
+
+        return rtrim($existing, '/').($rest === [] ? '' : '/'.implode('/', $rest));
     }
 }

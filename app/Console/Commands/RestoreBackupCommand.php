@@ -16,7 +16,7 @@ use function Laravel\Prompts\text;
     {--disk= : Backup disk}
     {--into= : Restore into this NEW database; the current database is not touched (recommended)}
     {--replace-current : Replace ALL data of the current database instead}
-    {--files-to= : Where uploaded files are restored}
+    {--files-to= : New folder for the uploaded files (never the live files with --into)}
     {--without-files : Restore the database only}
     {--force : Skip the confirmation (refused for --replace-current in production)}')]
 #[Description('Restore a backup archive into a new database (recommended) or over the current one')]
@@ -75,7 +75,7 @@ class RestoreBackupCommand extends Command
         $restore->intoNewDatabase($disk, $path, $into, withFiles: $withFiles, filesTarget: $filesTo);
         $this->info("Backup [{$path}] restored into the new database [{$into}]. The current database was not changed.");
         if ($withFiles) {
-            $this->info('Files restored into ['.($filesTo ?? storage_path("app/restored/{$into}/public")).'].');
+            $this->info('Files restored into ['.($filesTo ?? RestoreDatabaseBackupAction::restoredFilesRoot().'/'.$into).'] (the live files were not changed).');
         }
 
         return self::SUCCESS;

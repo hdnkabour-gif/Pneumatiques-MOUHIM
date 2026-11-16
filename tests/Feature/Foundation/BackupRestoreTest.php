@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\Backups\RestoreDatabaseBackupAction;
+use App\Exceptions\PartialRestoreException;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Database\QueryException;
 use Illuminate\Process\Exceptions\ProcessFailedException;
@@ -56,7 +57,7 @@ afterEach(function () {
     foreach (['mouhim_backup_test', RESTORED_DB] as $database) {
         DB::connection('pg_admin')->statement("DROP DATABASE IF EXISTS {$database} WITH (FORCE)");
     }
-    File::deleteDirectory(storage_path('app/restored'));
+    File::deleteDirectory(RestoreDatabaseBackupAction::restoredFilesRoot());
 });
 
 /** Runs backup:run with the test configuration and returns the archive path. */
@@ -159,7 +160,7 @@ it('restores into a new database and folder without touching the current data (r
         expect(siteNames('restored'))->toBe(['Dépôt Central', 'Magasin 01'])
             ->and(siteNames('backup_test'))->toBe(['Dépôt Central', 'Magasin 01 (modifié)'])
             ->and(file_get_contents($live.'/photo.jpg'))->toBe('AFTER')
-            ->and(file_get_contents(storage_path('app/restored/'.RESTORED_DB.'/public/'.basename($live).'/photo.jpg')))->toBe('BEFORE');
+            ->and(file_get_contents(RestoreDatabaseBackupAction::restoredFilesRoot().'/'.RESTORED_DB.'/'.basename($live).'/photo.jpg'))->toBe('BEFORE');
     } finally {
         File::deleteDirectory($live);
     }
@@ -287,4 +288,205 @@ it('never replaces the current database in production without a typed confirmati
         ->assertFailed();
 
     expect(DB::table('sites')->count())->toBeGreaterThan(0);
+});
+
+/*
+| Review of PR #8: database and files are two resources. Each failure point is injected and
+| the exact resulting state is checked.
+*/
+
+/** A live folder of uploaded files included in the test backups. */
+function liveFilesForBackup(string $content = 'PHOTO'): string
+{
+    $live = storage_path('app/public/backup-test-'.uniqid());
+    mkdir($live.'/sub', 0775, true);
+    file_put_contents($live.'/photo.jpg', $content);
+    file_put_contents($live.'/sub/doc.pdf', $content.'-PDF');
+
+    $config = config('backup_restore_test');
+    $config['backup']['source']['files']['include'] = [$live];
+    config(['backup_restore_test' => $config]);
+
+    return $live;
+}
+
+/** Restore action whose given step fails, as a full disk or a broken mount would. */
+function restoreFailingAt(string $step): RestoreDatabaseBackupAction
+{
+    return match ($step) {
+        'copy' => new class extends RestoreDatabaseBackupAction
+        {
+            protected function copyVerified(string $source, string $target): void
+            {
+                mkdir($target, 0775, true);
+                file_put_contents($target.'/half-copied.jpg', 'X');
+
+                throw new RuntimeException('No space left on device (injected)');
+            }
+        },
+        'move' => new class extends RestoreDatabaseBackupAction
+        {
+            protected function moveFiles(string $staging, string $target): void
+            {
+                throw new RuntimeException('No space left on device (injected)');
+            }
+        },
+    };
+}
+
+function stagingFolders(): array
+{
+    return glob(storage_path('app/public/.restore-staging-*'), GLOB_ONLYDIR) ?: [];
+}
+
+it('changes neither the database nor the live files when the files cannot be put in place (replace)', function () {
+    $live = liveFilesForBackup();
+    try {
+        $path = backupNow();
+        DB::connection('backup_test')->table('sites')->where('code', 'M01')->update(['name' => 'Après la sauvegarde']);
+        // A file now stands where the archive has a folder.
+        File::deleteDirectory($live);
+        file_put_contents($live, 'NOT A FOLDER');
+
+        expect(fn () => app(RestoreDatabaseBackupAction::class)->replacingCurrent('backups_local', $path, 'backup_test'))
+            ->toThrow(RuntimeException::class, 'is a file where the archive has a folder');
+
+        expect(siteNames('backup_test'))->toBe(['Dépôt Central', 'Après la sauvegarde'])
+            ->and(file_get_contents($live))->toBe('NOT A FOLDER')
+            ->and(stagingFolders())->toBe([]);
+    } finally {
+        is_dir($live) ? File::deleteDirectory($live) : @unlink($live);
+    }
+});
+
+it('changes neither the database nor the live files when copying the files fails (replace)', function () {
+    $live = liveFilesForBackup();
+    try {
+        $path = backupNow();
+        DB::connection('backup_test')->table('sites')->where('code', 'M01')->update(['name' => 'Après la sauvegarde']);
+        file_put_contents($live.'/photo.jpg', 'CURRENT');
+
+        expect(fn () => restoreFailingAt('copy')->replacingCurrent('backups_local', $path, 'backup_test'))
+            ->toThrow(RuntimeException::class, 'injected');
+
+        expect(siteNames('backup_test'))->toBe(['Dépôt Central', 'Après la sauvegarde'])
+            ->and(file_get_contents($live.'/photo.jpg'))->toBe('CURRENT')
+            ->and(stagingFolders())->toBe([]);
+    } finally {
+        File::deleteDirectory($live);
+    }
+});
+
+it('says the database WAS replaced and keeps a verified copy when moving the files fails afterwards (replace)', function () {
+    $live = liveFilesForBackup();
+    try {
+        $path = backupNow();
+        DB::connection('backup_test')->table('sites')->where('code', 'M01')->update(['name' => 'Après la sauvegarde']);
+        File::deleteDirectory($live);
+
+        try {
+            restoreFailingAt('move')->replacingCurrent('backups_local', $path, 'backup_test');
+            $this->fail('A partial restore must not pass silently.');
+        } catch (PartialRestoreException $e) {
+            expect($e->getMessage())->toContain('The database WAS restored');
+            $staged = $e->stagedFiles;
+        }
+
+        // Documented state: database restored, live files missing, complete copy kept for the retry.
+        expect(siteNames('backup_test'))->toBe(['Dépôt Central', 'Magasin 01'])
+            ->and(is_dir($live))->toBeFalse()
+            ->and(file_get_contents($staged.'/'.basename($live).'/photo.jpg'))->toBe('PHOTO')
+            ->and(file_get_contents($staged.'/'.basename($live).'/sub/doc.pdf'))->toBe('PHOTO-PDF');
+        File::deleteDirectory($staged);
+    } finally {
+        File::deleteDirectory($live);
+    }
+});
+
+it('removes both the new database and the new files folder when restoring into them fails', function (string $step) {
+    $live = liveFilesForBackup();
+    try {
+        $path = backupNow();
+        $restore = $step === 'copy' ? restoreFailingAt('copy') : app(RestoreDatabaseBackupAction::class);
+        if ($step === 'database') {
+            $path = archiveWithDump($path, fn (string $sql) => str_replace(
+                '-- PostgreSQL database dump complete',
+                "SELECT * FROM table_that_does_not_exist;\n-- PostgreSQL database dump complete",
+                $sql,
+            ));
+            // The tampered archive keeps the files of the original one.
+            $zip = new ZipArchive;
+            $zip->open(Storage::disk('backups_local')->path($path));
+            $zip->addFromString('public/'.basename($live).'/photo.jpg', 'PHOTO');
+            $zip->close();
+        }
+
+        expect(fn () => $restore->intoNewDatabase('backups_local', $path, RESTORED_DB, 'backup_test'))->toThrow(RuntimeException::class);
+
+        expect(DB::connection('pg_admin')->table('pg_database')->where('datname', RESTORED_DB)->exists())->toBeFalse()
+            ->and(file_exists(RestoreDatabaseBackupAction::restoredFilesRoot().'/'.RESTORED_DB))->toBeFalse()
+            ->and(file_get_contents($live.'/photo.jpg'))->toBe('PHOTO');
+    } finally {
+        File::deleteDirectory($live);
+    }
+})->with(['copy', 'database']);
+
+it('never lets a restore into a new database write over the live files', function (string $target) {
+    $path = backupNow(['--only-db' => true]);
+
+    expect(fn () => app(RestoreDatabaseBackupAction::class)->intoNewDatabase('backups_local', $path, RESTORED_DB, 'backup_test', filesTarget: $target))
+        ->toThrow(RuntimeException::class, 'overlaps the live uploaded files');
+
+    expect(DB::connection('pg_admin')->table('pg_database')->where('datname', RESTORED_DB)->exists())->toBeFalse();
+})->with([
+    'the live folder' => fn () => storage_path('app/public'),
+    'its parent' => fn () => storage_path('app'),
+    'a live sub-folder' => fn () => storage_path('app/public/used-tyres'),
+    'a path escaping _restored' => fn () => storage_path('app/public/_restored/../used-tyres'),
+    'a relative path to it' => 'storage/app/public',
+]);
+
+it('keeps restored files on the persistent volume, apart from the live files, and out of the backups', function () {
+    expect(RestoreDatabaseBackupAction::restoredFilesRoot())->toStartWith(storage_path('app/public').'/');
+
+    $copy = RestoreDatabaseBackupAction::restoredFilesRoot().'/old_restore';
+    $live = storage_path('app/public/backup-test-'.uniqid());
+    mkdir($copy, 0775, true);
+    mkdir($live, 0775, true);
+    file_put_contents($copy.'/restored.jpg', 'COPY');
+    file_put_contents($live.'/live.jpg', 'LIVE');
+
+    // The real include / exclude settings, written to the test disk.
+    $config = config('backup_restore_test');
+    $config['backup']['source']['files'] = config('backup.backup.source.files');
+    config(['backup_restore_test' => $config]);
+
+    try {
+        $path = backupNow();
+        $zip = new ZipArchive;
+        $zip->open(Storage::disk('backups_local')->path($path));
+        $names = collect(range(0, $zip->numFiles - 1))->map(fn ($i) => $zip->getNameIndex($i));
+        $zip->close();
+
+        expect($names->contains('public/'.basename($live).'/live.jpg'))->toBeTrue()
+            ->and($names->contains(fn ($n) => str_contains($n, '_restored')))->toBeFalse();
+    } finally {
+        File::deleteDirectory($live);
+    }
+});
+
+it('explains when the database user may not create the new database', function () {
+    DB::connection('pg_admin')->statement('DROP ROLE IF EXISTS restore_no_createdb');
+    DB::connection('pg_admin')->statement("CREATE ROLE restore_no_createdb LOGIN PASSWORD 'secret-for-tests' NOCREATEDB");
+    config(['database.connections.no_createdb' => [...config('database.connections.backup_test'), 'username' => 'restore_no_createdb', 'password' => 'secret-for-tests']]);
+
+    try {
+        $path = backupNow(['--only-db' => true]);
+
+        expect(fn () => app(RestoreDatabaseBackupAction::class)->intoNewDatabase('backups_local', $path, RESTORED_DB, 'no_createdb'))
+            ->toThrow(RuntimeException::class, 'may not create databases (CREATEDB)');
+    } finally {
+        DB::purge('no_createdb');
+        DB::connection('pg_admin')->statement('DROP ROLE IF EXISTS restore_no_createdb');
+    }
 });
