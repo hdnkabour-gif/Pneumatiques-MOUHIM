@@ -30,7 +30,7 @@ pneumatiques, services automobiles, stock, ventes, crédit, caisse, atelier.
 | Laravel | 13.40 |
 | Filament | 5.11 |
 | Livewire | 4.4 |
-| PostgreSQL | 17 (Docker / Railway), tests CI sur 16 |
+| PostgreSQL | 18 (Railway, Docker local, tests CI) ; client `pg_dump` / `psql` 18 dans l'image |
 | Pest | 5.3 |
 | spatie/laravel-permission | 8.3 |
 | spatie/laravel-activitylog | 5.1 |
@@ -140,9 +140,12 @@ BACKUP_NOTIFY_EMAIL=<email du propriétaire>
 Fichiers envoyés (logo, photos) : monter un **volume Railway** sur `/app/storage/app/public`
 (le disque du conteneur est effacé à chaque déploiement).
 
-Version du client PostgreSQL : `pg_dump` doit être de version ≥ au serveur. L'image installe la
-version 17 ; si le PostgreSQL de Railway est plus récent, définir la variable de build
-`PG_CLIENT_VERSION` (ex. `18`).
+Version du client PostgreSQL : `pg_dump` refuse un serveur plus récent que lui (« server version
+mismatch ») et la sauvegarde échoue. L'image installe la version 18, celle du PostgreSQL de Railway ;
+si le serveur passe à une version plus récente, définir la variable de build `PG_CLIENT_VERSION`.
+
+Docker local : PostgreSQL 18 utilise le volume `pgdata18` (les données d'un ancien volume `pgdata`
+en version 17 ne sont ni lues ni effacées).
 
 Premier déploiement – compte propriétaire, au choix :
 
