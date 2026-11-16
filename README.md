@@ -159,7 +159,10 @@ Premier déploiement – compte propriétaire, au choix :
 - Automatique tous les jours à 02:00 (heure du Maroc) : base de données + fichiers envoyés,
   vers un stockage S3 compatible **externe à Railway** (Cloudflare R2, Backblaze B2…).
 - Conservation : tous les jours pendant 30 jours, puis dégressive.
-- Contrôle de santé à 08:00 ; email en cas d'échec.
+- Contrôle de santé à 08:00. Tout échec (sauvegarde, nettoyage, sauvegarde trop ancienne) est
+  signalé immédiatement aux propriétaires actifs : notification dans l'application (et sur le
+  téléphone si Web Push est configuré), sans dépendre de la file d'attente. Email en plus si
+  `MAIL_*` et `BACKUP_NOTIFY_EMAIL` sont configurés.
 - Si une variable `BACKUP_S3_*` manque, la sauvegarde échoue avec un message qui nomme les
   variables manquantes (jamais leurs valeurs) et l'échec est signalé.
 - Les tests automatisés `BackupRestoreTest` sauvegardent une base, la détruisent puis la restaurent,
