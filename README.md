@@ -160,14 +160,33 @@ Premier déploiement – compte propriétaire, au choix :
   vers un stockage S3 compatible **externe à Railway** (Cloudflare R2, Backblaze B2…).
 - Conservation : tous les jours pendant 30 jours, puis dégressive.
 - Contrôle de santé à 08:00 ; email en cas d'échec.
-- Le test automatisé `BackupRestoreTest` sauvegarde une base, la détruit puis la restaure.
+- Si une variable `BACKUP_S3_*` manque, la sauvegarde échoue avec un message qui nomme les
+  variables manquantes (jamais leurs valeurs) et l'échec est signalé.
+- Les tests automatisés `BackupRestoreTest` sauvegardent une base, la détruisent puis la restaurent,
+  et vérifient qu'une restauration ratée ne modifie rien.
 
-Restauration (remplace **toutes** les données actuelles) :
+Restauration – méthode recommandée : dans une **nouvelle** base, sans toucher à la base actuelle.
+On vérifie la base restaurée, puis on bascule `DB_URL` vers elle si c'est nécessaire.
 
 ```bash
-php artisan app:backup-restore            # choisir la sauvegarde dans la liste
-php artisan app:backup-restore --force    # dernière sauvegarde, sans confirmation
+php artisan app:backup-restore --into=restore_20261116          # dernière sauvegarde (ou choisir dans la liste)
+php artisan app:backup-restore chemin/archive.zip --into=restore_20261116 --without-files
 ```
+
+Les fichiers envoyés sont restaurés dans `storage/app/restored/<base>/public` (jamais par-dessus les
+fichiers actuels) ; `--files-to=` choisit un autre dossier.
+
+Remplacer la base actuelle (à éviter ; mettre l'application en maintenance avec `php artisan down`) :
+
+```bash
+php artisan app:backup-restore --replace-current
+```
+
+- L'archive est contrôlée avant toute modification (archive lisible, mot de passe, dump complet).
+- La suppression de l'ancien schéma et le chargement se font dans **une seule transaction** :
+  en cas d'erreur, la base reste exactement comme avant.
+- En production, il faut taper le nom de la base pour confirmer (`--force` ne suffit pas).
+- Les paramètres du serveur viennent de la connexion active (`DB_URL` compris).
 
 Sauvegarde manuelle : `php artisan backup:run`.
 
