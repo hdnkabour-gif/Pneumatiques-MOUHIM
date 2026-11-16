@@ -5,6 +5,7 @@ namespace App\Services\Backups;
 use App\Enums\RoleName;
 use App\Models\User;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -17,6 +18,17 @@ use Throwable;
  */
 class BackupAlerts
 {
+    /**
+     * Removes old backups, but only once tonight's backup has succeeded (spatie also never
+     * deletes the newest backup). A failed cleanup alerts the owners.
+     */
+    public function cleanAfterSuccessfulBackup(): void
+    {
+        if (Artisan::call('backup:clean') !== 0) {
+            $this->taskFailed('backup:clean');
+        }
+    }
+
     /** @param  string  $task  backup:run, backup:clean or backup:monitor */
     public function taskFailed(string $task): void
     {

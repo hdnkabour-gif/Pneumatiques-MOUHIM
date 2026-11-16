@@ -108,12 +108,13 @@ it('backs up the database and restores it after data loss', function () {
     expect(fn () => $db->table('activity_log')->delete())->toThrow(QueryException::class);
 });
 
-it('schedules the daily backup', function () {
+it('schedules the daily backup, and cleans old backups only after it (not on its own)', function () {
     $events = collect(app(Schedule::class)->events())
         ->map(fn ($e) => $e->command);
 
     expect($events->contains(fn ($c) => str_contains($c, 'backup:run')))->toBeTrue()
-        ->and($events->contains(fn ($c) => str_contains($c, 'backup:clean')))->toBeTrue();
+        ->and($events->contains(fn ($c) => str_contains($c, 'backup:monitor')))->toBeTrue()
+        ->and($events->contains(fn ($c) => str_contains($c, 'backup:clean')))->toBeFalse();
 });
 
 it('restores the uploaded files together with the database (audit)', function () {
@@ -345,6 +346,7 @@ it('changes neither the database nor the live files when the files cannot be put
         $path = backupNow();
         DB::connection('backup_test')->table('sites')->where('code', 'M01')->update(['name' => 'Après la sauvegarde']);
         // A file now stands where the archive has a folder.
+        $stagingBefore = stagingFolders();
         File::deleteDirectory($live);
         file_put_contents($live, 'NOT A FOLDER');
 
@@ -353,7 +355,7 @@ it('changes neither the database nor the live files when the files cannot be put
 
         expect(siteNames('backup_test'))->toBe(['Dépôt Central', 'Après la sauvegarde'])
             ->and(file_get_contents($live))->toBe('NOT A FOLDER')
-            ->and(stagingFolders())->toBe([]);
+            ->and(stagingFolders())->toBe($stagingBefore);
     } finally {
         is_dir($live) ? File::deleteDirectory($live) : @unlink($live);
     }
@@ -365,13 +367,14 @@ it('changes neither the database nor the live files when copying the files fails
         $path = backupNow();
         DB::connection('backup_test')->table('sites')->where('code', 'M01')->update(['name' => 'Après la sauvegarde']);
         file_put_contents($live.'/photo.jpg', 'CURRENT');
+        $stagingBefore = stagingFolders();
 
         expect(fn () => restoreFailingAt('copy')->replacingCurrent('backups_local', $path, 'backup_test'))
             ->toThrow(RuntimeException::class, 'injected');
 
         expect(siteNames('backup_test'))->toBe(['Dépôt Central', 'Après la sauvegarde'])
             ->and(file_get_contents($live.'/photo.jpg'))->toBe('CURRENT')
-            ->and(stagingFolders())->toBe([]);
+            ->and(stagingFolders())->toBe($stagingBefore);
     } finally {
         File::deleteDirectory($live);
     }

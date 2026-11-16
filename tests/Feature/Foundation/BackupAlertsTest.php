@@ -38,7 +38,7 @@ it('alerts every active owner, in their language, when a scheduled backup task f
         ->and($formerOwner->notifications()->count())->toBe(0)
         ->and($seller->notifications()->count())->toBe(0)
         ->and(DB::table('jobs')->count())->toBe(0);
-})->with(['backup:run', 'backup:clean', 'backup:monitor']);
+})->with(['backup:run', 'backup:monitor']);
 
 it('stays silent when the backup task succeeds', function () {
     $owner = owner();

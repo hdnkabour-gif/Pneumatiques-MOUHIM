@@ -158,7 +158,9 @@ Premier déploiement – compte propriétaire, au choix :
 
 - Automatique tous les jours à 02:00 (heure du Maroc) : base de données + fichiers envoyés,
   vers un stockage S3 compatible **externe à Railway** (Cloudflare R2, Backblaze B2…).
-- Conservation : tous les jours pendant 30 jours, puis dégressive.
+- Conservation : tous les jours pendant 30 jours, puis dégressive (un par jour, semaine, mois, puis
+  2 ans). Le nettoyage des anciennes sauvegardes n'a lieu **qu'après une sauvegarde réussie** : des nuits
+  en échec ne réduisent jamais les sauvegardes existantes, et la plus récente n'est jamais supprimée.
 - Contrôle de santé à 08:00. Tout échec (sauvegarde, nettoyage, sauvegarde trop ancienne) est
   signalé immédiatement aux propriétaires actifs : notification dans l'application (et sur le
   téléphone si Web Push est configuré), sans dépendre de la file d'attente. Email en plus si
