@@ -76,6 +76,8 @@ class DocumentNumbering extends Page
         foreach (self::types() as $type) {
             $data[$type->value] = ['prefix' => $settings->get($type->prefixSetting()) ?? $type->defaultPrefix(), 'next' => null];
         }
+        $data['number_pattern'] = $settings->get('documents.number_pattern');
+        $data['number_padding'] = $settings->get('documents.number_padding');
         $this->form->fill($data);
     }
 
@@ -91,14 +93,24 @@ class DocumentNumbering extends Page
             TextInput::make($type->value.'.next')->label(__('settings.numbering.next_number'))
                 ->integer()->minValue($sequences->lastNumber($type, $year) + 1)
                 ->placeholder((string) ($sequences->lastNumber($type, $year) + 1))->live(onBlur: true),
-            Text::make(fn (Get $get) => __('settings.numbering.preview').' : '.$this->preview($type, $year, $get($type->value.'.prefix'), $get($type->value.'.next')))
+            Text::make(fn (Get $get) => __('settings.numbering.preview').' : '.$this->preview($type, $year, $get($type->value.'.prefix'), $get($type->value.'.next'), $get('number_pattern'), $get('number_padding')))
                 ->color('gray'),
         ]), self::types());
+
+        $formatFields = [
+            TextInput::make('number_pattern')
+                ->label(__('settings.fields.document_number_pattern'))
+                ->helperText(__('settings.fields.document_number_pattern_help'))
+                ->required()->maxLength(60)->live(onBlur: true),
+            TextInput::make('number_padding')
+                ->label(__('settings.fields.document_number_padding'))
+                ->required()->integer()->minValue(1)->maxValue(10)->live(onBlur: true),
+        ];
 
         return $schema->statePath('data')->components([
             Section::make(__('settings.numbering.year', ['year' => $year]))
                 ->description(__('settings.numbering.help'))
-                ->schema($rows),
+                ->schema([...$formatFields, ...$rows]),
         ]);
     }
 
@@ -125,6 +137,17 @@ class DocumentNumbering extends Page
 
         try {
             DB::transaction(function () use ($d, $settings, $sequences, $year) {
+                $pattern = trim((string) ($d['number_pattern'] ?? ''));
+                $padding = (int) ($d['number_padding'] ?? 0);
+                if (strlen($pattern) > 60
+                    || ! preg_match('/^(?:\\{PREFIX\\}|\\{NUMBER\\}|\\{YEAR\\}|\\{YY\\}|[ ._\\/-])+$/D', $pattern)
+                    || ! str_contains($pattern, '{PREFIX}')
+                    || ! str_contains($pattern, '{NUMBER}')
+                    || (! str_contains($pattern, '{YY}') && ! str_contains($pattern, '{YEAR}'))
+                    || $padding < 1 || $padding > 10) {
+                    throw new BusinessRuleException(__('settings.fields.document_number_pattern_invalid'));
+                }
+
                 $prefixes = [];
                 foreach (self::types() as $type) {
                     $prefixes[$type->prefixSetting()] = strtoupper(trim((string) $d[$type->value]['prefix']));
@@ -139,7 +162,10 @@ class DocumentNumbering extends Page
                 if (count(array_unique($prefixes)) !== count($prefixes)) {
                     throw new BusinessRuleException(__('settings.numbering.duplicate_prefix'));
                 }
-                $settings->setMany($prefixes, auth()->user());
+                $settings->setMany($prefixes + [
+                    'documents.number_pattern' => $pattern,
+                    'documents.number_padding' => $padding,
+                ], auth()->user());
             });
         } catch (BusinessRuleException $e) {
             Notification::make()->danger()->title($e->getMessage())->send();
@@ -151,16 +177,16 @@ class DocumentNumbering extends Page
         Notification::make()->success()->title(__('settings.saved'))->send();
     }
 
-    private function preview(DocumentType $type, int $year, ?string $prefix, mixed $next): string
+    private function preview(DocumentType $type, int $year, ?string $prefix, mixed $next, ?string $pattern, mixed $padding): string
     {
         $settings = app(SettingsService::class);
         $number = filled($next) ? (int) $next : app(SequenceService::class)->lastNumber($type, $year) + 1;
 
-        return strtr((string) $settings->get('documents.number_pattern'), [
+        return strtr((string) ($pattern ?: $settings->get('documents.number_pattern')), [
             '{PREFIX}' => strtoupper((string) $prefix),
             '{YEAR}' => (string) $year,
             '{YY}' => substr((string) $year, -2),
-            '{NUMBER}' => str_pad((string) $number, (int) $settings->get('documents.number_padding'), '0', STR_PAD_LEFT),
+            '{NUMBER}' => str_pad((string) $number, (int) ($padding ?: $settings->get('documents.number_padding')), '0', STR_PAD_LEFT),
         ]);
     }
 }

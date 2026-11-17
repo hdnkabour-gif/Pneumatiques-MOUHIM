@@ -42,3 +42,37 @@ it('refuses two documents with the same prefix', function () {
 
     expect(app(SettingsService::class)->get('documents.prefix.quote'))->toBe('DV');
 });
+
+
+it('updates the future numbering format without renumbering invoices already issued', function () {
+    $this->actingAs(owner());
+    $sequence = app(SequenceService::class);
+    $year = (int) now()->year;
+    $oldNumber = $sequence->nextDocumentNumber(DocumentType::Invoice);
+
+    Livewire::test(DocumentNumbering::class)
+        ->set('data.number_pattern', '{PREFIX}{NUMBER}/{YY}')
+        ->set('data.number_padding', 1)
+        ->set('data.invoice.prefix', '')
+        ->set('data.invoice.next', 219)
+        ->call('save')
+        ->assertHasNoFormErrors()
+        ->assertNotified();
+
+    expect($oldNumber)->toBe('FA-'.$year.'-000001')
+        ->and(app(SettingsService::class)->get('documents.number_pattern'))->toBe('{PREFIX}{NUMBER}/{YY}')
+        ->and(app(SettingsService::class)->get('documents.number_padding'))->toBe(1)
+        ->and($sequence->nextDocumentNumber(DocumentType::Invoice))->toBe('219/'.now()->format('y'))
+        ->and($sequence->nextDocumentNumber(DocumentType::Quote))->toBe('DV1/'.now()->format('y'));
+});
+
+it('rejects an invalid numbering pattern while keeping the previous settings', function () {
+    $this->actingAs(owner());
+    $settings = app(SettingsService::class);
+    $before = $settings->get('documents.number_pattern');
+    Livewire::test(DocumentNumbering::class)
+        ->set('data.number_pattern', 'UNSAFE FORMAT')
+        ->call('save');
+
+    expect($settings->get('documents.number_pattern'))->toBe($before);
+});
