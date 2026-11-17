@@ -1,5 +1,14 @@
 # Changelog
 
+## [Préparation à la mise en service — contrôle sans suppression] – 2026-11-17
+
+### Ajouté
+- L'écran de numérotation permet de régler le format et le remplissage pour les futurs documents,
+  avec aperçu et validation, sans renuméroter les factures existantes (D-58).
+- `php artisan app:go-live-audit` affiche uniquement des comptages des données commerciales et
+  référentielles et la configuration de numérotation ; aucune suppression, aucun secret affiché.
+  Une purge des données de démonstration nécessite un processus distinct et vérifié.
+
 ## [Images envoyées] – 2026-11-17
 
 ### Corrigé
