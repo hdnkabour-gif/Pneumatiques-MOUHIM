@@ -43,7 +43,6 @@ it('refuses two documents with the same prefix', function () {
     expect(app(SettingsService::class)->get('documents.prefix.quote'))->toBe('DV');
 });
 
-
 it('updates the future numbering format without renumbering invoices already issued', function () {
     $this->actingAs(owner());
     $sequence = app(SequenceService::class);

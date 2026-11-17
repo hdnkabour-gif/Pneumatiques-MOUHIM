@@ -2,12 +2,12 @@
 
 namespace App\Console\Commands;
 
+use App\Services\SettingsService;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use App\Services\SettingsService;
 
 /**
  * Read-only, non-destructive inventory before replacing demonstration data.
