@@ -139,6 +139,9 @@ BACKUP_NOTIFY_EMAIL=<email du propriétaire>
 
 Fichiers envoyés (logo, photos) : monter un **volume Railway** sur `/app/storage/app/public`
 (le disque du conteneur est effacé à chaque déploiement).
+Ils sont servis sous `/storage/...` grâce au lien `public/storage`, absent de l'image : le service web
+le crée à chaque démarrage (`php artisan storage:link --force`, qui ne remplace qu'un lien existant,
+jamais un vrai dossier). Sans ce lien, les images envoyées ne s'affichent pas (réponse 403).
 
 Version du client PostgreSQL : `pg_dump` refuse un serveur plus récent que lui (« server version
 mismatch ») et la sauvegarde échoue. L'image installe la version 18, celle du PostgreSQL de Railway ;
@@ -236,6 +239,25 @@ Ce qui est garanti, étape par étape :
   devient public juste après, et elle est supprimée en cas d'échec).
 
 Sauvegarde manuelle : `php artisan backup:run`.
+
+## Données de démonstration – Staging uniquement
+
+```bash
+php artisan app:staging-demo-data
+```
+
+Crée une journée de travail fictive (tout est marqué « démo ») sur les trois sites, avec les actions
+de l'application : commande et deux réceptions au dépôt, transferts vers M01 et M02 (dont un en
+transit), ventes en espèces, par carte et à crédit avec leurs factures, solde d'ouverture, chèque,
+paiement fournisseur, pneu d'occasion et dépense avec photos, clôture de la caisse de M01. Tout ou rien
+(une seule transaction) ; `stock:verify` est lancé à la fin.
+
+Refusée partout ailleurs que dans le projet Railway de Staging : la commande lit les variables que
+Railway fixe dans le processus (`RAILWAY_PROJECT_ID`, comparé à l'identifiant du projet de Staging écrit
+dans le code, et `RAILWAY_ENVIRONMENT_NAME` = `staging`), jamais `APP_ENV` (le Staging tourne en mode
+production) ni la configuration. Les comptes d'employés de démonstration ont un mot de passe aléatoire
+jamais affiché : personne ne peut s'y connecter. Une seule exécution par jour (la caisse de M01 est
+clôturée).
 
 ## Sécurité
 

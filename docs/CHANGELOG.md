@@ -1,5 +1,21 @@
 # Changelog
 
+## [Images envoyées] – 2026-11-17
+
+### Corrigé
+- Les images envoyées (logo, photos des pneus d'occasion, des dépenses, des équipements) ne
+  s'affichaient pas : l'image Docker ne contient pas le lien `public/storage`, et l'adresse générée
+  répondait 403 (vérifié avec un vrai envoi de logo par le formulaire). Le service web crée maintenant
+  ce lien à chaque démarrage.
+
+## [Données de démonstration Staging] – 2026-11-17
+
+### Ajouté
+- `php artisan app:staging-demo-data` : journée de travail fictive complète sur les trois sites
+  (achats, réceptions, transferts, ventes espèces / carte / crédit, factures, chèque, paiement
+  fournisseur, photos, clôture de caisse), refusée hors du projet Railway de Staging (identifiant du
+  projet et nom de l'environnement fixés par Railway, pas `APP_ENV`).
+
 ## [Fiabilité des sauvegardes – audit de sécurité, phase A] – 2026-11-16
 
 ### Corrigé
