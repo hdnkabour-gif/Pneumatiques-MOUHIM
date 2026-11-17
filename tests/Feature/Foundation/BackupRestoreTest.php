@@ -64,9 +64,13 @@ afterEach(function () {
 /** Runs backup:run with the test configuration and returns the archive path. */
 function backupNow(array $options = []): string
 {
-    expect(Artisan::call('backup:run', ['--config' => 'backup_restore_test', '--disable-notifications' => true, ...$options]))->toBe(0);
+    // A unique name: spatie names archives by the second, so two backups in the same second
+    // would overwrite each other and "the newest" would be ambiguous.
+    $filename = 'backup-'.uniqid().'.zip';
+    expect(Artisan::call('backup:run', ['--config' => 'backup_restore_test', '--disable-notifications' => true, '--filename' => $filename, ...$options]))->toBe(0);
 
-    return app(RestoreDatabaseBackupAction::class)->available('backups_local')[0];
+    return collect(app(RestoreDatabaseBackupAction::class)->available('backups_local'))
+        ->sole(fn (string $path) => basename($path) === $filename);
 }
 
 /** Rewrites the dump of an archive (plain SQL) and stores it as a new archive. */
