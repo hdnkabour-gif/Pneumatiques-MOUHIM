@@ -139,6 +139,9 @@ BACKUP_NOTIFY_EMAIL=<email du propriétaire>
 
 Fichiers envoyés (logo, photos) : monter un **volume Railway** sur `/app/storage/app/public`
 (le disque du conteneur est effacé à chaque déploiement).
+Ils sont servis sous `/storage/...` grâce au lien `public/storage`, absent de l'image : le service web
+le crée à chaque démarrage (`php artisan storage:link --force`, qui ne remplace qu'un lien existant,
+jamais un vrai dossier). Sans ce lien, les images envoyées ne s'affichent pas (réponse 403).
 
 Version du client PostgreSQL : `pg_dump` doit être de version ≥ au serveur. L'image installe la
 version 17 ; si le PostgreSQL de Railway est plus récent, définir la variable de build

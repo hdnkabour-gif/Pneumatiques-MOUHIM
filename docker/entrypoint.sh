@@ -18,6 +18,10 @@ case "$1" in
         # First owner from OWNER_* variables (no-op when absent or an owner exists).
         # A rejected value (weak password…) is reported in the logs without blocking start-up.
         php artisan app:create-owner --from-env || echo "app:create-owner --from-env failed: see the messages above"
+        # Uploaded files (logo, photos) live in storage/app/public (the Railway volume) and are
+        # served as /storage through public/storage. The link is not in the image: create it at
+        # every start (--force only replaces an existing symbolic link, never a real folder).
+        php artisan storage:link --force || echo "storage:link failed: uploaded images will not be displayed"
         # Scheduled tasks (daily backup…) run inside the web container unless a
         # dedicated "scheduler" service is used (RUN_SCHEDULER=false on web then).
         if [ "${RUN_SCHEDULER:-true}" = "true" ]; then

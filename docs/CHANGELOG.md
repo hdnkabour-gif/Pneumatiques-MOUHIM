@@ -1,5 +1,13 @@
 # Changelog
 
+## [Images envoyées] – 2026-11-17
+
+### Corrigé
+- Les images envoyées (logo, photos des pneus d'occasion, des dépenses, des équipements) ne
+  s'affichaient pas : l'image Docker ne contient pas le lien `public/storage`, et l'adresse générée
+  répondait 403 (vérifié avec un vrai envoi de logo par le formulaire). Le service web crée maintenant
+  ce lien à chaque démarrage.
+
 ## [Phase 2 – Catalogue et stock] – 2026-11-05
 
 ### Ajouté
