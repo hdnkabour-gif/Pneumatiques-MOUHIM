@@ -168,6 +168,25 @@ php artisan app:backup-restore --force    # dernière sauvegarde, sans confirmat
 
 Sauvegarde manuelle : `php artisan backup:run`.
 
+## Données de démonstration – Staging uniquement
+
+```bash
+php artisan app:staging-demo-data
+```
+
+Crée une journée de travail fictive (tout est marqué « démo ») sur les trois sites, avec les actions
+de l'application : commande et deux réceptions au dépôt, transferts vers M01 et M02 (dont un en
+transit), ventes en espèces, par carte et à crédit avec leurs factures, solde d'ouverture, chèque,
+paiement fournisseur, pneu d'occasion et dépense avec photos, clôture de la caisse de M01. Tout ou rien
+(une seule transaction) ; `stock:verify` est lancé à la fin.
+
+Refusée partout ailleurs que dans le projet Railway de Staging : la commande lit les variables que
+Railway fixe dans le processus (`RAILWAY_PROJECT_ID`, comparé à l'identifiant du projet de Staging écrit
+dans le code, et `RAILWAY_ENVIRONMENT_NAME` = `staging`), jamais `APP_ENV` (le Staging tourne en mode
+production) ni la configuration. Les comptes d'employés de démonstration ont un mot de passe aléatoire
+jamais affiché : personne ne peut s'y connecter. Une seule exécution par jour (la caisse de M01 est
+clôturée).
+
 ## Sécurité
 
 - Aucun compte par défaut ; le propriétaire est créé par `app:create-owner` (mot de passe ≥ 12 caractères).

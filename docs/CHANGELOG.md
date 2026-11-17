@@ -1,5 +1,13 @@
 # Changelog
 
+## [Données de démonstration Staging] – 2026-11-17
+
+### Ajouté
+- `php artisan app:staging-demo-data` : journée de travail fictive complète sur les trois sites
+  (achats, réceptions, transferts, ventes espèces / carte / crédit, factures, chèque, paiement
+  fournisseur, photos, clôture de caisse), refusée hors du projet Railway de Staging (identifiant du
+  projet et nom de l'environnement fixés par Railway, pas `APP_ENV`).
+
 ## [Phase 2 – Catalogue et stock] – 2026-11-05
 
 ### Ajouté
