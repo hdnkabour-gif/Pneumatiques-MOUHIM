@@ -1,5 +1,68 @@
 # Changelog
 
+## [Images envoyées] – 2026-11-17
+
+### Corrigé
+- Les images envoyées (logo, photos des pneus d'occasion, des dépenses, des équipements) ne
+  s'affichaient pas : l'image Docker ne contient pas le lien `public/storage`, et l'adresse générée
+  répondait 403 (vérifié avec un vrai envoi de logo par le formulaire). Le service web crée maintenant
+  ce lien à chaque démarrage.
+
+## [Données de démonstration Staging] – 2026-11-17
+
+### Ajouté
+- `php artisan app:staging-demo-data` : journée de travail fictive complète sur les trois sites
+  (achats, réceptions, transferts, ventes espèces / carte / crédit, factures, chèque, paiement
+  fournisseur, photos, clôture de caisse), refusée hors du projet Railway de Staging (identifiant du
+  projet et nom de l'environnement fixés par Railway, pas `APP_ENV`).
+
+## [Fiabilité des sauvegardes – audit de sécurité, phase A] – 2026-11-16
+
+### Corrigé
+- Sauvegarde quotidienne en échec chaque nuit (code 1) : le client PostgreSQL de l'image (17) refusait
+  le serveur Railway (18). L'image, la CI et Docker local passent à PostgreSQL 18.
+- Variables `BACKUP_S3_*` absentes : l'erreur n'était pas signalée (TypeError non interceptée par
+  spatie/laravel-backup). Elle devient un échec clair, qui nomme les variables manquantes.
+- Restauration : avec `DB_URL` seul (configuration Railway), l'ancienne commande supprimait le schéma
+  de la vraie base puis restaurait sur un autre serveur, laissant la base vide. Les paramètres viennent
+  maintenant de la connexion active.
+
+### Modifié
+- `app:backup-restore` demande un mode explicite :
+  - `--into=<nouvelle_base>` (recommandé) : nouvelle base ; fichiers copiés pour vérification dans un
+    dossier **privé** (`storage/app/private/restored/<base>`, hors de l'arborescence web publique) ; la
+    base et les fichiers actuels ne sont pas touchés ; en cas d'échec, la base et le dossier créés sont
+    supprimés, chacun indépendamment, et ce qui reste est signalé sans masquer l'erreur d'origine.
+  - `--replace-current` : archive contrôlée et absence d'obstacle vérifiée **avant** toute modification,
+    base remplacée en une seule transaction, puis fichiers mis en place. Base et fichiers ne forment pas
+    une opération atomique : si la mise en place des fichiers échoue, la base a déjà été restaurée et le
+    message indique combien de fichiers sont en place et la commande qui termine à partir de l'archive.
+    En production, nom de la base à taper.
+  - `--files-only` (nouveau) : remet en place les fichiers d'une archive sans toucher à la base ;
+    répétable ; termine une restauration partielle ou sert à la bascule. Confirmation en production.
+  - Chaque fichier est copié à côté de sa destination, contrôlé par empreinte SHA-256, puis renommé
+    par-dessus en une opération : jamais de fichier actuel remplacé par une copie incomplète.
+- Les anciennes sauvegardes ne sont nettoyées qu'après une sauvegarde réussie (plus de nettoyage à 01:30
+  les nuits où la sauvegarde échoue).
+
+### Ajouté
+- Alerte aux propriétaires actifs quand une tâche de sauvegarde échoue : notification enregistrée
+  immédiatement dans l'application (sans file d'attente) et envoi Web Push si configuré. Limites : la
+  réception sur le téléphone n'est pas prouvée par les tests, et aucune alerte n'est possible si
+  l'application, la base ou le planificateur sont arrêtés (surveillance externe à décider).
+- Tests : `DB_URL`, archive endommagée ou tronquée, dump en échec en cours de route, archive chiffrée,
+  pannes injectées à chaque étape (copie, copie altérée, obstacle, échec au 2e fichier après la mise en
+  place du 1er, base, suppression de la base), copies de restauration hors de l'arborescence publique,
+  droit `CREATEDB`, conservation des sauvegardes ; journée de travail réaliste sur les trois sites
+  restaurée à l'identique : contenu de chaque table, valeurs des séquences, définitions exactes des
+  contraintes, déclencheurs, index et fonctions, factures PDF complètes.
+
+### Reste à prouver (avant production)
+- Sauvegarde et restauration réelles avec Cloudflare R2 sur un environnement Railway de test (droits du
+  bucket, image construite, volume, droit `CREATEDB`).
+- Valeur réelle de `QUEUE_CONNECTION` sur Railway (aucun worker séparé n'y tourne) : si c'est `database`,
+  les autres notifications (approbations…), qui passent par la file d'attente, ne seraient jamais affichées.
+
 ## [Phase 2 – Catalogue et stock] – 2026-11-05
 
 ### Ajouté

@@ -2,8 +2,9 @@
 # FrankenPHP = PHP 8.4 + serveur web Caddy dans un seul conteneur.
 FROM dunglas/frankenphp:1-php8.4-bookworm AS base
 
-# pg_dump must be >= the PostgreSQL server version (Railway): adjust if needed.
-ARG PG_CLIENT_VERSION=17
+# pg_dump refuses a server newer than itself ("server version mismatch"), so the
+# client must be >= the PostgreSQL server version. Railway runs PostgreSQL 18.
+ARG PG_CLIENT_VERSION=18
 # 1 = include dev tools (Pest, Pint) for local use; production keeps 0.
 ARG COMPOSER_DEV=0
 

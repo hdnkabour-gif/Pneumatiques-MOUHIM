@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use League\Flysystem\AsyncAwsS3\AsyncAwsS3Adapter;
 use League\Flysystem\Filesystem;
+use RuntimeException;
 use Spatie\Activitylog\Support\PendingActivityLog;
 use Spatie\Permission\Models\Role;
 
@@ -96,6 +97,18 @@ class AppServiceProvider extends ServiceProvider
     private function registerS3CompatibleDriver(): void
     {
         Storage::extend('s3-compatible', function ($app, array $config) {
+            // A missing setting must be a clear, reportable failure: spatie/laravel-backup only
+            // turns an Exception (not a TypeError) into a "backup has failed" notification.
+            $missing = array_filter(
+                ['bucket' => 'BACKUP_S3_BUCKET', 'endpoint' => 'BACKUP_S3_ENDPOINT', 'key' => 'BACKUP_S3_KEY', 'secret' => 'BACKUP_S3_SECRET'],
+                fn (string $variable, string $setting) => blank($config[$setting] ?? null),
+                ARRAY_FILTER_USE_BOTH,
+            );
+
+            if ($missing !== []) {
+                throw new RuntimeException('Off-site backup storage is not configured. Missing: '.implode(', ', $missing).'.');
+            }
+
             $client = new S3Client(array_filter([
                 'region' => $config['region'] ?? 'auto',
                 'endpoint' => $config['endpoint'] ?? null,

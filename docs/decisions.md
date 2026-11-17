@@ -81,7 +81,7 @@ Format : **D-XX – Titre** : décision, puis raison.
 
 Choix d'implémentation pris pendant la phase 1. Les points marqués **(à confirmer)** attendent la réponse du responsable du projet.
 
-**D-31 – Versions.** PHP 8.4, Laravel 13, Filament 5, Livewire 4, PostgreSQL 17, Pest 5. Image Docker unique basée sur FrankenPHP (serveur web + PHP), identique en local et sur Railway. Raison : versions stables actuelles, un seul conteneur simple à déployer.
+**D-31 – Versions (révisée le 17 novembre 2026).** PHP 8.4, Laravel 13, Filament 5, Livewire 4, PostgreSQL 18, Pest 5. Image Docker unique basée sur FrankenPHP (serveur web + PHP), identique en local et sur Railway ; elle contient le client PostgreSQL 18 (`pg_dump` / `psql`), la CI et Docker local utilisent aussi PostgreSQL 18. Aucune base existante n'est mise à niveau automatiquement : toute migration de version d'une base se fait par un plan séparé et validé. Raison : versions stables actuelles, un seul conteneur simple à déployer ; PostgreSQL 18 est la version du serveur Railway, et `pg_dump` refuse un serveur plus récent que lui (la sauvegarde échouait avec le client 17).
 
 **D-32 – Rôles et permissions.** Package gratuit `spatie/laravel-permission`. Les cinq rôles par défaut existent dès le départ, y compris Responsable de site (il suffit de ne l'attribuer à personne s'il n'est pas utilisé). Le rôle Propriétaire a toujours toutes les permissions et n'est pas modifiable. Les utilisateurs et les sites ne sont jamais supprimés, seulement désactivés. Raison : l'historique doit rester attribuable.
 

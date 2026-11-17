@@ -30,7 +30,7 @@ pneumatiques, services automobiles, stock, ventes, crédit, caisse, atelier.
 | Laravel | 13.40 |
 | Filament | 5.11 |
 | Livewire | 4.4 |
-| PostgreSQL | 17 (Docker / Railway), tests CI sur 16 |
+| PostgreSQL | 18 (Railway, Docker local, tests CI) ; client `pg_dump` / `psql` 18 dans l'image |
 | Pest | 5.3 |
 | spatie/laravel-permission | 8.3 |
 | spatie/laravel-activitylog | 5.1 |
@@ -139,10 +139,16 @@ BACKUP_NOTIFY_EMAIL=<email du propriétaire>
 
 Fichiers envoyés (logo, photos) : monter un **volume Railway** sur `/app/storage/app/public`
 (le disque du conteneur est effacé à chaque déploiement).
+Ils sont servis sous `/storage/...` grâce au lien `public/storage`, absent de l'image : le service web
+le crée à chaque démarrage (`php artisan storage:link --force`, qui ne remplace qu'un lien existant,
+jamais un vrai dossier). Sans ce lien, les images envoyées ne s'affichent pas (réponse 403).
 
-Version du client PostgreSQL : `pg_dump` doit être de version ≥ au serveur. L'image installe la
-version 17 ; si le PostgreSQL de Railway est plus récent, définir la variable de build
-`PG_CLIENT_VERSION` (ex. `18`).
+Version du client PostgreSQL : `pg_dump` refuse un serveur plus récent que lui (« server version
+mismatch ») et la sauvegarde échoue. L'image installe la version 18, celle du PostgreSQL de Railway ;
+si le serveur passe à une version plus récente, définir la variable de build `PG_CLIENT_VERSION`.
+
+Docker local : PostgreSQL 18 utilise le volume `pgdata18` (les données d'un ancien volume `pgdata`
+en version 17 ne sont ni lues ni effacées).
 
 Premier déploiement – compte propriétaire, au choix :
 
@@ -155,18 +161,103 @@ Premier déploiement – compte propriétaire, au choix :
 
 - Automatique tous les jours à 02:00 (heure du Maroc) : base de données + fichiers envoyés,
   vers un stockage S3 compatible **externe à Railway** (Cloudflare R2, Backblaze B2…).
-- Conservation : tous les jours pendant 30 jours, puis dégressive.
-- Contrôle de santé à 08:00 ; email en cas d'échec.
-- Le test automatisé `BackupRestoreTest` sauvegarde une base, la détruit puis la restaure.
+- Conservation : tous les jours pendant 30 jours, puis dégressive (un par jour, semaine, mois, puis
+  2 ans). Le nettoyage des anciennes sauvegardes n'a lieu **qu'après une sauvegarde réussie** : des nuits
+  en échec ne réduisent jamais les sauvegardes existantes, et la plus récente n'est jamais supprimée.
+- Contrôle de santé à 08:00. Tout échec (sauvegarde, nettoyage, sauvegarde trop ancienne) est
+  signalé aux propriétaires actifs : notification enregistrée immédiatement dans l'application (sans
+  dépendre de la file d'attente) et envoyée sur le téléphone si Web Push est configuré. Email en plus si
+  `MAIL_*` et `BACKUP_NOTIFY_EMAIL` sont configurés.
+- Limites : si l'application, la base ou le planificateur sont arrêtés, aucune alerte ne part ; seule
+  une surveillance externe (à décider) peut le détecter. La réception sur le téléphone dépend de la
+  configuration Web Push et n'est pas prouvée par les tests.
+- Non encore prouvé en conditions réelles : sauvegarde vers Cloudflare R2 et restauration sur un
+  environnement Railway de test. C'est une condition avant l'utilisation en production.
+- Si une variable `BACKUP_S3_*` manque, la sauvegarde échoue avec un message qui nomme les
+  variables manquantes (jamais leurs valeurs) et l'échec est signalé.
+- Les tests automatisés `BackupRestoreTest` sauvegardent une base, la détruisent puis la restaurent,
+  et vérifient qu'une restauration ratée ne modifie rien.
 
-Restauration (remplace **toutes** les données actuelles) :
+Restauration – méthode recommandée : dans une **nouvelle** base, sans toucher à la base ni aux
+fichiers actuels.
 
 ```bash
-php artisan app:backup-restore            # choisir la sauvegarde dans la liste
-php artisan app:backup-restore --force    # dernière sauvegarde, sans confirmation
+php artisan app:backup-restore --into=restore_20261116          # dernière sauvegarde (ou choisir dans la liste)
+php artisan app:backup-restore chemin/archive.zip --into=restore_20261116 --without-files
 ```
 
+- Les fichiers de l'archive sont copiés, pour vérification, dans le dossier **privé**
+  `storage/app/private/restored/<base>` : hors de l'arborescence web publique (rien sous
+  `storage/app/public`, servi comme `/storage` quand le lien `storage:link` existe, ni sous `public/`),
+  et refusé par la route des fichiers privés sans URL signée. Ce dossier n'est **pas** sur le volume
+  Railway : la copie durable, c'est l'archive elle-même (R2). `--files-to=` choisit un autre dossier
+  privé ; tout dossier dans, ou contenant, l'arborescence publique est refusé.
+- Copie vérifiée fichier par fichier (empreinte SHA-256). En cas d'échec (copie ou chargement de la
+  base), la nouvelle base et le nouveau dossier sont supprimés, chacun indépendamment ; ce qui n'a pas
+  pu être supprimé est signalé dans le journal, sans masquer l'erreur d'origine.
+- L'utilisateur PostgreSQL doit pouvoir créer une base (`CREATEDB`) ; sinon un message le dit, et il faut
+  restaurer dans un service PostgreSQL séparé.
+- **Bascule** (après vérification de la base restaurée) : mettre l'application en maintenance
+  (`php artisan down`), remettre les fichiers de la même archive en place
+  (`php artisan app:backup-restore chemin/archive.zip --files-only`), pointer `DB_URL` vers la nouvelle
+  base, redéployer, puis `php artisan up`. L'ancienne base reste intacte tant qu'on ne la supprime pas.
+
+Remettre seulement les fichiers d'une archive (aucun effet sur la base ; répétable) :
+
+```bash
+php artisan app:backup-restore chemin/archive.zip --files-only
+```
+
+Chaque fichier est copié à côté de sa destination, contrôlé (SHA-256), puis renommé par-dessus en une
+seule opération : un fichier actuel n'est jamais remplacé par une copie incomplète ou différente de
+l'archive. Les fichiers présents de même nom sont remplacés, aucun n'est supprimé. En production, une
+personne doit confirmer. L'archive doit s'ouvrir (bon mot de passe, contenu intact) et contenir les
+fichiers ; son dump SQL n'est pas nécessaire : les fichiers d'une archive dont le dump est abîmé
+restent récupérables.
+
+Remplacer la base actuelle (à éviter ; mettre l'application en maintenance avec `php artisan down`) :
+
+```bash
+php artisan app:backup-restore --replace-current
+```
+
+Ce qui est garanti, étape par étape :
+
+1. Avant toute modification : archive contrôlée (lisible, mot de passe, dump complet) et aucun obstacle
+   pour mettre les fichiers en place. Un échec ici ne change **ni la base ni les fichiers**.
+2. Suppression de l'ancien schéma et chargement de la base dans **une seule transaction** : en cas
+   d'erreur, la base et les fichiers restent comme avant.
+3. Mise en place des fichiers un par un, comme `--files-only` ; la source extraite n'est jamais
+   consommée. Si cette étape échoue, **la base a déjà été restaurée** : le message dit combien de
+   fichiers sont en place sur combien, et donne la commande `--files-only` qui termine le travail à
+   partir de l'archive, inchangée, avec le même disque (`--disk`) et le même dossier (`--files-to`). Base et fichiers ne forment donc pas une seule opération atomique.
+
+- En production, il faut taper le nom de la base pour confirmer (`--force` ne suffit pas).
+- Les paramètres du serveur viennent de la connexion active (`DB_URL` compris).
+- Aucune copie de restauration n'est écrite dans l'arborescence publique, sauf la copie temporaire de
+  chaque fichier, à côté de sa place finale et le temps de cette copie (elle porte le contenu qui y
+  devient public juste après, et elle est supprimée en cas d'échec).
+
 Sauvegarde manuelle : `php artisan backup:run`.
+
+## Données de démonstration – Staging uniquement
+
+```bash
+php artisan app:staging-demo-data
+```
+
+Crée une journée de travail fictive (tout est marqué « démo ») sur les trois sites, avec les actions
+de l'application : commande et deux réceptions au dépôt, transferts vers M01 et M02 (dont un en
+transit), ventes en espèces, par carte et à crédit avec leurs factures, solde d'ouverture, chèque,
+paiement fournisseur, pneu d'occasion et dépense avec photos, clôture de la caisse de M01. Tout ou rien
+(une seule transaction) ; `stock:verify` est lancé à la fin.
+
+Refusée partout ailleurs que dans le projet Railway de Staging : la commande lit les variables que
+Railway fixe dans le processus (`RAILWAY_PROJECT_ID`, comparé à l'identifiant du projet de Staging écrit
+dans le code, et `RAILWAY_ENVIRONMENT_NAME` = `staging`), jamais `APP_ENV` (le Staging tourne en mode
+production) ni la configuration. Les comptes d'employés de démonstration ont un mot de passe aléatoire
+jamais affiché : personne ne peut s'y connecter. Une seule exécution par jour (la caisse de M01 est
+clôturée).
 
 ## Sécurité
 

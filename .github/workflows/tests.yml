@@ -11,7 +11,8 @@ jobs:
 
     services:
       postgres:
-        image: postgres:16
+        # Same major version as the Railway database server.
+        image: postgres:18
         env:
           POSTGRES_USER: mouhim
           POSTGRES_PASSWORD: secret
@@ -36,8 +37,22 @@ jobs:
           extensions: pdo_pgsql, pgsql, intl, zip, gd, bcmath
           coverage: none
 
-      - name: Install PostgreSQL 16 client (pg_dump / psql for backup tests)
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client-16
+      # pg_dump refuses a newer server: the client must match the PostgreSQL 18 server.
+      - name: Install PostgreSQL 18 client (pg_dump / psql for backup tests)
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt noble-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          # The runner's libpq-dev would be upgraded too and clash with postgresql-common over
+          # /usr/bin/pg_config; it is not needed (PHP extensions are already installed).
+          sudo apt-get remove -y libpq-dev
+          sudo apt-get update && sudo apt-get install -y postgresql-client-18
+          echo /usr/lib/postgresql/18/bin >> "$GITHUB_PATH"
+
+      - name: Check PostgreSQL client and server versions
+        run: |
+          pg_dump --version
+          PGPASSWORD=secret psql -h 127.0.0.1 -U mouhim -d mouhim_test -tAc 'show server_version'
 
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
