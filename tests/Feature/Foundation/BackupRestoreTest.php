@@ -420,7 +420,7 @@ it('says exactly how far it got when file 2 fails after file 1 was put in place,
         } catch (PartialRestoreException $e) {
             expect($e->getMessage())->toContain('The database WAS restored')
                 ->toContain('only 1 of 2 uploaded files')
-                ->toContain("app:backup-restore {$path} --files-only")
+                ->toContain('app:backup-restore '.escapeshellarg($path).' --files-only --disk='.escapeshellarg('backups_local').' --files-to='.escapeshellarg(storage_path('app/public')))
                 ->and([$e->placed, $e->total])->toBe([1, 2]);
         }
 
@@ -544,6 +544,75 @@ it('keeps restored copies private: outside the public tree, even with the storag
 
     foreach (['/storage/restored/'.RESTORED_DB.'/used-tyres/receipt.jpg', '/storage/app/private/restored/'.RESTORED_DB.'/used-tyres/receipt.jpg'] as $url) {
         expect($this->get($url)->status())->toBeIn([403, 404]);
+    }
+});
+
+it('gives a finishing command that keeps the disk and the folder actually used (custom disk and target)', function () {
+    $live = liveFilesForBackup();
+    $target = storage_path('app/private/custom-target-'.uniqid());
+    Storage::fake('backups_custom');
+    $config = config('backup_restore_test');
+    $config['backup']['destination']['disks'] = ['backups_custom'];
+    config(['backup_restore_test' => $config]);
+
+    try {
+        expect(Artisan::call('backup:run', ['--config' => 'backup_restore_test', '--disable-notifications' => true]))->toBe(0);
+        $path = app(RestoreDatabaseBackupAction::class)->available('backups_custom')[0];
+
+        try {
+            restoreFailingOnSecondFile()->replacingCurrent('backups_custom', $path, 'backup_test', filesTarget: $target);
+            $this->fail('A partial restore must not pass silently.');
+        } catch (PartialRestoreException $e) {
+            expect($e->getMessage())->toContain($e->finishCommand())
+                ->and($e->finishCommand())->toBe('php artisan app:backup-restore '.escapeshellarg($path)
+                    .' --files-only --disk='.escapeshellarg('backups_custom').' --files-to='.escapeshellarg($target));
+        }
+
+        // Running exactly that command (disk and target from the message) finishes the custom folder.
+        $this->artisan('app:backup-restore', ['path' => $path, '--files-only' => true, '--disk' => $e->disk, '--files-to' => $e->target, '--force' => true])
+            ->assertSuccessful();
+        expect(file_get_contents($target.'/'.basename($live).'/photo.jpg'))->toBe('PHOTO')
+            ->and(file_get_contents($target.'/'.basename($live).'/sub/doc.pdf'))->toBe('PHOTO-PDF');
+    } finally {
+        File::deleteDirectory($live);
+        File::deleteDirectory($target);
+    }
+});
+
+it('saves the files of an archive whose database dump is damaged or missing (--files-only), still refusing an unreadable archive', function () {
+    $live = liveFilesForBackup();
+    try {
+        $path = backupNow();
+        // Same files, but the dump is cut in half (or absent).
+        $truncated = archiveWithDump($path, fn (string $sql) => substr($sql, 0, intdiv(strlen($sql), 2)));
+        $zip = new ZipArchive;
+        $zip->open(Storage::disk('backups_local')->path($truncated));
+        $zip->addFromString('public/'.basename($live).'/photo.jpg', 'PHOTO');
+        $zip->close();
+        $filesOnlyArchive = 'files-only.zip';
+        $zip->open(Storage::disk('backups_local')->path($filesOnlyArchive), ZipArchive::CREATE);
+        $zip->addFromString('public/'.basename($live).'/sub/doc.pdf', 'PHOTO-PDF');
+        $zip->close();
+        File::deleteDirectory($live);
+        $restore = app(RestoreDatabaseBackupAction::class);
+
+        // The database modes still refuse the damaged dump…
+        expect(fn () => $restore->replacingCurrent('backups_local', $truncated, 'backup_test'))
+            ->toThrow(RuntimeException::class, 'does not contain a complete PostgreSQL dump');
+        expect(is_dir($live))->toBeFalse();
+
+        // …but the files can be saved, from either archive.
+        $restore->filesOnly('backups_local', $truncated);
+        $restore->filesOnly('backups_local', $filesOnlyArchive);
+        expect(file_get_contents($live.'/photo.jpg'))->toBe('PHOTO')
+            ->and(file_get_contents($live.'/sub/doc.pdf'))->toBe('PHOTO-PDF');
+
+        // An archive that does not open, or has no uploaded files, is still refused.
+        Storage::disk('backups_local')->put('not-a-zip.zip', 'garbage');
+        expect(fn () => $restore->filesOnly('backups_local', 'not-a-zip.zip'))->toThrow(RuntimeException::class, 'not a valid archive');
+        expect(fn () => $restore->filesOnly('backups_local', backupNow(['--only-db' => true])))->toThrow(RuntimeException::class, 'contains no uploaded files');
+    } finally {
+        File::deleteDirectory($live);
     }
 });
 

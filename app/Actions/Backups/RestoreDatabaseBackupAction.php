@@ -135,7 +135,7 @@ class RestoreDatabaseBackupAction
         $config = $this->connectionConfig($connection);
         $target = $filesTarget ?? storage_path('app/public');
 
-        $this->withExtractedArchive($disk, $path, function (string $workDir, string $dump) use ($config, $connection, $withFiles, $target, $path) {
+        $this->withExtractedArchive($disk, $path, function (string $workDir, string $dump) use ($config, $connection, $withFiles, $target, $path, $disk) {
             // 1. Before any change: the files can all be put in place (no obstacle).
             $source = $withFiles ? $this->filesSource($workDir) : null;
             $files = $source ? $this->manifest($source) : [];
@@ -156,7 +156,7 @@ class RestoreDatabaseBackupAction
                         $placed++;
                     }
                 } catch (Throwable $e) {
-                    throw new PartialRestoreException($path, $target, $placed, count($files), $e);
+                    throw new PartialRestoreException($disk, $path, $target, $placed, count($files), $e);
                 }
             }
         });
@@ -165,12 +165,14 @@ class RestoreDatabaseBackupAction
     /**
      * Puts the uploaded files of an archive in place (added or replaced, never deleted) without
      * touching the database. Repeatable: finishes a restore whose files were not all put in place.
+     * The archive must open (right password, intact entries) and contain the uploaded files; its
+     * database dump is not needed.
      */
     public function filesOnly(string $disk, string $path, ?string $filesTarget = null): void
     {
         $target = $filesTarget ?? storage_path('app/public');
 
-        $this->withExtractedArchive($disk, $path, function (string $workDir) use ($target, $path) {
+        $this->withExtractedArchive($disk, $path, withDump: false, callback: function (string $workDir) use ($target, $path) {
             $source = $this->filesSource($workDir) ?? throw new RuntimeException("Backup [{$path}] contains no uploaded files.");
             $files = $this->manifest($source);
             $this->assertPlaceable(array_keys($files), $target);
@@ -194,12 +196,14 @@ class RestoreDatabaseBackupAction
     }
 
     /**
-     * Downloads and extracts the archive, and checks the dump is complete BEFORE the
-     * callback may change anything. The work directory is always removed.
+     * Downloads and extracts the archive (readable, right password, intact entries) and, when
+     * the database is restored, checks the dump is complete BEFORE the callback may change
+     * anything. Restoring files only does not depend on the dump, so a damaged dump does not
+     * prevent saving the files. The work directory is always removed.
      *
-     * @param  callable(string $workDir, string $dump): void  $callback
+     * @param  callable(string $workDir, ?string $dump): void  $callback
      */
-    private function withExtractedArchive(string $disk, string $path, callable $callback): void
+    private function withExtractedArchive(string $disk, string $path, callable $callback, bool $withDump = true): void
     {
         $workDir = storage_path('app/restore-'.Str::random(8));
         mkdir($workDir, 0700, true);
@@ -223,6 +227,12 @@ class RestoreDatabaseBackupAction
             $zip->close();
             if (! $extracted) {
                 throw new RuntimeException("Backup [{$path}] could not be extracted (damaged archive or wrong BACKUP_ARCHIVE_PASSWORD).");
+            }
+
+            if (! $withDump) {
+                $callback($workDir, null);
+
+                return;
             }
 
             $dump = collect(glob($workDir.'/db-dumps/*') ?: [])->first()

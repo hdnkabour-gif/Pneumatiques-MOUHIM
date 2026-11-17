@@ -7,11 +7,14 @@ use Throwable;
 
 /**
  * The database WAS restored, but the uploaded files were not all put back. The archive is
- * unchanged: putting its files in place again (--files-only) finishes the restore.
+ * unchanged: putting its files in place again (--files-only) finishes the restore. The command
+ * given repeats the disk and the folder actually used, so it reads the same archive and writes
+ * into the same place.
  */
 class PartialRestoreException extends RuntimeException
 {
     public function __construct(
+        public readonly string $disk,
         public readonly string $archive,
         public readonly string $target,
         public readonly int $placed,
@@ -20,8 +23,14 @@ class PartialRestoreException extends RuntimeException
     ) {
         parent::__construct(
             "The database WAS restored, but only {$placed} of {$total} uploaded files were put into [{$target}]: {$previous->getMessage()} "
-            ."Finish with: php artisan app:backup-restore {$archive} --files-only (repeatable; it uses the unchanged archive).",
+            .'Finish with: '.$this->finishCommand().' (repeatable; it uses the unchanged archive).',
             previous: $previous,
         );
+    }
+
+    public function finishCommand(): string
+    {
+        return 'php artisan app:backup-restore '.escapeshellarg($this->archive).' --files-only'
+            .' --disk='.escapeshellarg($this->disk).' --files-to='.escapeshellarg($this->target);
     }
 }

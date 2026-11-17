@@ -208,7 +208,9 @@ php artisan app:backup-restore chemin/archive.zip --files-only
 Chaque fichier est copié à côté de sa destination, contrôlé (SHA-256), puis renommé par-dessus en une
 seule opération : un fichier actuel n'est jamais remplacé par une copie incomplète ou différente de
 l'archive. Les fichiers présents de même nom sont remplacés, aucun n'est supprimé. En production, une
-personne doit confirmer.
+personne doit confirmer. L'archive doit s'ouvrir (bon mot de passe, contenu intact) et contenir les
+fichiers ; son dump SQL n'est pas nécessaire : les fichiers d'une archive dont le dump est abîmé
+restent récupérables.
 
 Remplacer la base actuelle (à éviter ; mettre l'application en maintenance avec `php artisan down`) :
 
@@ -225,7 +227,7 @@ Ce qui est garanti, étape par étape :
 3. Mise en place des fichiers un par un, comme `--files-only` ; la source extraite n'est jamais
    consommée. Si cette étape échoue, **la base a déjà été restaurée** : le message dit combien de
    fichiers sont en place sur combien, et donne la commande `--files-only` qui termine le travail à
-   partir de l'archive, inchangée. Base et fichiers ne forment donc pas une seule opération atomique.
+   partir de l'archive, inchangée, avec le même disque (`--disk`) et le même dossier (`--files-to`). Base et fichiers ne forment donc pas une seule opération atomique.
 
 - En production, il faut taper le nom de la base pour confirmer (`--force` ne suffit pas).
 - Les paramètres du serveur viennent de la connexion active (`DB_URL` compris).
