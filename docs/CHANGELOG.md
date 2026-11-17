@@ -1,5 +1,16 @@
 # Changelog
 
+## [Préparation à la mise en service — audit strict] – 2026-11-17
+
+### Corrigé
+- `app:go-live-audit` couvre aussi les produits du magasin, leurs déclinaisons, le stock,
+  les fournisseurs, les transferts et tous les documents dépendants (sans supprimer de données).
+- `app:go-live-audit --strict` refuse de déclarer un magasin prêt tant que des enregistrements
+  opérationnels persistent, qu'un tableau de référence obligatoire manque, que le propriétaire
+  actif / les trois sites manquent ou que des tâches attendent dans la file.
+- Le diagnostic affiche une signature des comptages (pas une empreinte des contenus des lignes).
+  Ce contrôle n'exécute **aucune purge** et ne valide pas à lui seul une mise en production.
+
 ## [Préparation à la mise en service — contrôle sans suppression] – 2026-11-17
 
 ### Ajouté
