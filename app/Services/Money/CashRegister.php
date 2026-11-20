@@ -37,12 +37,42 @@ class CashRegister
         return CashDay::query()->firstOrCreate(['site_id' => $site->id, 'business_date' => ($date ?? $this->today())->toDateString()]);
     }
 
-    /** Refuses a cash operation on a closed day (called by every action that moves cash). */
-    public function assertOpen(int $siteId): void
+    /**
+     * Refuses a cash operation on a closed day (called by every action that moves cash).
+     *
+     * #17 (PM-02): this is no longer an unlocked pre-check. It MUST run inside the caller's
+     * transaction and takes a SHARE lock on today's cash-day row (creating the row if needed),
+     * held until that transaction commits. close() takes FOR UPDATE on the same row, so:
+     *  - a cash operation in flight makes the close wait, and the close then counts it;
+     *  - a cash operation arriving during/after a close waits, sees the day closed and is refused;
+     *  - cash operations never block each other (SHARE locks are compatible).
+     * Lock order everywhere: the cash-day row BEFORE the customer row.
+     */
+    public function assertOpen(int $siteId): CashDay
     {
-        if (CashDay::query()->where('site_id', $siteId)->where('business_date', $this->today()->toDateString())->whereNotNull('closed_at')->exists()) {
+        if (DB::transactionLevel() === 0) {
+            throw new \LogicException('CashRegister::assertOpen() must run inside the transaction that moves the cash (#17).');
+        }
+        $date = $this->today()->toDateString();
+        $day = $this->lockDay($siteId, $date, shared: true);
+        if ($day->isClosed()) {
             throw BusinessRuleException::make('cash.errors.closed');
         }
+
+        return $day;
+    }
+
+    /** Today's cash-day row, created if missing, then locked (SHARE or FOR UPDATE) in this transaction. */
+    private function lockDay(int $siteId, string $date, bool $shared): CashDay
+    {
+        $query = fn () => CashDay::query()->where('site_id', $siteId)->where('business_date', $date);
+        if (! $query()->exists()) {
+            // Concurrent creators: ON CONFLICT DO NOTHING, never a unique-violation abort.
+            DB::table('cash_days')->insertOrIgnore(['site_id' => $siteId, 'business_date' => $date,
+                'opening_float_cents' => 0, 'created_at' => now(), 'updated_at' => now()]);
+        }
+
+        return ($shared ? $query()->sharedLock() : $query()->lockForUpdate())->firstOrFail();
     }
 
     /** @return array{float: int, cash_in: int, refunds: int, expenses: int, expected: int, card: int, cheque: int} */
@@ -71,8 +101,17 @@ class CashRegister
     public function setFloat(Site $site, int $cents, User $user): void
     {
         $this->authorize($user, $site, Permission::CashClose);
-        $this->assertOpen($site->id);
-        $this->day($site)->update(['opening_float_cents' => max(0, $cents)]);
+        // #17: same row lock as close(); a float change can never land after the count.
+        DB::transaction(function () use ($site, $cents, $user) {
+            $day = $this->lockDay($site->id, $this->today()->toDateString(), shared: false);
+            if ($day->isClosed()) {
+                throw BusinessRuleException::make('cash.errors.closed');
+            }
+            $before = $day->opening_float_cents;
+            $day->update(['opening_float_cents' => max(0, $cents)]);
+            activity('cash')->causedBy($user)->performedOn($day)->event('cash_float')
+                ->withProperties(['before' => $before, 'after' => $day->opening_float_cents])->tap(fn ($a) => $a->site_id = $site->id)->log('cash_float');
+        });
     }
 
     /** @param  array{category: string, amount_cents: int, description: string, paid_in_cash?: bool, photo?: ?string}  $data */
@@ -82,20 +121,25 @@ class CashRegister
         if ((int) $data['amount_cents'] <= 0 || trim((string) $data['description']) === '') {
             throw BusinessRuleException::make('cash.errors.expense');
         }
-        if ($data['paid_in_cash'] ?? true) {
-            $this->assertOpen($site->id);
-        }
 
-        $expense = Expense::query()->create([
-            'site_id' => $site->id, 'business_date' => $this->today()->toDateString(), 'category' => $data['category'],
-            'amount_cents' => (int) $data['amount_cents'], 'paid_in_cash' => (bool) ($data['paid_in_cash'] ?? true),
-            'description' => trim($data['description']), 'photo' => $data['photo'] ?? null, 'user_id' => $user->id,
-        ]);
-        activity('cash')->causedBy($user)->performedOn($expense)->event('expense')
-            ->withProperties(['amount_cents' => $expense->amount_cents, 'category' => $expense->category])
-            ->tap(fn ($a) => $a->site_id = $site->id)->log('expense');
+        // #17: the open-day check, the expense and its audit entry are ONE transaction: either
+        // all are recorded and counted by the close, or none is (a failing audit rolls back).
+        return DB::transaction(function () use ($site, $data, $user) {
+            if ($data['paid_in_cash'] ?? true) {
+                $this->assertOpen($site->id);
+            }
 
-        return $expense;
+            $expense = Expense::query()->create([
+                'site_id' => $site->id, 'business_date' => $this->today()->toDateString(), 'category' => $data['category'],
+                'amount_cents' => (int) $data['amount_cents'], 'paid_in_cash' => (bool) ($data['paid_in_cash'] ?? true),
+                'description' => trim($data['description']), 'photo' => $data['photo'] ?? null, 'user_id' => $user->id,
+            ]);
+            activity('cash')->causedBy($user)->performedOn($expense)->event('expense')
+                ->withProperties(['amount_cents' => $expense->amount_cents, 'category' => $expense->category])
+                ->tap(fn ($a) => $a->site_id = $site->id)->log('expense');
+
+            return $expense;
+        });
     }
 
     /** Closing: counted cash, difference recorded; a big difference alerts the owner. */
@@ -104,7 +148,9 @@ class CashRegister
         $this->authorize($user, $site, Permission::CashClose);
 
         return DB::transaction(function () use ($site, $countedCents, $notes, $user) {
-            $day = CashDay::query()->lockForUpdate()->findOrFail($this->day($site)->id);
+            // #17: FOR UPDATE waits for every cash operation holding the day's SHARE lock; the
+            // summary below is then read after they committed, so it includes them.
+            $day = $this->lockDay($site->id, $this->today()->toDateString(), shared: false);
             if ($day->isClosed()) {
                 throw BusinessRuleException::make('cash.errors.closed');
             }
@@ -135,10 +181,12 @@ class CashRegister
         if (! $user->can(Permission::ApprovalsDecide->value)) {
             throw BusinessRuleException::make('app.errors.forbidden');
         }
-        $day = $this->day($site);
-        $day->update(['closed_at' => null, 'closed_by' => null, 'counted_cents' => null, 'difference_cents' => null, 'expected_cents' => null]);
-        activity('cash')->causedBy($user)->performedOn($day)->event('cash_reopened')->withProperties(['reason' => $reason])
-            ->tap(fn ($a) => $a->site_id = $site->id)->log('cash_reopened');
+        DB::transaction(function () use ($site, $reason, $user) {
+            $day = $this->lockDay($site->id, $this->today()->toDateString(), shared: false);
+            $day->update(['closed_at' => null, 'closed_by' => null, 'counted_cents' => null, 'difference_cents' => null, 'expected_cents' => null]);
+            activity('cash')->causedBy($user)->performedOn($day)->event('cash_reopened')->withProperties(['reason' => $reason])
+                ->tap(fn ($a) => $a->site_id = $site->id)->log('cash_reopened');
+        });
     }
 
     private function authorize(User $user, Site $site, Permission $permission): void

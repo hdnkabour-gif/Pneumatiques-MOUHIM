@@ -1,5 +1,30 @@
 # Changelog
 
+## [Clôture de caisse sans opération perdue — #17] – 2026-11-20
+
+### Corrigé
+- La clôture de caisse pouvait se terminer **pendant** qu'une opération en espèces était en cours (vente,
+  encaissement client, avoir remboursé en espèces, dépense) : le contrôle « caisse ouverte » était une simple
+  lecture sans verrou, l'opération s'enregistrait juste après la clôture et le montant attendu figé à la
+  clôture ne correspondait plus à la journée.
+- Chaque opération en espèces verrouille maintenant la journée de caisse **dans sa propre transaction**
+  (verrou partagé), et la clôture verrouille la même ligne en exclusif : soit l'opération est terminée et
+  comptée dans la clôture, soit elle arrive après et elle est refusée (« caisse clôturée ») sans rien écrire.
+  Les opérations ne se bloquent pas entre elles.
+- Ordre de verrouillage unique : journée de caisse d'abord, puis client et factures (vente, encaissement,
+  avoir remboursé en espèces), pour éviter les interblocages. Revue : l'avoir verrouillait la facture avant la
+  journée ; un encaissement et un remboursement simultanés sur la même facture, sans journée de caisse encore
+  créée, s'interbloquaient (reproduit sur PostgreSQL 18) — corrigé et couvert par un test.
+- Le fond de caisse et la réouverture verrouillent aussi la journée ; un changement de fond est désormais
+  journalisé (avant/après). Une dépense et son entrée de journal sont dans la même transaction : si le
+  journal échoue, la dépense est annulée.
+
+### Ajouté
+- Tests de concurrence sur PostgreSQL réel avec barrières déterministes (processus séparés) : encaissement,
+  vente, avoir, dépense, puis les quatre ensemble, pendant une clôture ; et encaissement, vente, dépense,
+  fond de caisse arrivant pendant une clôture (tous refusés). Tous échouaient avant la correction.
+- Le rejeu d'un encaissement déjà enregistré après la clôture reste couvert par #21.
+
 ## [Encaissement rejoué sans doublon — #21] – 2026-11-20
 
 ### Corrigé
