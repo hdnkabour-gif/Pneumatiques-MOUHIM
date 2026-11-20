@@ -17,6 +17,8 @@ return [
     'errors' => [
         'amount' => 'Montant invalide.',
         'more_than_due' => 'Le client doit :due : le montant ne peut pas être supérieur.',
+        'idempotency_key' => 'Référence de l\'opération invalide. Rouvrez le formulaire et réessayez.',
+        'idempotency_conflict' => 'Cette opération a déjà été envoyée avec d\'autres valeurs. Rouvrez le formulaire pour un nouvel encaissement.',
         'cheque_status' => 'Changement impossible pour ce chèque.',
     ],
 ];
