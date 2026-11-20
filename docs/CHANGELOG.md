@@ -1,5 +1,19 @@
 # Changelog
 
+## [Plafond de crédit sous concurrence — #18] – 2026-11-20
+
+### Corrigé
+- Deux ventes à crédit confirmées **au même instant** pour le même client pouvaient toutes deux
+  passer sous le plafond (ex. 700 + 700 > 1 000 MAD), car chaque confirmation ne verrouillait que
+  sa propre vente. La confirmation verrouille désormais la fiche du client dans la même transaction
+  avant le contrôle du plafond : la seconde lit l'encours après la première et demande l'approbation
+  du propriétaire (D-21, D-54). Ordre des verrous identique à l'encaissement (client, puis ventes).
+
+### Ajouté
+- Suite `tests/Concurrency` : deux processus PHP réels (deux connexions PostgreSQL), données
+  validées, départ synchronisé ; 3 manches, plus un cas témoin où le plafond autorise les deux ventes.
+  Le schéma est reconstruit (`DatabaseMigrations`) car le journal d'activité refuse `TRUNCATE` (D-34).
+
 ## [Préparation à la mise en service — audit strict] – 2026-11-17
 
 ### Corrigé
