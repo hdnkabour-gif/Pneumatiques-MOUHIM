@@ -9,6 +9,7 @@ use App\Exceptions\BusinessRuleException;
 use App\Models\Customer;
 use App\Models\Payment;
 use App\Models\Product;
+use App\Services\Money\CashRegister;
 use App\Services\Stock\StockService;
 use Spatie\Activitylog\Models\Activity;
 
@@ -82,4 +83,28 @@ it('keeps the old behaviour when no key is sent, and rejects malformed keys', fu
 
     expect(fn () => ($this->receive)(['amount_cents' => 1000, 'idempotency_key' => 'bad key with spaces']))
         ->toThrow(BusinessRuleException::class);
+});
+
+it('returns an already-recorded cash receipt on retry even after the cash day closed; a new cash receipt is still refused (#21 review)', function () {
+    $first = ($this->receive)(['method' => 'cash', 'amount_cents' => 3000, 'idempotency_key' => 'rcpt-test-close-1']);
+    app(CashRegister::class)->close(site('M01'), 0, 'TEST écart volontaire', userWithRole(RoleName::SiteManager, 'M01'));
+
+    $retry = ($this->receive)(['method' => 'cash', 'amount_cents' => 3000, 'idempotency_key' => 'rcpt-test-close-1']);
+    expect($retry->id)->toBe($first->id)->and(($this->receipts)())->toBe(1);
+
+    expect(fn () => ($this->receive)(['method' => 'cash', 'amount_cents' => 1000, 'idempotency_key' => 'rcpt-test-close-2']))
+        ->toThrow(BusinessRuleException::class); // D-29: a NEW cash receipt on a closed day
+    expect(fn () => ($this->receive)(['method' => 'cash', 'amount_cents' => 3000, 'idempotency_key' => 'rcpt-test-close-1'], userWithRole(RoleName::Seller, 'M02')))
+        ->toThrow(BusinessRuleException::class); // authorisation is still checked before any replay
+    expect(($this->receipts)())->toBe(1);
+});
+
+it('treats a changed cheque drawer under the same key as a conflict, not a replay (Codex review)', function () {
+    $cheque = ['method' => 'cheque', 'amount_cents' => 3000, 'cheque_number' => 'TEST-0001', 'bank' => 'TEST Banque', 'due_date' => now()->addDays(10)->toDateString()];
+    ($this->receive)([...$cheque, 'drawer' => 'TEST Tireur A', 'idempotency_key' => 'rcpt-test-drawer']);
+
+    expect(fn () => ($this->receive)([...$cheque, 'drawer' => 'TEST Tireur B', 'idempotency_key' => 'rcpt-test-drawer']))
+        ->toThrow(BusinessRuleException::class);
+    expect(($this->receipts)())->toBe(1)
+        ->and(Payment::query()->where('idempotency_key', 'rcpt-test-drawer')->value('drawer'))->toBe('TEST Tireur A');
 });

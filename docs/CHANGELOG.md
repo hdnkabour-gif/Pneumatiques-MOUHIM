@@ -9,6 +9,12 @@
   sans nouvelle ligne ni nouvelle entrée de journal ; la même clé avec d'autres valeurs est refusée.
   Deux encaissements réels du même montant (deux formulaires, deux clés) restent bien enregistrés.
 - Sans clé, le comportement reste celui d'avant (compatibilité des autres appels).
+- Revue : un encaissement espèces déjà enregistré puis rejoué **après la clôture de la caisse** renvoie le
+  paiement existant (le contrôle « caisse ouverte » s'applique seulement à un nouvel encaissement) ; le tireur
+  du chèque fait partie de l'empreinte (un tireur différent avec la même clé = conflit).
+- Points d'entrée : seul le formulaire « Encaisser » de la fiche client envoie une clé ; les données de
+  démonstration appellent `receive()` sans clé ; les paiements de l'écran de vente passent par
+  `ConfirmSaleAction` (vente verrouillée, refus d'une vente déjà validée) et ne sont pas concernés.
 
 ### Ajouté
 - Colonnes `payments.idempotency_key` (unique) et `payments.idempotency_fingerprint` (migration additive).

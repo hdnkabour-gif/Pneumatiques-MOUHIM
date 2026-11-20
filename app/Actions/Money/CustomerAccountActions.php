@@ -70,12 +70,9 @@ class CustomerAccountActions
             'customer' => $customer->id, 'site' => $site->id, 'user' => $user->id, 'method' => $method->value, 'amount' => $amount,
             'cheque_number' => $method === PaymentMethod::Cheque ? trim((string) ($data['cheque_number'] ?? '')) : null,
             'bank' => $method === PaymentMethod::Cheque ? trim((string) ($data['bank'] ?? '')) : null,
+            'drawer' => $method === PaymentMethod::Cheque ? trim((string) ($data['drawer'] ?? '')) : null,
             'due_date' => $method === PaymentMethod::Cheque ? ($data['due_date'] ?? null) : null,
         ]));
-
-        if ($method === PaymentMethod::Cash) {
-            app(CashRegister::class)->assertOpen($site->id); // D-29
-        }
 
         return DB::transaction(function () use ($customer, $site, $data, $user, $method, $amount, $key, $fingerprint) {
             if ($key !== null) {
@@ -89,6 +86,12 @@ class CustomerAccountActions
                     }
                     throw BusinessRuleException::make('money.errors.idempotency_conflict');
                 }
+            }
+            // D-29: a NEW cash receipt needs an open cash day. Checked after the replay lookup on
+            // purpose (#21 review): a retry of a receipt that was already recorded must return it
+            // even if the day has been closed since; a new posting on a closed day is still refused.
+            if ($method === PaymentMethod::Cash) {
+                app(CashRegister::class)->assertOpen($site->id);
             }
             Customer::query()->lockForUpdate()->findOrFail($customer->id);
             if ($amount > $customer->outstandingCents()) {
