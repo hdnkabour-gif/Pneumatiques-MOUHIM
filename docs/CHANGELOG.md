@@ -1,5 +1,20 @@
 # Changelog
 
+## [Encaissement rejoué sans doublon — #21] – 2026-11-20
+
+### Corrigé
+- Un encaissement client renvoyé (double clic, réseau coupé puis nouvel essai) pouvait être
+  enregistré deux fois. Chaque formulaire d'encaissement porte maintenant une **clé d'opération**
+  unique (générée à l'ouverture du formulaire) : le même envoi rejoué renvoie le même paiement,
+  sans nouvelle ligne ni nouvelle entrée de journal ; la même clé avec d'autres valeurs est refusée.
+  Deux encaissements réels du même montant (deux formulaires, deux clés) restent bien enregistrés.
+- Sans clé, le comportement reste celui d'avant (compatibilité des autres appels).
+
+### Ajouté
+- Colonnes `payments.idempotency_key` (unique) et `payments.idempotency_fingerprint` (migration additive).
+- Tests : rejeu, conflit, deux paiements légitimes, essai refusé puis corrigé, autre utilisateur ou
+  site, et deux requêtes simultanées avec la même clé (deux processus réels).
+
 ## [Plafond de crédit sous concurrence — #18] – 2026-11-20
 
 ### Corrigé

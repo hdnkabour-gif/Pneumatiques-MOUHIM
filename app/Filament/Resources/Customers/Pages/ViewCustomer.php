@@ -22,12 +22,14 @@ use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\Str;
 
 class ViewCustomer extends ViewRecord
 {
@@ -68,6 +70,9 @@ class ViewCustomer extends ViewRecord
                         ->visible(fn (Get $get) => $get('method') === 'cheque'),
                     DatePicker::make('due_date')->label(__('sales.fields.due_date'))
                         ->visible(fn (Get $get) => $get('method') === 'cheque'),
+                    // #21: one key per opened form. A double click or a network retry of the
+                    // same form posts once; reopening the form for a new receipt gets a new key.
+                    Hidden::make('idempotency_key')->default(fn () => (string) Str::uuid()),
                 ])
                 ->action(function (array $data) {
                     $site = Site::query()->find(auth()->user()->default_site_id) ?? Site::query()->visibleTo(auth()->user())->firstOrFail();

@@ -60,11 +60,36 @@ class CustomerAccountActions
             throw BusinessRuleException::make('sales.errors.cheque_details');
         }
 
+        // #21: optional operation key. Same key + same request = the same receipt (a retry);
+        // same key + different request = conflict. No key = previous behaviour.
+        $key = isset($data['idempotency_key']) && $data['idempotency_key'] !== '' ? (string) $data['idempotency_key'] : null;
+        if ($key !== null && ! preg_match('/^[A-Za-z0-9_-]{8,100}$/', $key)) {
+            throw BusinessRuleException::make('money.errors.idempotency_key');
+        }
+        $fingerprint = $key === null ? null : hash('sha256', json_encode([
+            'customer' => $customer->id, 'site' => $site->id, 'user' => $user->id, 'method' => $method->value, 'amount' => $amount,
+            'cheque_number' => $method === PaymentMethod::Cheque ? trim((string) ($data['cheque_number'] ?? '')) : null,
+            'bank' => $method === PaymentMethod::Cheque ? trim((string) ($data['bank'] ?? '')) : null,
+            'due_date' => $method === PaymentMethod::Cheque ? ($data['due_date'] ?? null) : null,
+        ]));
+
         if ($method === PaymentMethod::Cash) {
             app(CashRegister::class)->assertOpen($site->id); // D-29
         }
 
-        return DB::transaction(function () use ($customer, $site, $data, $user, $method, $amount) {
+        return DB::transaction(function () use ($customer, $site, $data, $user, $method, $amount, $key, $fingerprint) {
+            if ($key !== null) {
+                // Serialise every request carrying this key (even for another customer),
+                // then return the earlier receipt or refuse a different request.
+                DB::select('SELECT pg_advisory_xact_lock(hashtextextended(?, 21))', [$key]);
+                $previous = Payment::query()->where('idempotency_key', $key)->first();
+                if ($previous) {
+                    if (hash_equals((string) $previous->idempotency_fingerprint, $fingerprint)) {
+                        return $previous;
+                    }
+                    throw BusinessRuleException::make('money.errors.idempotency_conflict');
+                }
+            }
             Customer::query()->lockForUpdate()->findOrFail($customer->id);
             if ($amount > $customer->outstandingCents()) {
                 throw BusinessRuleException::make('money.errors.more_than_due', ['due' => Money::format($customer->outstandingCents())]);
@@ -77,6 +102,7 @@ class CustomerAccountActions
                 'drawer' => $method === PaymentMethod::Cheque ? ($data['drawer'] ?? null) : null,
                 'due_date' => $method === PaymentMethod::Cheque ? ($data['due_date'] ?? null) : null,
                 'status' => 'received', 'received_by' => $user->id, 'received_at' => now(),
+                'idempotency_key' => $key, 'idempotency_fingerprint' => $fingerprint,
             ]);
 
             // Oldest first: opening balance, then documents by date.
