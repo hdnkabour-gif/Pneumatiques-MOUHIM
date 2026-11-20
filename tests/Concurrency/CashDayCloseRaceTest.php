@@ -239,3 +239,25 @@ it('refuses to check the cash day outside a transaction: the lock would be relea
     expect(DB::transactionLevel())->toBe(0)
         ->and(fn () => app(CashRegister::class)->assertOpen(site('M01')->id))->toThrow(LogicException::class);
 });
+
+it('a cash receipt and a cash refund on the same open invoice, with NO cash-day row yet, do not deadlock (Codex P2)', function () {
+    $c = ($this->debtor)();                                      // credit invoice: no cash moved, so…
+    $invoice = Sale::query()->where('customer_id', $c->id)->firstOrFail()->load('lines');
+    DB::table('cash_days')->delete();                            // …and no cash-day row exists for today
+    expect(CashDay::query()->count())->toBe(0);
+
+    // The receipt creates today's row (uncommitted) and is held on the customer lock; the refund
+    // then arrives for the invoice the receipt will allocate to.
+    [$pdo, $pid] = cashBarrier("SELECT id FROM customers WHERE id = {$c->id} FOR UPDATE");
+    $receipt = cashOp('receipt', $c->id, site('M01')->id, $this->seller->id, 3000);
+    cashWaitBehind($pid, 1);
+    $refund = cashOp('credit_note', $invoice->id, $invoice->lines->first()->id, owner()->id);
+    cashWaitBehind($pid, 2, [$refund]);
+    $pdo->exec('COMMIT');
+    $results = [cashResult($receipt), cashResult($refund)];
+
+    expect(collect($results)->pluck('result')->all())->toBe(['POSTED', 'POSTED'], json_encode($results));
+    expect(CashDay::query()->count())->toBe(1);
+    $s = app(CashRegister::class)->summary(site('M01'));
+    expect($s['cash_in'])->toBe(3000)->and($s['refunds'])->toBe($invoice->total_ttc_cents);
+});

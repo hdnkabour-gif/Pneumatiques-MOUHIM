@@ -64,10 +64,14 @@ class CreateCreditNoteAction
     public function execute(Sale $invoice, array $lines, RefundMethod $refund, string $reason, User $requester, User $approver): Sale
     {
         return DB::transaction(function () use ($invoice, $lines, $refund, $reason, $requester, $approver) {
-            $invoice = Sale::query()->with(['lines', 'site'])->lockForUpdate()->findOrFail($invoice->id);
+            // #17 (Codex P2 on #24): the cash day is locked BEFORE the invoice, the same order as
+            // CustomerAccountActions::receive() (cash day, customer, open invoices). Otherwise a
+            // receipt that just created today's row and a refund holding the invoice wait on each
+            // other (deadlock). A confirmed invoice's site never changes, so reading it unlocked is safe.
             if ($refund === RefundMethod::Cash) {
-                app(CashRegister::class)->assertOpen($invoice->site_id); // D-29
+                app(CashRegister::class)->assertOpen((int) Sale::query()->whereKey($invoice->id)->value('site_id')); // D-29
             }
+            $invoice = Sale::query()->with(['lines', 'site'])->lockForUpdate()->findOrFail($invoice->id);
             $this->validate($invoice, $lines, $refund, $reason, $requester, checkPermission: false);
 
             $note = Sale::query()->create([

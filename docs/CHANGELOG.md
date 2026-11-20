@@ -11,8 +11,10 @@
   (verrou partagé), et la clôture verrouille la même ligne en exclusif : soit l'opération est terminée et
   comptée dans la clôture, soit elle arrive après et elle est refusée (« caisse clôturée ») sans rien écrire.
   Les opérations ne se bloquent pas entre elles.
-- Ordre de verrouillage unique : journée de caisse, puis client (vente et encaissement), pour éviter les
-  interblocages.
+- Ordre de verrouillage unique : journée de caisse d'abord, puis client et factures (vente, encaissement,
+  avoir remboursé en espèces), pour éviter les interblocages. Revue : l'avoir verrouillait la facture avant la
+  journée ; un encaissement et un remboursement simultanés sur la même facture, sans journée de caisse encore
+  créée, s'interbloquaient (reproduit sur PostgreSQL 18) — corrigé et couvert par un test.
 - Le fond de caisse et la réouverture verrouillent aussi la journée ; un changement de fond est désormais
   journalisé (avant/après). Une dépense et son entrée de journal sont dans la même transaction : si le
   journal échoue, la dépense est annulée.
