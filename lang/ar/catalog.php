@@ -21,7 +21,7 @@ return [
     'brands' => [
         'label' => 'علامة تجارية',
         'plural' => 'العلامات التجارية',
-        'fields' => ['name' => 'الاسم'],
+        'fields' => ['name' => 'الاسم', 'logo' => 'الشعار', 'logo_help' => 'شعار اختياري (JPG أو PNG أو WebP، 3 ميغابايت كحد أقصى).'],
     ],
     'products' => [
         'label' => 'منتج',
@@ -38,6 +38,8 @@ return [
     'fields' => [
         'sku' => 'SKU',
         'name' => 'الاسم',
+        'image' => 'صورة المنتج',
+        'image_help' => 'صورة اختيارية للمنتج (JPG أو PNG أو WebP، 5 ميغابايت كحد أقصى).',
         'name_ar' => 'الاسم (بالعربية)',
         'category' => 'الصنف',
         'brand' => 'العلامة',

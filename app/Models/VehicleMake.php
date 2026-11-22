@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class VehicleMake extends Model
 {
-    protected $fillable = ['name', 'is_active'];
+    protected $fillable = ['name', 'is_active', 'logo_path'];
 
     protected function casts(): array
     {

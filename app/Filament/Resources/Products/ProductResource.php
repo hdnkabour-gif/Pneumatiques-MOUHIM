@@ -21,6 +21,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
@@ -76,6 +77,7 @@ class ProductResource extends Resource
             ->defaultSort('name')
             ->searchPlaceholder(__('catalog.search_placeholder'))
             ->columns([
+                ImageColumn::make('image_path')->label(__('catalog.fields.image'))->disk('public')->square()->size(48),
                 TextColumn::make('sku')->label(__('catalog.fields.sku'))->sortable()->toggleable()->visibleFrom('md'),
                 TextColumn::make('name')->label(__('catalog.fields.name'))->weight('bold')->wrap()
                     ->description(fn (Product $r) => $r->tyreSpec?->sizeLabel())

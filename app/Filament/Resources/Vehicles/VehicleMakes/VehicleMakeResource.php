@@ -8,19 +8,20 @@ use App\Filament\Support\PageHub;
 use App\Models\VehicleMake;
 use BackedEnum;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
 class VehicleMakeResource extends Resource
 {
-    /** Simplicity (§5): setup pages appear in the menu only for those who manage them. */
     public static function shouldRegisterNavigation(): bool
     {
         return PageHub::inMenu(static::class) && parent::shouldRegisterNavigation() && (auth()->user()?->canAny([Permission::CompatibilitiesManage->value]) ?? false);
@@ -56,6 +57,10 @@ class VehicleMakeResource extends Resource
     {
         return $schema->columns(2)->components([
             TextInput::make('name')->label(__('vehicles.fields.name'))->required()->maxLength(100)->unique(ignoreRecord: true),
+            FileUpload::make('logo_path')->label(__('vehicles.fields.logo'))->image()
+                ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                ->disk('public')->directory('catalog/vehicle-makes')->visibility('public')
+                ->imageEditor()->maxSize(3072)->helperText(__('vehicles.fields.logo_help')),
             Toggle::make('is_active')->label(__('app.active'))->default(true),
         ]);
     }
@@ -66,6 +71,7 @@ class VehicleMakeResource extends Resource
             ->modifyQueryUsing(fn (Builder $query) => $query->withCount('models'))
             ->defaultSort('name')
             ->columns([
+                ImageColumn::make('logo_path')->label(__('vehicles.fields.logo'))->disk('public')->square()->size(44),
                 TextColumn::make('name')->label(__('vehicles.fields.name'))->searchable()->sortable()->weight('bold'),
                 TextColumn::make('models_count')->label(__('vehicles.models.plural'))->badge(),
                 IconColumn::make('is_active')->label(__('app.active'))->boolean(),

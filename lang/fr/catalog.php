@@ -21,7 +21,7 @@ return [
     'brands' => [
         'label' => 'Marque',
         'plural' => 'Marques',
-        'fields' => ['name' => 'Nom'],
+        'fields' => ['name' => 'Nom', 'logo' => 'Logo', 'logo_help' => 'Logo facultatif (JPG, PNG ou WebP, 3 Mo maximum).'],
     ],
     'products' => [
         'label' => 'Produit',
@@ -38,6 +38,8 @@ return [
     'fields' => [
         'sku' => 'SKU',
         'name' => 'Nom',
+        'image' => 'Photo du produit',
+        'image_help' => 'Image facultative du produit (JPG, PNG ou WebP, 5 Mo maximum).',
         'name_ar' => 'Nom (arabe)',
         'category' => 'Catégorie',
         'brand' => 'Marque',
