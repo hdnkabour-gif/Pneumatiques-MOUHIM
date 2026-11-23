@@ -59,8 +59,10 @@ class RestoreDatabaseBackupAction
     /**
      * @param  string|null  $filesTarget  new private folder for the uploaded files (default {restoredFilesRoot}/{database});
      *                                    it must not exist and must not be in the public web tree
+     * @param  string|null  $documentsTarget  new private folder for the private documents (expense receipts)
+     *                                        (default {restoredFilesRoot}/{database}-documents); same rules
      */
-    public function intoNewDatabase(string $disk, string $path, string $database, ?string $connection = null, bool $withFiles = true, ?string $filesTarget = null): void
+    public function intoNewDatabase(string $disk, string $path, string $database, ?string $connection = null, bool $withFiles = true, ?string $filesTarget = null, ?string $documentsTarget = null): void
     {
         $config = $this->connectionConfig($connection);
 
@@ -79,15 +81,19 @@ class RestoreDatabaseBackupAction
         }
 
         $filesTarget ??= self::restoredFilesRoot().'/'.$database;
+        $documentsTarget ??= self::restoredFilesRoot().'/'.$database.'-documents';
         if ($withFiles) {
-            $this->assertPrivate($filesTarget);
-            if (file_exists($filesTarget)) {
-                throw new RuntimeException("Files target [{$filesTarget}] already exists.");
+            foreach ([$filesTarget, $documentsTarget] as $folder) {
+                $this->assertPrivate($folder);
+                if (file_exists($folder)) {
+                    throw new RuntimeException("Files target [{$folder}] already exists.");
+                }
             }
         }
 
-        $this->withExtractedArchive($disk, $path, function (string $workDir, string $dump) use ($config, $connection, $database, $withFiles, $filesTarget) {
+        $this->withExtractedArchive($disk, $path, function (string $workDir, string $dump) use ($config, $connection, $database, $withFiles, $filesTarget, $documentsTarget) {
             $createdFiles = false;
+            $createdDocuments = false;
             $createdDatabase = false;
 
             try {
@@ -95,6 +101,11 @@ class RestoreDatabaseBackupAction
                 if ($source) {
                     $createdFiles = true;
                     $this->copyVerified($source, $filesTarget);
+                }
+                $documents = $withFiles ? $this->documentsSource($workDir) : null;
+                if ($documents) {
+                    $createdDocuments = true;
+                    $this->copyVerified($documents, $documentsTarget);
                 }
 
                 DB::connection($connection)->statement('CREATE DATABASE "'.$database.'"');
@@ -115,6 +126,9 @@ class RestoreDatabaseBackupAction
                 if ($createdFiles && file_exists($filesTarget) && ! File::deleteDirectory($filesTarget)) {
                     $leftovers[] = "folder [{$filesTarget}]";
                 }
+                if ($createdDocuments && file_exists($documentsTarget) && ! File::deleteDirectory($documentsTarget)) {
+                    $leftovers[] = "folder [{$documentsTarget}]";
+                }
                 if ($leftovers !== []) {
                     Log::error('Restore failed and could not remove: '.implode(', ', $leftovers).'. Remove them by hand.', ['error' => $e->getMessage()]);
                 }
@@ -127,19 +141,27 @@ class RestoreDatabaseBackupAction
     /**
      * @param  string|null  $filesTarget  where uploaded files go back (default storage/app/public);
      *                                    files are added or replaced, never deleted.
+     * @param  string|null  $documentsTarget  where private documents go back (default storage/app/documents)
      *
      * @throws PartialRestoreException when the database was replaced but the files could not all be put in place
      */
-    public function replacingCurrent(string $disk, string $path, ?string $connection = null, bool $withFiles = true, ?string $filesTarget = null): void
+    public function replacingCurrent(string $disk, string $path, ?string $connection = null, bool $withFiles = true, ?string $filesTarget = null, ?string $documentsTarget = null): void
     {
         $config = $this->connectionConfig($connection);
         $target = $filesTarget ?? storage_path('app/public');
+        $documentsTarget ??= storage_path('app/documents');
+        if ($withFiles) {
+            $this->assertPrivate($documentsTarget);
+        }
 
-        $this->withExtractedArchive($disk, $path, function (string $workDir, string $dump) use ($config, $connection, $withFiles, $target, $path, $disk) {
+        $this->withExtractedArchive($disk, $path, function (string $workDir, string $dump) use ($config, $connection, $withFiles, $target, $documentsTarget, $path, $disk) {
             // 1. Before any change: the files can all be put in place (no obstacle).
             $source = $withFiles ? $this->filesSource($workDir) : null;
             $files = $source ? $this->manifest($source) : [];
             $this->assertPlaceable(array_keys($files), $target);
+            $documents = $withFiles ? $this->documentsSource($workDir) : null;
+            $documentFiles = $documents ? $this->manifest($documents) : [];
+            $this->assertPlaceable(array_keys($documentFiles), $documentsTarget);
 
             // 2. Database replaced in one transaction: on error, nothing changed.
             $prelude = $workDir.'/replace-schema.sql';
@@ -148,16 +170,20 @@ class RestoreDatabaseBackupAction
             $this->psql($config, [$prelude, $dump]);
 
             // 3. Files put in place one by one; the extracted source is never consumed.
-            if ($source) {
-                $placed = 0;
-                try {
-                    foreach ($files as $relative => $sha256) {
-                        $this->placeFile($source.'/'.$relative, $target.'/'.$relative, $sha256);
-                        $placed++;
-                    }
-                } catch (Throwable $e) {
-                    throw new PartialRestoreException($disk, $path, $target, $placed, count($files), $e);
+            //    Public files first, then private documents; the count covers both.
+            $placed = 0;
+            $total = count($files) + count($documentFiles);
+            try {
+                foreach ($files as $relative => $sha256) {
+                    $this->placeFile($source.'/'.$relative, $target.'/'.$relative, $sha256);
+                    $placed++;
                 }
+                foreach ($documentFiles as $relative => $sha256) {
+                    $this->placeFile($documents.'/'.$relative, $documentsTarget.'/'.$relative, $sha256);
+                    $placed++;
+                }
+            } catch (Throwable $e) {
+                throw new PartialRestoreException($disk, $path, $target, $placed, $total, $e);
             }
         });
     }
@@ -168,17 +194,28 @@ class RestoreDatabaseBackupAction
      * The archive must open (right password, intact entries) and contain the uploaded files; its
      * database dump is not needed.
      */
-    public function filesOnly(string $disk, string $path, ?string $filesTarget = null): void
+    public function filesOnly(string $disk, string $path, ?string $filesTarget = null, ?string $documentsTarget = null): void
     {
         $target = $filesTarget ?? storage_path('app/public');
+        $documentsTarget ??= storage_path('app/documents');
+        $this->assertPrivate($documentsTarget);
 
-        $this->withExtractedArchive($disk, $path, withDump: false, callback: function (string $workDir) use ($target, $path) {
-            $source = $this->filesSource($workDir) ?? throw new RuntimeException("Backup [{$path}] contains no uploaded files.");
-            $files = $this->manifest($source);
+        $this->withExtractedArchive($disk, $path, withDump: false, callback: function (string $workDir) use ($target, $documentsTarget, $path) {
+            $source = $this->filesSource($workDir);
+            $documents = $this->documentsSource($workDir);
+            if (! $source && ! $documents) {
+                throw new RuntimeException("Backup [{$path}] contains no uploaded files.");
+            }
+            $files = $source ? $this->manifest($source) : [];
+            $documentFiles = $documents ? $this->manifest($documents) : [];
             $this->assertPlaceable(array_keys($files), $target);
+            $this->assertPlaceable(array_keys($documentFiles), $documentsTarget);
 
             foreach ($files as $relative => $sha256) {
                 $this->placeFile($source.'/'.$relative, $target.'/'.$relative, $sha256);
+            }
+            foreach ($documentFiles as $relative => $sha256) {
+                $this->placeFile($documents.'/'.$relative, $documentsTarget.'/'.$relative, $sha256);
             }
         });
     }
@@ -320,6 +357,16 @@ class RestoreDatabaseBackupAction
     {
         return is_dir($workDir.'/public') ? $workDir.'/public'
             : (collect(glob($workDir.'/{,*/,*/*/,*/*/*/}storage/app/public', GLOB_BRACE | GLOB_ONLYDIR) ?: [])->first());
+    }
+
+    /**
+     * Private documents (expense receipts) are in "documents/" inside the archive (storage/app/documents,
+     * archived relative to storage/app). Null when the archive has none (older archives, or no receipt yet).
+     */
+    private function documentsSource(string $workDir): ?string
+    {
+        return is_dir($workDir.'/documents') ? $workDir.'/documents'
+            : (collect(glob($workDir.'/{,*/,*/*/,*/*/*/}storage/app/documents', GLOB_BRACE | GLOB_ONLYDIR) ?: [])->first());
     }
 
     /** Copies a folder and checks every file arrived identical (SHA-256). */

@@ -34,6 +34,7 @@ function railwayEnvironment(?string $project, ?string $environment): void
 
 beforeEach(function () {
     Storage::fake('public');
+    Storage::fake('documents');
 });
 
 afterEach(function () {
@@ -97,7 +98,9 @@ it('creates a complete fictitious day on the three sites, with exact figures', f
     $used = UsedTyre::query()->sole();
     expect($used->status)->toBe(UsedTyreStatus::InStock)
         ->and(Storage::disk('public')->exists($used->photos[0]))->toBeTrue()
-        ->and(Storage::disk('public')->exists(DB::table('expenses')->value('photo')))->toBeTrue();
+        // Expense receipts are private financial documents (never under /storage).
+        ->and(Storage::disk('documents')->exists(DB::table('expenses')->value('photo')))->toBeTrue()
+        ->and(Storage::disk('public')->exists(DB::table('expenses')->value('photo')))->toBeFalse();
 
     // Demo staff cannot log in: their passwords were random and never shown.
     expect(DB::table('users')->where('email', 'like', 'demo-%@example.invalid')->count())->toBe(4);

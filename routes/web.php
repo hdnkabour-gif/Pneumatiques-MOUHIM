@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ExpensePhotoController;
 use App\Http\Controllers\PrintController;
 use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\SaleDocumentController;
@@ -20,6 +21,10 @@ Route::middleware(['auth', SetLocale::class])
         Route::get('used-tyres/{usedTyre}/label', [PrintController::class, 'usedTyreLabel'])->name('used-tyres.label');
         Route::get('sales/{sale}/pdf', [SaleDocumentController::class, 'show'])->name('sales.pdf');
     });
+
+// Expense receipts: private financial documents, checked on every request (permission + site).
+Route::get('/admin/expenses/{expense}/photo', ExpensePhotoController::class)
+    ->middleware(['auth', 'throttle:60,1'])->name('expenses.photo');
 
 // Phone notifications: the browser registers its push endpoint (§16.1).
 Route::post('/push/subscribe', [PushSubscriptionController::class, 'store'])
