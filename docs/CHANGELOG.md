@@ -1,5 +1,65 @@
 # Changelog
 
+## [Clôture de caisse sans opération perdue — #17] – 2026-11-20
+
+### Corrigé
+- La clôture de caisse pouvait se terminer **pendant** qu'une opération en espèces était en cours (vente,
+  encaissement client, avoir remboursé en espèces, dépense) : le contrôle « caisse ouverte » était une simple
+  lecture sans verrou, l'opération s'enregistrait juste après la clôture et le montant attendu figé à la
+  clôture ne correspondait plus à la journée.
+- Chaque opération en espèces verrouille maintenant la journée de caisse **dans sa propre transaction**
+  (verrou partagé), et la clôture verrouille la même ligne en exclusif : soit l'opération est terminée et
+  comptée dans la clôture, soit elle arrive après et elle est refusée (« caisse clôturée ») sans rien écrire.
+  Les opérations ne se bloquent pas entre elles.
+- Ordre de verrouillage unique : journée de caisse d'abord, puis client et factures (vente, encaissement,
+  avoir remboursé en espèces), pour éviter les interblocages. Revue : l'avoir verrouillait la facture avant la
+  journée ; un encaissement et un remboursement simultanés sur la même facture, sans journée de caisse encore
+  créée, s'interbloquaient (reproduit sur PostgreSQL 18) — corrigé et couvert par un test.
+- Le fond de caisse et la réouverture verrouillent aussi la journée ; un changement de fond est désormais
+  journalisé (avant/après). Une dépense et son entrée de journal sont dans la même transaction : si le
+  journal échoue, la dépense est annulée.
+
+### Ajouté
+- Tests de concurrence sur PostgreSQL réel avec barrières déterministes (processus séparés) : encaissement,
+  vente, avoir, dépense, puis les quatre ensemble, pendant une clôture ; et encaissement, vente, dépense,
+  fond de caisse arrivant pendant une clôture (tous refusés). Tous échouaient avant la correction.
+- Le rejeu d'un encaissement déjà enregistré après la clôture reste couvert par #21.
+
+## [Encaissement rejoué sans doublon — #21] – 2026-11-20
+
+### Corrigé
+- Un encaissement client renvoyé (double clic, réseau coupé puis nouvel essai) pouvait être
+  enregistré deux fois. Chaque formulaire d'encaissement porte maintenant une **clé d'opération**
+  unique (générée à l'ouverture du formulaire) : le même envoi rejoué renvoie le même paiement,
+  sans nouvelle ligne ni nouvelle entrée de journal ; la même clé avec d'autres valeurs est refusée.
+  Deux encaissements réels du même montant (deux formulaires, deux clés) restent bien enregistrés.
+- Sans clé, le comportement reste celui d'avant (compatibilité des autres appels).
+- Revue : un encaissement espèces déjà enregistré puis rejoué **après la clôture de la caisse** renvoie le
+  paiement existant (le contrôle « caisse ouverte » s'applique seulement à un nouvel encaissement) ; le tireur
+  du chèque fait partie de l'empreinte (un tireur différent avec la même clé = conflit).
+- Points d'entrée : seul le formulaire « Encaisser » de la fiche client envoie une clé ; les données de
+  démonstration appellent `receive()` sans clé ; les paiements de l'écran de vente passent par
+  `ConfirmSaleAction` (vente verrouillée, refus d'une vente déjà validée) et ne sont pas concernés.
+
+### Ajouté
+- Colonnes `payments.idempotency_key` (unique) et `payments.idempotency_fingerprint` (migration additive).
+- Tests : rejeu, conflit, deux paiements légitimes, essai refusé puis corrigé, autre utilisateur ou
+  site, et deux requêtes simultanées avec la même clé (deux processus réels).
+
+## [Plafond de crédit sous concurrence — #18] – 2026-11-20
+
+### Corrigé
+- Deux ventes à crédit confirmées **au même instant** pour le même client pouvaient toutes deux
+  passer sous le plafond (ex. 700 + 700 > 1 000 MAD), car chaque confirmation ne verrouillait que
+  sa propre vente. La confirmation verrouille désormais la fiche du client dans la même transaction
+  avant le contrôle du plafond : la seconde lit l'encours après la première et demande l'approbation
+  du propriétaire (D-21, D-54). Ordre des verrous identique à l'encaissement (client, puis ventes).
+
+### Ajouté
+- Suite `tests/Concurrency` : deux processus PHP réels (deux connexions PostgreSQL), données
+  validées, départ synchronisé ; 3 manches, plus un cas témoin où le plafond autorise les deux ventes.
+  Le schéma est reconstruit (`DatabaseMigrations`) car le journal d'activité refuse `TRUNCATE` (D-34).
+
 ## [Préparation à la mise en service — audit strict] – 2026-11-17
 
 ### Corrigé

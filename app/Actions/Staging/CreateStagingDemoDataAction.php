@@ -68,6 +68,7 @@ class CreateStagingDemoDataAction
             return DB::transaction(fn () => $this->createDay($owner, $dep, $m01, $m02));
         } catch (Throwable $e) {
             Storage::disk('public')->delete($this->photos);
+            Storage::disk('documents')->delete($this->photos);
 
             throw $e;
         }
@@ -162,7 +163,7 @@ class CreateStagingDemoDataAction
             'tread_depth_tenths' => 55, 'cost_cents' => 15000, 'price_cents' => 35000, 'photos' => [$usedPhoto], 'notes' => 'Démo'], $m01, UsedTyreOrigin::Supplier, $sellerM01);
         $usedTyres->inspect($used, collect(UsedTyreCheck::cases())->mapWithKeys(fn ($c) => [$c->value => true])->all(), $sellerM01, 55);
         $expense = $cash->addExpense($m01, ['category' => 'other', 'amount_cents' => 3000, 'description' => 'Fournitures atelier (démo)',
-            'photo' => $this->photo('expenses', 'DEPENSE DEMO')], $sellerM01);
+            'photo' => $this->photo('expenses', 'DEPENSE DEMO', 'documents')], $sellerM01);
 
         // Closing of the M01 till, counted exactly.
         $expected = $cash->summary($m01)['expected'];
@@ -194,8 +195,8 @@ class CreateStagingDemoDataAction
         return Site::query()->where('code', $code)->firstOrFail();
     }
 
-    /** A small, real JPEG in the public disk, as an upload through the forms would store it. */
-    private function photo(string $folder, string $label): string
+    /** A small, real JPEG on the disk an upload through the forms would use (receipts: private "documents"). */
+    private function photo(string $folder, string $label, string $disk = 'public'): string
     {
         $image = imagecreatetruecolor(320, 200);
         imagefill($image, 0, 0, imagecolorallocate($image, 30, 90, 150));
@@ -205,7 +206,7 @@ class CreateStagingDemoDataAction
         $bytes = ob_get_clean();
 
         $path = $folder.'/demo-'.Str::random(20).'.jpg';
-        Storage::disk('public')->put($path, $bytes);
+        Storage::disk($disk)->put($path, $bytes);
         $this->photos[] = $path;
 
         return $path;

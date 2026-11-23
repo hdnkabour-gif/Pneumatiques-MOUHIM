@@ -32,7 +32,7 @@
         <b style="font-size: 1rem;">{{ __('cash.today_expenses') }}</b>
         @forelse ($expenses as $e)
             <div class="cd-row"><span>{{ __('cash.categories.'.$e->category) }} – {{ $e->description }} <small style="display: inline">{{ $e->user?->name }}</small>
-                @if ($e->photo)<a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($e->photo) }}" target="_blank">📷</a>@endif</span>
+                @if ($e->photo)<a href="{{ route('expenses.photo', $e) }}" target="_blank" rel="noopener">📷</a>@endif</span>
                 <b style="font-size: 1rem;">{{ $this->money($e->amount_cents) }}</b></div>
         @empty <div class="cd-row"><small>—</small></div> @endforelse
     </div>

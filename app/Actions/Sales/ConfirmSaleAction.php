@@ -17,6 +17,7 @@ use App\Enums\UsedTyreStatus;
 use App\Enums\WorkOrderStatus;
 use App\Exceptions\ApprovalRequiredException;
 use App\Exceptions\BusinessRuleException;
+use App\Models\Customer;
 use App\Models\OilDrum;
 use App\Models\Payment;
 use App\Models\Product;
@@ -73,6 +74,22 @@ class ConfirmSaleAction
                 return $this->issueQuote($sale, $user, $reserve);
             }
 
+            // #17 (PM-02): a cash payment holds today's cash-day row (SHARE) until this sale
+            // commits, so a concurrent close either counts it or this sale is refused.
+            // Taken BEFORE the customer lock: same order as CustomerAccountActions::receive().
+            if (collect($payments)->contains(fn ($p) => $p['method'] === PaymentMethod::Cash)) {
+                app(CashRegister::class)->assertOpen($sale->site_id); // D-29
+            }
+
+            // #18 (PM-03): the credit ceiling is a decision about the CUSTOMER, not about
+            // this sale. Lock the customer row for the rest of the transaction so two
+            // confirmations for the same customer are serialised: the second one reads
+            // the outstanding balance only after the first has committed. Same lock order
+            // as CustomerAccountActions::receive() (cash day, customer, then confirmed sales).
+            if ($sale->customer_id) {
+                Customer::query()->lockForUpdate()->findOrFail($sale->customer_id);
+            }
+
             $paid = array_sum(array_column($payments, 'amount_cents'));
             if ($paid > $sale->total_ttc_cents) {
                 throw BusinessRuleException::make('sales.errors.overpaid');
@@ -95,10 +112,6 @@ class ConfirmSaleAction
             }
             if ($sale->customer?->requires_po_number && blank($sale->po_number)) {
                 throw BusinessRuleException::make('sales.errors.po_required');
-            }
-
-            if (collect($payments)->contains(fn ($p) => $p['method'] === PaymentMethod::Cash)) {
-                app(CashRegister::class)->assertOpen($sale->site_id); // D-29
             }
 
             $missing = $this->rules->required($sale, $user, $credit);

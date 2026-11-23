@@ -43,6 +43,17 @@ return [
             'throw' => true,
         ],
 
+        // Private financial documents (expense receipts): never served as a public file. Read only
+        // through an authenticated route that checks the permission and the site (ExpensePhotoController).
+        // Backed up and restored next to storage/app/public (config/backup.php, RestoreDatabaseBackupAction).
+        'documents' => [
+            'driver' => 'local',
+            'root' => storage_path('app/documents'),
+            'visibility' => 'private',
+            'serve' => false,
+            'throw' => true,
+        ],
+
         // Local backup disk (development and restore tests only).
         'backups_local' => [
             'driver' => 'local',

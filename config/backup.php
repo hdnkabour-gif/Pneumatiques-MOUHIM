@@ -29,6 +29,8 @@ return [
                 // Uploaded files (logo, photos, receipts). The code itself is in Git.
                 'include' => [
                     storage_path('app/public'),
+                    // Private documents (expense receipts): archived as documents/… and restored by app:backup-restore.
+                    storage_path('app/documents'),
                 ],
 
                 /*

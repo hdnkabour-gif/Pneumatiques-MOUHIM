@@ -5,6 +5,7 @@ use App\Actions\Sales\SaveSaleDraftAction;
 use App\Enums\RoleName;
 use App\Exceptions\BusinessRuleException;
 use App\Filament\Pages\CashDesk;
+use App\Models\Activity;
 use App\Models\Expense;
 use App\Models\Product;
 use App\Services\Money\CashRegister;
@@ -67,4 +68,30 @@ it('records an expense with its photo from the cash page; storekeepers have no c
 
     $this->get(CashDesk::getUrl())->assertOk()->assertSee('Taxi pièces');
     $this->actingAs(userWithRole(RoleName::Storekeeper, 'DEP'))->get(CashDesk::getUrl())->assertForbidden();
+});
+
+it('rolls back the expense when its audit entry fails, and leaves the day usable (#17)', function () {
+    Activity::creating(function (Activity $a) {
+        if ($a->event === 'expense') {
+            throw new RuntimeException('TEST audit store unavailable');
+        }
+    });
+    expect(fn () => $this->cash->addExpense(site('M01'), ['category' => 'other', 'amount_cents' => 1200, 'description' => 'TEST'], $this->seller))
+        ->toThrow(RuntimeException::class);
+    expect(Expense::query()->count())->toBe(0);
+    Activity::flushEventListeners();
+
+    $day = $this->cash->close(site('M01'), 0, null, $this->manager);
+    expect($day->expected_cents)->toBe(0)->and($day->closed_at)->not->toBeNull();
+});
+
+it('audits a float change and refuses it once the day is closed (#17)', function () {
+    $this->cash->setFloat(site('M01'), 30000, $this->manager);
+    $this->cash->setFloat(site('M01'), 45000, $this->manager);
+    $log = Activity::query()->where('event', 'cash_float')->latest('id')->firstOrFail();
+    expect($log->properties->all())->toBe(['before' => 30000, 'after' => 45000])->and($log->site_id)->toBe(site('M01')->id);
+
+    $this->cash->close(site('M01'), 45000, null, $this->manager);
+    expect(fn () => $this->cash->setFloat(site('M01'), 1, $this->manager))->toThrow(BusinessRuleException::class, __('cash.errors.closed'));
+    expect($this->cash->day(site('M01'))->opening_float_cents)->toBe(45000);
 });

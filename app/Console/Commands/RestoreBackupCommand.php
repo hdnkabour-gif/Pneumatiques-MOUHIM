@@ -19,6 +19,7 @@ use function Laravel\Prompts\text;
     {--replace-current : Replace ALL data of the current database instead}
     {--files-only : Only put the uploaded files of the archive in place (finishes a partial restore)}
     {--files-to= : Folder for the uploaded files (with --into: a new private folder)}
+    {--documents-to= : Folder for the private documents, e.g. expense receipts (with --into: a new private folder)}
     {--without-files : Restore the database only}
     {--force : Skip the confirmation (refused for --replace-current in production)}')]
 #[Description('Restore a backup archive into a new database (recommended) or over the current one')]
@@ -49,6 +50,7 @@ class RestoreBackupCommand extends Command
             ?? ($this->option('force') || ! $this->input->isInteractive() ? $backups[0] : select('Backup to restore', $backups, $backups[0]));
         $withFiles = ! $this->option('without-files');
         $filesTo = $this->option('files-to');
+        $documentsTo = $this->option('documents-to');
 
         if ($filesOnly) {
             $target = $filesTo ?? storage_path('app/public');
@@ -67,8 +69,8 @@ class RestoreBackupCommand extends Command
                 }
             }
 
-            $restore->filesOnly($disk, $path, $filesTo);
-            $this->info("Uploaded files of [{$path}] put into [{$target}]. The database was not changed.");
+            $restore->filesOnly($disk, $path, $filesTo, $documentsTo);
+            $this->info("Uploaded files of [{$path}] put into [{$target}], private documents into [".($documentsTo ?? storage_path('app/documents')).']. The database was not changed.');
 
             return self::SUCCESS;
         }
@@ -92,16 +94,16 @@ class RestoreBackupCommand extends Command
                 }
             }
 
-            $restore->replacingCurrent($disk, $path, withFiles: $withFiles, filesTarget: $filesTo);
+            $restore->replacingCurrent($disk, $path, withFiles: $withFiles, filesTarget: $filesTo, documentsTarget: $documentsTo);
             $this->info("Database [{$database}] restored from [{$path}].");
 
             return self::SUCCESS;
         }
 
-        $restore->intoNewDatabase($disk, $path, $into, withFiles: $withFiles, filesTarget: $filesTo);
+        $restore->intoNewDatabase($disk, $path, $into, withFiles: $withFiles, filesTarget: $filesTo, documentsTarget: $documentsTo);
         $this->info("Backup [{$path}] restored into the new database [{$into}]. The current database was not changed.");
         if ($withFiles) {
-            $this->info('Files restored into the private folder ['.($filesTo ?? RestoreDatabaseBackupAction::restoredFilesRoot().'/'.$into).'] (the live files were not changed).');
+            $this->info('Files restored into the private folder ['.($filesTo ?? RestoreDatabaseBackupAction::restoredFilesRoot().'/'.$into).'] and private documents into ['.($documentsTo ?? RestoreDatabaseBackupAction::restoredFilesRoot().'/'.$into.'-documents').'] (the live files were not changed).');
         }
 
         return self::SUCCESS;

@@ -652,3 +652,57 @@ it('explains when the database user may not create the new database', function (
         DB::connection('pg_admin')->statement('DROP ROLE IF EXISTS restore_no_createdb');
     }
 });
+
+/*
+ * Private documents (expense receipts, storage/app/documents) are backed up next to the public
+ * files and come back in every restore mode, verified file by file; they are never restored
+ * into the public web tree.
+ */
+it('backs up the private documents and restores them in every mode, never into the public tree', function () {
+    $public = storage_path('app/public/backup-test-'.uniqid());
+    $documents = storage_path('app/documents/backup-test-'.uniqid());
+    mkdir($public, 0775, true);
+    mkdir($documents.'/expenses', 0775, true);
+    file_put_contents($public.'/logo.png', 'LOGO');
+    file_put_contents($documents.'/expenses/receipt.jpg', 'RECEIPT');
+
+    $config = config('backup_restore_test');
+    $config['backup']['source']['files']['include'] = [$public, $documents];
+    $config['backup']['source']['files']['relative_path'] = storage_path('app');
+    config(['backup_restore_test' => $config]);
+
+    try {
+        $path = backupNow();
+        $action = app(RestoreDatabaseBackupAction::class);
+
+        // 1. Into a new database: documents go to their own private folder.
+        $action->intoNewDatabase('backups_local', $path, RESTORED_DB, 'backup_test');
+        $restoredDocs = RestoreDatabaseBackupAction::restoredFilesRoot().'/'.RESTORED_DB.'-documents';
+        expect(file_get_contents($restoredDocs.'/'.basename($documents).'/expenses/receipt.jpg'))->toBe('RECEIPT')
+            ->and(glob(storage_path('app/public').'/**/receipt.jpg'))->toBe([]);
+
+        // 2. Replacing the current data after losing the receipt: it comes back in place.
+        unlink($documents.'/expenses/receipt.jpg');
+        $action->replacingCurrent('backups_local', $path, 'backup_test');
+        expect(file_get_contents($documents.'/expenses/receipt.jpg'))->toBe('RECEIPT')
+            ->and(file_get_contents($public.'/logo.png'))->toBe('LOGO');
+
+        // 3. Files only (finishing a partial restore): the receipt comes back too.
+        unlink($documents.'/expenses/receipt.jpg');
+        $action->filesOnly('backups_local', $path);
+        expect(file_get_contents($documents.'/expenses/receipt.jpg'))->toBe('RECEIPT');
+
+        // A documents target inside the public web tree is refused.
+        DB::connection('pg_admin')->statement('DROP DATABASE IF EXISTS '.RESTORED_DB.' WITH (FORCE)');
+        expect(fn () => $action->intoNewDatabase('backups_local', $path, RESTORED_DB, 'backup_test', filesTarget: RestoreDatabaseBackupAction::restoredFilesRoot().'/fresh-'.uniqid(), documentsTarget: storage_path('app/public/leak')))
+            ->toThrow(RuntimeException::class, 'public web tree');
+    } finally {
+        File::deleteDirectory($public);
+        File::deleteDirectory($documents);
+    }
+});
+
+it('includes the private documents folder in the production backup configuration', function () {
+    expect(config('backup.backup.source.files.include'))->toContain(storage_path('app/documents'))
+        ->and(config('backup.backup.source.files.include'))->toContain(storage_path('app/public'));
+});
