@@ -24,8 +24,15 @@ use Illuminate\Support\Facades\DB;
  */
 class CustomerAccountActions
 {
-    /** D-23: debt from the paper books, entered by the owner only. */
-    public function addOpeningBalance(Customer $customer, int $amountCents, string $asOf, ?string $note, User $user): CustomerOpeningBalance
+    /**
+     * D-23: debt from the paper books, entered by the owner only.
+     *
+     * #19 (PM-04): the balance and its audit entry are ONE transaction: if the audit cannot be
+     * written, nothing is recorded, so a retry cannot duplicate the debt. An optional operation
+     * key (sent by the form) makes a resubmission return the balance already recorded; the same
+     * key with different values is refused. Lock order as receive(): the customer row.
+     */
+    public function addOpeningBalance(Customer $customer, int $amountCents, string $asOf, ?string $note, User $user, ?string $idempotencyKey = null): CustomerOpeningBalance
     {
         if (! $user->can(Permission::ApprovalsDecide->value)) {
             throw BusinessRuleException::make('app.errors.forbidden');
@@ -33,14 +40,36 @@ class CustomerAccountActions
         if ($amountCents <= 0) {
             throw BusinessRuleException::make('money.errors.amount');
         }
+        $key = $idempotencyKey !== null && $idempotencyKey !== '' ? $idempotencyKey : null;
+        if ($key !== null && ! preg_match('/^[A-Za-z0-9_-]{8,100}$/', $key)) {
+            throw BusinessRuleException::make('money.errors.idempotency_key');
+        }
+        $fingerprint = $key === null ? null : hash('sha256', json_encode([
+            'customer' => $customer->id, 'user' => $user->id, 'amount' => $amountCents, 'as_of' => $asOf, 'note' => $note,
+        ]));
 
-        $balance = $customer->openingBalances()->create([
-            'amount_cents' => $amountCents, 'remaining_cents' => $amountCents, 'as_of' => $asOf, 'note' => $note, 'created_by' => $user->id,
-        ]);
-        activity('money')->causedBy($user)->performedOn($customer)->event('opening_balance')
-            ->withProperties(['amount_cents' => $amountCents, 'as_of' => $asOf])->log('opening_balance');
+        return DB::transaction(function () use ($customer, $amountCents, $asOf, $note, $user, $key, $fingerprint) {
+            if ($key !== null) {
+                DB::select('SELECT pg_advisory_xact_lock(hashtextextended(?, 23))', [$key]);
+                $previous = CustomerOpeningBalance::query()->where('idempotency_key', $key)->first();
+                if ($previous) {
+                    if (hash_equals((string) $previous->idempotency_fingerprint, $fingerprint)) {
+                        return $previous;
+                    }
+                    throw BusinessRuleException::make('money.errors.idempotency_conflict');
+                }
+            }
+            Customer::query()->lockForUpdate()->findOrFail($customer->id);
 
-        return $balance;
+            $balance = $customer->openingBalances()->create([
+                'amount_cents' => $amountCents, 'remaining_cents' => $amountCents, 'as_of' => $asOf, 'note' => $note, 'created_by' => $user->id,
+                'idempotency_key' => $key, 'idempotency_fingerprint' => $fingerprint,
+            ]);
+            activity('money')->causedBy($user)->performedOn($customer)->event('opening_balance')
+                ->withProperties(['amount_cents' => $amountCents, 'as_of' => $asOf])->log('opening_balance');
+
+            return $balance;
+        });
     }
 
     /**

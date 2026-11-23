@@ -92,9 +92,11 @@ class ViewCustomer extends ViewRecord
                     Fields::money('amount_cents', __('money.amount'))->required(),
                     DatePicker::make('as_of')->label(__('money.as_of'))->required()->default(today()),
                     TextInput::make('note')->label(__('money.note')),
+                    // #19: one key per opened form, so a resubmission records the balance once.
+                    Hidden::make('idempotency_key')->default(fn () => (string) Str::uuid()),
                 ])
                 ->action(fn (array $data) => app(CustomerAccountActions::class)
-                    ->addOpeningBalance($this->record, (int) $data['amount_cents'], $data['as_of'], $data['note'] ?? null, auth()->user())),
+                    ->addOpeningBalance($this->record, (int) $data['amount_cents'], $data['as_of'], $data['note'] ?? null, auth()->user(), $data['idempotency_key'] ?? null)),
             Action::make('sell')->label(__('sales.screen.title'))->icon(Heroicon::OutlinedShoppingCart)
                 ->visible(fn () => SaleScreen::canAccess())
                 ->url(fn () => SaleScreen::getUrl(['customer' => $this->record->id])),
