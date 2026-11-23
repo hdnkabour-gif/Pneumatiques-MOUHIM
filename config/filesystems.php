@@ -48,7 +48,8 @@ return [
         // Backed up and restored next to storage/app/public (config/backup.php, RestoreDatabaseBackupAction).
         'documents' => [
             'driver' => 'local',
-            'root' => storage_path('app/documents'),
+            // #29: must be on the persistent volume in production (DocumentStorageGuard).
+            'root' => env('DOCUMENTS_ROOT', storage_path('app/documents')),
             'visibility' => 'private',
             'serve' => false,
             'throw' => true,

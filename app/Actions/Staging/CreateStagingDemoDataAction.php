@@ -25,6 +25,7 @@ use App\Models\Site;
 use App\Models\Supplier;
 use App\Models\User;
 use App\Services\Money\CashRegister;
+use App\Support\DocumentStorageGuard;
 use App\Support\StagingGuard;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -163,7 +164,8 @@ class CreateStagingDemoDataAction
             'tread_depth_tenths' => 55, 'cost_cents' => 15000, 'price_cents' => 35000, 'photos' => [$usedPhoto], 'notes' => 'Démo'], $m01, UsedTyreOrigin::Supplier, $sellerM01);
         $usedTyres->inspect($used, collect(UsedTyreCheck::cases())->mapWithKeys(fn ($c) => [$c->value => true])->all(), $sellerM01, 55);
         $expense = $cash->addExpense($m01, ['category' => 'other', 'amount_cents' => 3000, 'description' => 'Fournitures atelier (démo)',
-            'photo' => $this->photo('expenses', 'DEPENSE DEMO', 'documents')], $sellerM01);
+            // #29: a receipt photo only where private storage is durable; otherwise the expense has none.
+            'photo' => app(DocumentStorageGuard::class)->problem() === null ? $this->photo('expenses', 'DEPENSE DEMO', 'documents') : null], $sellerM01);
 
         // Closing of the M01 till, counted exactly.
         $expected = $cash->summary($m01)['expected'];

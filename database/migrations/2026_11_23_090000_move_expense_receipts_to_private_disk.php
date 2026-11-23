@@ -1,9 +1,7 @@
 <?php
 
+use App\Actions\Documents\MoveExpenseReceiptsToPrivateDisk;
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * Expense receipts were stored on the public disk (served as /storage/... without any check).
@@ -16,31 +14,10 @@ return new class extends Migration
 {
     public function up(): void
     {
-        $public = Storage::disk('public');
-        $documents = Storage::disk('documents');
-        $moved = 0;
-        $missing = 0;
-
-        foreach (DB::table('expenses')->whereNotNull('photo')->orderBy('id')->pluck('photo') as $path) {
-            if (! $public->exists($path)) {
-                $documents->exists($path) || $missing++;
-
-                continue;
-            }
-            $bytes = $public->get($path);
-            if (! $documents->exists($path) || hash('sha256', $documents->get($path)) !== hash('sha256', $bytes)) {
-                $documents->put($path, $bytes);
-            }
-            if (hash('sha256', $documents->get($path)) !== hash('sha256', $bytes)) {
-                throw new RuntimeException("Receipt [{$path}] could not be copied to the private disk intact; nothing was deleted.");
-            }
-            $public->delete($path);
-            $moved++;
-        }
-
-        if ($moved || $missing) {
-            Log::info('Expense receipts moved to the private documents disk.', ['moved' => $moved, 'missing' => $missing]);
-        }
+        // Same idempotent action as `app:secure-receipts`, which the entrypoint also runs at
+        // every boot: if storage is not durable yet (#29) nothing moves now, and a later boot
+        // moves the receipts once it is.
+        app(MoveExpenseReceiptsToPrivateDisk::class)();
     }
 
     /** Not reversible on purpose: putting financial documents back into the public web tree is never wanted. */

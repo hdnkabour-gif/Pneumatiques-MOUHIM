@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Services\SettingsService;
+use App\Support\DocumentStorageGuard;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -72,6 +73,8 @@ class GoLiveAuditCommand extends Command
         $this->line('Invoice numbering pattern: '.(string) $settings->get('documents.number_pattern'));
         $this->line('Invoice numbering prefix: '.(string) $settings->get('documents.prefix.invoice'));
         $this->line('Invoice padding: '.(int) $settings->get('documents.number_padding'));
+        $documentsProblem = app(DocumentStorageGuard::class)->problem();
+        $this->line('Private documents storage: '.($documentsProblem === null ? 'PASS' : 'FAIL — '.$documentsProblem));
         $this->warn('This command is a diagnostic only. It does not certify that existing business records are demonstrations.');
         $this->warn('Do not enter real sales before the owner confirms the next invoice number and the cleanup has passed on a restored copy.');
 
@@ -96,7 +99,7 @@ class GoLiveAuditCommand extends Command
             && ($counts['categories'] ?? 0) > 0 && ($counts['brands'] ?? 0) > 0;
         $pendingJobs = DB::table('jobs')->count();
 
-        if ($nonEmpty || $missing || ! $validBase || $pendingJobs > 0) {
+        if ($nonEmpty || $missing || ! $validBase || $pendingJobs > 0 || $documentsProblem !== null) {
             $this->error('GO_LIVE_NOT_READY: operational data remain, protected references are missing, or the queue is not empty.');
             $this->line('Nonempty or missing business tables: '.implode(', ', $nonEmpty));
             $this->line('Missing protected tables: '.implode(', ', $missing));
