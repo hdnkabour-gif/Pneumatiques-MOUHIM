@@ -79,12 +79,13 @@ it('refuses a new receipt while documents are not durable, but still records an 
 });
 
 it('fails the strict go-live audit while private documents are not durable', function () {
+    owner();   // otherwise ready: three sites, an owner, references, no business rows
     onRailway('/nonexistent-volume');
-    Artisan::call('app:go-live-audit');
-    expect(Artisan::output())->toContain('Private documents storage: FAIL');
+    expect(Artisan::call('app:go-live-audit', ['--strict' => true]))->toBe(1)
+        ->and(Artisan::output())->toContain('Private documents storage: FAIL')->toContain('GO_LIVE_NOT_READY');
     putenv('RAILWAY_VOLUME_MOUNT_PATH='.storage_path('app'));
-    Artisan::call('app:go-live-audit');
-    expect(Artisan::output())->toContain('Private documents storage: PASS');
+    expect(Artisan::call('app:go-live-audit', ['--strict' => true]))->toBe(0)
+        ->and(Artisan::output())->toContain('Private documents storage: PASS')->toContain('GO_LIVE_CLEAN_BASE_VERIFIED');
 });
 
 /*
@@ -138,4 +139,48 @@ it('refuses a durable documents root that the backups do not include', function 
 
     config(['backup.backup.source.files.include' => [storage_path('app/public'), storage_path('app/private_docs')]]);
     expect(app(DocumentStorageGuard::class)->problem())->toBeNull();
+});
+
+/*
+ * #31 review (P1): the server must not open while an old receipt is still reachable on the
+ * public disk. `app:secure-receipts --boot` (run by the entrypoint under set -e) exits non-zero
+ * in that case; the original stays where it is (never deleted before a verified private copy).
+ */
+it('refuses to boot while a receipt is still on the public disk because storage is not durable; keeps the original', function () {
+    Storage::fake('public');
+    Storage::fake('documents');
+    Storage::disk('public')->put('expenses/legacy.jpg', 'LEGACY');
+    receiptExpense('expenses/legacy.jpg');
+    onRailway('/nonexistent-volume');
+
+    expect(Artisan::call('app:secure-receipts', ['--boot' => true]))->toBe(1)
+        ->and(Artisan::output())->toContain('status=SKIPPED')->toContain('exposed=1')->toContain('safe=no')
+        ->and(Storage::disk('public')->get('expenses/legacy.jpg'))->toBe('LEGACY');
+});
+
+it('boots when nothing is exposed even if storage is not durable yet (new receipts are refused anyway)', function () {
+    Storage::fake('public');
+    Storage::fake('documents');
+    onRailway('/nonexistent-volume');
+
+    expect(Artisan::call('app:secure-receipts', ['--boot' => true]))->toBe(0)
+        ->and(Artisan::output())->toContain('status=SKIPPED')->toContain('exposed=0')->toContain('safe=yes');
+});
+
+it('refuses to boot when a public copy could not be deleted, and boots once the receipt is secured', function () {
+    owner();
+    Storage::fake('documents');
+    $public = Storage::fake('public');
+    $public->put('expenses/stuck-boot.jpg', 'STUCK');
+    receiptExpense('expenses/stuck-boot.jpg');
+    $failing = Mockery::mock($public)->makePartial();
+    $failing->shouldReceive('delete')->andReturn(false);
+    Storage::set('public', $failing);
+
+    expect(Artisan::call('app:secure-receipts', ['--boot' => true]))->toBe(1)
+        ->and(Artisan::output())->toContain('exposed=1')->toContain('safe=no');
+
+    Storage::set('public', $public);
+    expect(Artisan::call('app:secure-receipts', ['--boot' => true]))->toBe(0)
+        ->and(Artisan::output())->toContain('status=OK')->toContain('exposed=0')->toContain('safe=yes');
 });
