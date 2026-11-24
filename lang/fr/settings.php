@@ -55,6 +55,7 @@ return [
         'approval_missing' => 'Numérotation des factures non approuvée : aucune facture ne peut être émise.',
         'errors' => [
             'invoice_not_approved' => 'Première facture bloquée : le numéro « :number » n\'a pas été approuvé. Le propriétaire doit vérifier le format et le prochain numéro (dernière facture papier + 1) dans Paramètres › Numérotation des documents, puis cliquer sur « Approuver la numérotation des factures ».',
+            'approval_stale' => 'Numérotation modifiée entre-temps : vous avez confirmé « :shown » mais le prochain numéro est maintenant « :current ». Rien n\'a été approuvé : rouvrez la fenêtre et vérifiez le nouveau numéro.',
         ],
     ],
     'errors' => [

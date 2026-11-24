@@ -98,3 +98,27 @@ it('reports the approval in the go-live audit and fails the strict audit without
     Artisan::call('app:go-live-audit');
     expect(Artisan::output())->toContain('Invoice numbering approval: PASS');
 });
+
+/*
+ * #32 review (P1): the approval is bound to the number the owner SAW. If another manager or tab
+ * changes the next number between the confirmation window and the click, the old confirmation is
+ * refused and nothing is approved; a fresh window shows (and approves) the new number.
+ */
+it('refuses a confirmation made on a number that changed meanwhile, then approves the re-read number', function () {
+    d58(1251);
+    $yy = now()->format('y');
+    app(SequenceService::class)->setNextNumber(DocumentType::Invoice, (int) now()->year, 1300);   // the other tab
+
+    expect(fn () => app(InvoiceNumberingApproval::class)->approve(owner(), "1251/{$yy}"))
+        ->toThrow(BusinessRuleException::class, __('settings.numbering.errors.approval_stale', ['shown' => "1251/{$yy}", 'current' => "1300/{$yy}"]));
+    expect(app(SettingsService::class)->get('documents.invoice_numbering_approved'))->toBeNull();
+
+    $owner = owner();
+    Livewire::actingAs($owner)->test(DocumentNumbering::class)
+        ->callAction('approveInvoiceNumbering', data: ['number' => "1251/{$yy}"])   // the stale window
+        ->assertNotified(__('settings.numbering.errors.approval_stale', ['shown' => "1251/{$yy}", 'current' => "1300/{$yy}"]));
+    expect(app(SettingsService::class)->get('documents.invoice_numbering_approved'))->toBeNull();
+
+    Livewire::actingAs($owner)->test(DocumentNumbering::class)->callAction('approveInvoiceNumbering');   // re-read
+    expect(app(SettingsService::class)->get('documents.invoice_numbering_approved'))->toBe("1300/{$yy}");
+});

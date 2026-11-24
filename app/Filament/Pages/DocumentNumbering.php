@@ -11,6 +11,7 @@ use App\Services\SequenceService;
 use App\Services\SettingsService;
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -129,10 +130,20 @@ class DocumentNumbering extends Page
                 ->color(fn () => $approval->problem() === null ? 'gray' : 'warning')
                 ->visible(fn () => ! $approval->seriesEstablished())
                 ->requiresConfirmation()
+                // The number shown is frozen into the form when the window opens and sent back on
+                // confirmation: approve() refuses it if the numbering changed meanwhile (#32 review).
+                ->fillForm(fn () => ['number' => $approval->nextInvoiceNumber()])
+                ->schema([Hidden::make('number')])
                 ->modalDescription(fn () => __('settings.numbering.approve_confirm', ['number' => $approval->nextInvoiceNumber()]))
-                ->action(function () use ($approval) {
+                ->action(function (array $data) use ($approval) {
                     abort_unless(static::canAccess(), 403);
-                    $number = $approval->approve(auth()->user());
+                    try {
+                        $number = $approval->approve(auth()->user(), (string) ($data['number'] ?? ''));
+                    } catch (BusinessRuleException $e) {
+                        Notification::make()->danger()->title($e->getMessage())->send();
+
+                        return;
+                    }
                     Notification::make()->success()->title(__('settings.numbering.approved', ['number' => $number]))->send();
                 }),
         ];

@@ -7,6 +7,7 @@ use App\Enums\SaleKind;
 use App\Exceptions\BusinessRuleException;
 use App\Models\Sale;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 /**
  * #20 (D-58): the owner approves the exact number the FIRST invoice will carry (format, prefix,
@@ -52,14 +53,26 @@ class InvoiceNumberingApproval
         }
     }
 
-    public function approve(?User $by): string
+    /**
+     * $shown: the number displayed to the approver. If the format or next number changed since
+     * (another manager, another tab), nothing is approved: the approver must re-read it. The
+     * invoice counter row is locked meanwhile, so a concurrent next-number change waits.
+     */
+    public function approve(?User $by, ?string $shown = null): string
     {
-        $number = $this->nextInvoiceNumber();
-        $this->settings->set(self::SETTING, $number, $by);
-        activity('settings')->causedBy($by)->event('invoice_numbering_approved')
-            ->withProperties(['first_invoice_number' => $number])
-            ->log('invoice_numbering_approved');
+        return DB::transaction(function () use ($by, $shown) {
+            $key = DocumentType::Invoice->sequenceKey((int) now()->format('Y'));
+            DB::table('sequences')->where('key', $key)->lockForUpdate()->value('last_value');
+            $number = $this->nextInvoiceNumber();
+            if ($shown !== null && $shown !== $number) {
+                throw BusinessRuleException::make('settings.numbering.errors.approval_stale', ['shown' => $shown, 'current' => $number]);
+            }
+            $this->settings->set(self::SETTING, $number, $by);
+            activity('settings')->causedBy($by)->event('invoice_numbering_approved')
+                ->withProperties(['first_invoice_number' => $number])
+                ->log('invoice_numbering_approved');
 
-        return $number;
+            return $number;
+        });
     }
 }
