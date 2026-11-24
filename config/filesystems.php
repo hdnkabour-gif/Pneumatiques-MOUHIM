@@ -48,6 +48,8 @@ return [
         // Backed up and restored next to storage/app/public (config/backup.php, RestoreDatabaseBackupAction).
         'documents' => [
             'driver' => 'local',
+            // #29: fixed path, the one config/backup.php includes and the restore puts back
+            // (no override: a different root would silently fall out of the backups).
             'root' => storage_path('app/documents'),
             'visibility' => 'private',
             'serve' => false,
