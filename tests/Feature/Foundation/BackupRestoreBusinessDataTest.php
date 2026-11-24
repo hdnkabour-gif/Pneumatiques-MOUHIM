@@ -11,6 +11,7 @@ use App\Enums\RoleName;
 use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Sale;
+use App\Services\InvoiceNumberingApproval;
 use App\Services\Stock\StockService;
 use App\Services\Stock\StockVerifier;
 use Database\Seeders\DatabaseSeeder;
@@ -96,6 +97,7 @@ function databaseFingerprint(string $connection): array
 it('backs up and restores a three-site business day figure for figure', function () {
     useConnection('business_source');
     test()->seed(DatabaseSeeder::class);
+    app(InvoiceNumberingApproval::class)->approve(null);   // #20: a fresh install needs the owner approval
 
     $owner = owner();
     $storekeeper = userWithRole(RoleName::Storekeeper, 'DEP');

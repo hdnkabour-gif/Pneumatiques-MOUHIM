@@ -40,8 +40,16 @@ class SequenceService
     public function nextDocumentNumber(DocumentType $type, ?int $year = null): string
     {
         $year ??= (int) now()->format('Y');
+        $number = $this->format($type, $year, $this->next($type->sequenceKey($year)));
 
-        return $this->format($type, $year, $this->next($type->sequenceKey($year)));
+        // #20: the first invoice only in the owner-approved format and number. Checked after the
+        // increment (counter row locked, so a concurrent first invoice is seen once committed);
+        // callers run inside a transaction, so a refusal consumes no number.
+        if ($type === DocumentType::Invoice) {
+            app(InvoiceNumberingApproval::class)->assertIssuable($number);
+        }
+
+        return $number;
     }
 
     public function format(DocumentType $type, int $year, int $number): string

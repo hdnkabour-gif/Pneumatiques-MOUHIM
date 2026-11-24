@@ -6,6 +6,7 @@ use App\Enums\DocumentType;
 use App\Enums\Permission;
 use App\Exceptions\BusinessRuleException;
 use App\Filament\Support\PageHub;
+use App\Services\InvoiceNumberingApproval;
 use App\Services\SequenceService;
 use App\Services\SettingsService;
 use BackedEnum;
@@ -112,6 +113,29 @@ class DocumentNumbering extends Page
                 ->description(__('settings.numbering.help'))
                 ->schema([...$formatFields, ...$rows]),
         ]);
+    }
+
+    /**
+     * #20: the owner approves the exact number of the first invoice. Visible until the invoice
+     * series exists; the approval goes stale if the format or the next number changes later.
+     */
+    protected function getHeaderActions(): array
+    {
+        $approval = app(InvoiceNumberingApproval::class);
+
+        return [
+            Action::make('approveInvoiceNumbering')
+                ->label(__('settings.numbering.approve'))
+                ->color(fn () => $approval->problem() === null ? 'gray' : 'warning')
+                ->visible(fn () => ! $approval->seriesEstablished())
+                ->requiresConfirmation()
+                ->modalDescription(fn () => __('settings.numbering.approve_confirm', ['number' => $approval->nextInvoiceNumber()]))
+                ->action(function () use ($approval) {
+                    abort_unless(static::canAccess(), 403);
+                    $number = $approval->approve(auth()->user());
+                    Notification::make()->success()->title(__('settings.numbering.approved', ['number' => $number]))->send();
+                }),
+        ];
     }
 
     public function content(Schema $schema): Schema

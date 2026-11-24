@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Services\InvoiceNumberingApproval;
 use App\Services\SettingsService;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -72,6 +73,8 @@ class GoLiveAuditCommand extends Command
         $this->line('Invoice numbering pattern: '.(string) $settings->get('documents.number_pattern'));
         $this->line('Invoice numbering prefix: '.(string) $settings->get('documents.prefix.invoice'));
         $this->line('Invoice padding: '.(int) $settings->get('documents.number_padding'));
+        $numbering = app(InvoiceNumberingApproval::class)->problem();
+        $this->line('Invoice numbering approval: '.($numbering === null ? 'PASS' : 'FAIL — '.$numbering));
         $this->warn('This command is a diagnostic only. It does not certify that existing business records are demonstrations.');
         $this->warn('Do not enter real sales before the owner confirms the next invoice number and the cleanup has passed on a restored copy.');
 
@@ -96,10 +99,11 @@ class GoLiveAuditCommand extends Command
             && ($counts['categories'] ?? 0) > 0 && ($counts['brands'] ?? 0) > 0;
         $pendingJobs = DB::table('jobs')->count();
 
-        if ($nonEmpty || $missing || ! $validBase || $pendingJobs > 0) {
+        if ($nonEmpty || $missing || ! $validBase || $pendingJobs > 0 || $numbering !== null) {
             $this->error('GO_LIVE_NOT_READY: operational data remain, protected references are missing, or the queue is not empty.');
             $this->line('Nonempty or missing business tables: '.implode(', ', $nonEmpty));
             $this->line('Missing protected tables: '.implode(', ', $missing));
+            $this->line('Invoice numbering approved: '.($numbering === null ? 'yes' : 'no'));
             $this->line('Sites: '.($counts['sites'] ?? 'missing').'; active owners: '.$ownerCount.'; queued jobs: '.$pendingJobs);
 
             return self::FAILURE;

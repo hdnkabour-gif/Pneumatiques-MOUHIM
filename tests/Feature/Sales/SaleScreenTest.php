@@ -192,10 +192,11 @@ it('lets the owner continue the paper numbering from the settings page (D-49)', 
         ->set('data.invoice.prefix', 'fa')
         ->set('data.invoice.next', 1251)
         ->call('save')
-        ->assertHasNoErrors();
+        ->assertHasNoErrors()
+        ->callAction('approveInvoiceNumbering');   // #20: approve the first invoice number
 
     expect(app(SequenceService::class)->lastNumber(DocumentType::Invoice, $year))->toBe(1250)
-        ->and(app(SequenceService::class)->nextDocumentNumber(DocumentType::Invoice))->toBe("FA-{$year}-001251");
+        ->and(issueInvoice())->toBe("FA-{$year}-001251");
 
     $this->actingAs($this->seller)->get(DocumentNumbering::getUrl())->assertForbidden();
 });

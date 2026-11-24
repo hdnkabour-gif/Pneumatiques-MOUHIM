@@ -41,6 +41,8 @@ return [
         'documents.legal_mentions' => null,
         'documents.number_pattern' => '{PREFIX}-{YEAR}-{NUMBER}',
         'documents.number_padding' => 6,
+        // #20: exact first invoice number approved by the owner (null = not approved yet).
+        'documents.invoice_numbering_approved' => null,
         // D-49: prefix of each numbered document, editable by the owner.
         'documents.prefix.invoice' => 'FA',
         'documents.prefix.quote' => 'DV',

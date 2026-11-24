@@ -1,5 +1,17 @@
 # Changelog
 
+## [Approbation de la numérotation des factures — #20] – 2026-11-24
+
+### Ajouté
+- La **première facture** d'une installation n'est émise qu'avec le numéro exact approuvé par le propriétaire
+  (format, préfixe, nombre de chiffres, année et prochain numéro = dernière facture papier + 1, D-58).
+  Sans approbation, ou si le format ou le prochain numéro change après l'approbation, la facture est refusée
+  avec un message clair (FR/AR) et aucun numéro n'est consommé. Bouton « Approuver la numérotation des
+  factures » dans Paramètres › Numérotation des documents (droit « paramètres »), tracé dans le journal
+  (`invoice_numbering_approved`, auteur et numéro).
+- Une installation qui a déjà émis des factures n'est pas bloquée (série établie).
+- `app:go-live-audit` affiche `Invoice numbering approval: PASS|FAIL` ; le mode `--strict` échoue sans approbation.
+
 ## [Clôture de caisse sans opération perdue — #17] – 2026-11-20
 
 ### Corrigé
