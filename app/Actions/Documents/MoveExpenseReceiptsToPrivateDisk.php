@@ -17,7 +17,11 @@ use RuntimeException;
  *  - once it is durable, the next boot moves what is left.
  * A missing file is reported, never invented. Product photos stay public.
  *
- * @return array{moved: int, missing: int, skipped: ?string}
+ * A receipt counts as moved only once its public copy is really gone: the public disk does not
+ * throw on a failed delete, so it is checked; a failure is reported (delete_failed), the verified
+ * private copy is kept, and the next run retries.
+ *
+ * @return array{moved: int, missing: int, delete_failed: int, skipped: ?string}
  */
 class MoveExpenseReceiptsToPrivateDisk
 {
@@ -26,12 +30,13 @@ class MoveExpenseReceiptsToPrivateDisk
         if ($problem = app(DocumentStorageGuard::class)->problem()) {
             Log::warning('Expense receipts NOT moved to the private disk: '.$problem);
 
-            return ['moved' => 0, 'missing' => 0, 'skipped' => $problem];
+            return ['moved' => 0, 'missing' => 0, 'delete_failed' => 0, 'skipped' => $problem];
         }
         $public = Storage::disk('public');
         $documents = Storage::disk('documents');
         $moved = 0;
         $missing = 0;
+        $deleteFailed = 0;
 
         foreach (DB::table('expenses')->whereNotNull('photo')->orderBy('id')->pluck('photo') as $path) {
             if (! $public->exists($path)) {
@@ -47,12 +52,18 @@ class MoveExpenseReceiptsToPrivateDisk
                 throw new RuntimeException("Receipt [{$path}] could not be copied to the private disk intact; nothing was deleted.");
             }
             $public->delete($path);
+            if ($public->exists($path)) {
+                $deleteFailed++;
+                Log::error("Receipt [{$path}] copied to the private disk but its PUBLIC copy could not be deleted: it is still reachable.");
+
+                continue;
+            }
             $moved++;
         }
-        if ($moved || $missing) {
-            Log::info('Expense receipts moved to the private documents disk.', ['moved' => $moved, 'missing' => $missing]);
+        if ($moved || $missing || $deleteFailed) {
+            Log::info('Expense receipts secured.', ['moved' => $moved, 'missing' => $missing, 'delete_failed' => $deleteFailed]);
         }
 
-        return ['moved' => $moved, 'missing' => $missing, 'skipped' => null];
+        return ['moved' => $moved, 'missing' => $missing, 'delete_failed' => $deleteFailed, 'skipped' => null];
     }
 }

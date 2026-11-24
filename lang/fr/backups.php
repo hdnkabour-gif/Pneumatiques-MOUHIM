@@ -9,5 +9,6 @@ return [
         'backup:run' => 'sauvegarde quotidienne',
         'backup:clean' => 'nettoyage des anciennes sauvegardes',
         'backup:monitor' => 'contrôle des sauvegardes',
+        'app:secure-receipts' => 'mise à l\'abri des justificatifs de dépenses (justificatif manquant ou copie publique non supprimée)',
     ],
 ];

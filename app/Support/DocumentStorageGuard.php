@@ -24,6 +24,13 @@ class DocumentStorageGuard
             }
         }
 
+        // The backups must cover the documents root, or a "durable" receipt is still unrecoverable.
+        $covered = collect((array) config('backup.backup.source.files.include'))
+            ->contains(fn ($include) => $this->within($root, $this->normalize((string) $include)));
+        if (! $covered) {
+            return "Private documents root [{$root}] is not included in the backups.";
+        }
+
         if ((string) getenv('RAILWAY_ENVIRONMENT_NAME') === '') {
             return null;
         }

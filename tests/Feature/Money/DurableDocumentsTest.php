@@ -5,6 +5,7 @@ use App\Exceptions\BusinessRuleException;
 use App\Services\Money\CashRegister;
 use App\Support\DocumentStorageGuard;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 /*
@@ -84,4 +85,57 @@ it('fails the strict go-live audit while private documents are not durable', fun
     putenv('RAILWAY_VOLUME_MOUNT_PATH='.storage_path('app'));
     Artisan::call('app:go-live-audit');
     expect(Artisan::output())->toContain('Private documents storage: PASS');
+});
+
+/*
+ * #31 review (P1 x3): a receipt counts as secured only when the public copy is really gone;
+ * a missing receipt or a failed public delete makes app:secure-receipts fail and alerts the
+ * owners; a durable documents root that the backups do not cover is refused.
+ */
+function receiptExpense(string $path): void
+{
+    app(CashRegister::class)->addExpense(site('M01'), ['category' => 'other', 'amount_cents' => 500,
+        'description' => 'TEST', 'photo' => $path], userWithRole(RoleName::SiteManager, 'M01'));
+}
+
+it('does not count a receipt as moved while its public copy could not be deleted; fails, alerts, then retries', function () {
+    owner();
+    Storage::fake('documents');
+    $public = Storage::fake('public');
+    $public->put('expenses/stuck.jpg', 'STUCK');
+    receiptExpense('expenses/stuck.jpg');
+    $failing = Mockery::mock($public)->makePartial();
+    $failing->shouldReceive('delete')->andReturn(false);   // the public disk does not throw (throw=false)
+    Storage::set('public', $failing);
+
+    expect(Artisan::call('app:secure-receipts'))->not->toBe(0)
+        ->and(Artisan::output())->toContain('SECURE_RECEIPTS status=FAIL')->toContain('delete_failed=1')
+        ->and($public->get('expenses/stuck.jpg'))->toBe('STUCK')                 // still there, reported
+        ->and(Storage::disk('documents')->get('expenses/stuck.jpg'))->toBe('STUCK') // verified private copy kept
+        ->and(DB::table('notifications')->count())->toBeGreaterThan(0);
+
+    Storage::set('public', $public);                                              // deletion works again: retry heals
+    expect(Artisan::call('app:secure-receipts'))->toBe(0)
+        ->and(Artisan::output())->toContain('SECURE_RECEIPTS status=OK')
+        ->and($public->exists('expenses/stuck.jpg'))->toBeFalse();
+});
+
+it('fails and alerts the owners when a receipt is missing from both disks', function () {
+    owner();
+    Storage::fake('public');
+    Storage::fake('documents');
+    receiptExpense('expenses/vanished.jpg');
+
+    expect(Artisan::call('app:secure-receipts'))->not->toBe(0)
+        ->and(Artisan::output())->toContain('SECURE_RECEIPTS status=FAIL')->toContain('missing=1')
+        ->and(DB::table('notifications')->count())->toBeGreaterThan(0);
+});
+
+it('refuses a durable documents root that the backups do not include', function () {
+    onRailway(storage_path('app'));
+    config(['filesystems.disks.documents.root' => storage_path('app/private_docs')]);
+    expect(app(DocumentStorageGuard::class)->problem())->toContain('not included in the backups');
+
+    config(['backup.backup.source.files.include' => [storage_path('app/public'), storage_path('app/private_docs')]]);
+    expect(app(DocumentStorageGuard::class)->problem())->toBeNull();
 });
