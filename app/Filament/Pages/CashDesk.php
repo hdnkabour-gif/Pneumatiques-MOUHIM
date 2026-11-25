@@ -10,6 +10,7 @@ use App\Models\Expense;
 use App\Models\Site;
 use App\Services\Money\CashRegister;
 use App\Support\Decimal;
+use App\Support\DocumentStorageGuard;
 use App\Support\Money;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -118,7 +119,8 @@ class CashDesk extends Page
                     Select::make('category')->label(__('cash.category'))->required()->default('other')
                         ->options(collect(self::CATEGORIES)->mapWithKeys(fn ($c) => [$c => __('cash.categories.'.$c)])->all()),
                     TextInput::make('description')->label(__('cash.description'))->required()->maxLength(255),
-                    FileUpload::make('photo')->label(__('cash.photo'))->image()->disk('documents')->visibility('private')->directory('expenses')->maxSize(5120),
+                    FileUpload::make('photo')->label(__('cash.photo'))->image()->disk('documents')->visibility('private')->directory('expenses')->maxSize(5120)
+                        ->visible(fn () => app(DocumentStorageGuard::class)->problem() === null),   // #29: only on durable storage
                     Toggle::make('paid_in_cash')->label(__('cash.paid_in_cash'))->default(true),
                 ])
                 ->action(fn (array $data) => $run(fn () => app(CashRegister::class)->addExpense($this->site(), $data, auth()->user()), __('cash.saved'))),

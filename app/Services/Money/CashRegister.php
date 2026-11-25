@@ -15,6 +15,7 @@ use App\Models\Sale;
 use App\Models\Site;
 use App\Models\User;
 use App\Services\SettingsService;
+use App\Support\DocumentStorageGuard;
 use App\Support\Money;
 use Carbon\CarbonImmutable;
 use Filament\Notifications\Notification;
@@ -120,6 +121,10 @@ class CashRegister
         $this->authorize($user, $site, Permission::ExpensesCreate);
         if ((int) $data['amount_cents'] <= 0 || trim((string) $data['description']) === '') {
             throw BusinessRuleException::make('cash.errors.expense');
+        }
+        // #29: a receipt is only accepted on persistent, private storage (fail closed).
+        if (! empty($data['photo']) && app(DocumentStorageGuard::class)->problem() !== null) {
+            throw BusinessRuleException::make('cash.errors.documents_not_durable');
         }
 
         // #17: the open-day check, the expense and its audit entry are ONE transaction: either

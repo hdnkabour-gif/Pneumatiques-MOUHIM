@@ -22,6 +22,11 @@ case "$1" in
         # served as /storage through public/storage. The link is not in the image: create it at
         # every start (--force only replaces an existing symbolic link, never a real folder).
         php artisan storage:link --force || echo "storage:link failed: uploaded images will not be displayed"
+        # #29: expense receipts leave the public volume only once private storage is durable;
+        # until then they stay where they are (never lost). Idempotent, so it heals on a later boot.
+        # #31 review: fail closed. While any receipt is still reachable on the public disk the
+        # server does NOT open (set -e); the original file is kept until a verified private copy exists.
+        php artisan app:secure-receipts --boot
         # Scheduled tasks (daily backup…) run inside the web container unless a
         # dedicated "scheduler" service is used (RUN_SCHEDULER=false on web then).
         if [ "${RUN_SCHEDULER:-true}" = "true" ]; then
