@@ -184,3 +184,35 @@ it('refuses to boot when a public copy could not be deleted, and boots once the 
     expect(Artisan::call('app:secure-receipts', ['--boot' => true]))->toBe(0)
         ->and(Artisan::output())->toContain('status=OK')->toContain('exposed=0')->toContain('safe=yes');
 });
+
+/*
+ * #31 review (P1, 8c04924): an old receipt left in the public "expenses/" folder WITHOUT an expense
+ * row (the old cash desk stored the upload before the expense could be refused) must also block a
+ * "safe" boot, and be preserved: moved to the private disk intact once storage is durable.
+ */
+it('refuses to boot while an unreferenced receipt file is in the public expenses folder; keeps the original', function () {
+    Storage::fake('public');
+    Storage::fake('documents');
+    Storage::disk('public')->put('expenses/orphan.jpg', 'ORPHAN');
+    Storage::disk('public')->put('logo/brand.png', 'LOGO');   // other public files are not receipts
+    onRailway('/nonexistent-volume');
+
+    expect(Artisan::call('app:secure-receipts', ['--boot' => true]))->toBe(1)
+        ->and(Artisan::output())->toContain('exposed=1')->toContain('unreferenced=1')->toContain('safe=no')
+        ->and(Storage::disk('public')->get('expenses/orphan.jpg'))->toBe('ORPHAN');
+});
+
+it('moves an unreferenced receipt to the private disk intact once storage is durable, then boots', function () {
+    Storage::fake('public');
+    Storage::fake('documents');
+    Storage::disk('public')->put('expenses/orphan.jpg', 'ORPHAN');
+    Storage::disk('public')->put('logo/brand.png', 'LOGO');
+    onRailway(storage_path('app'));
+    config(['filesystems.disks.documents.root' => storage_path('app/documents')]);
+
+    expect(Artisan::call('app:secure-receipts', ['--boot' => true]))->toBe(0)
+        ->and(Artisan::output())->toContain('exposed=0')->toContain('unreferenced=1')->toContain('safe=yes')
+        ->and(Storage::disk('documents')->get('expenses/orphan.jpg'))->toBe('ORPHAN')
+        ->and(Storage::disk('public')->exists('expenses/orphan.jpg'))->toBeFalse()
+        ->and(Storage::disk('public')->get('logo/brand.png'))->toBe('LOGO');
+});
