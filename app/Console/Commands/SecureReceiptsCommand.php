@@ -7,7 +7,6 @@ use App\Services\Backups\BackupAlerts;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 #[Signature('app:secure-receipts {--boot : Exit non-zero only when a receipt is still reachable on the public disk (the entrypoint then refuses to open the server)}')]
@@ -16,7 +15,7 @@ class SecureReceiptsCommand extends Command
 {
     /**
      * Machine-readable last line:
-     * SECURE_RECEIPTS status=OK|FAIL|SKIPPED moved= missing= delete_failed= exposed= safe=yes|no
+     * SECURE_RECEIPTS status=OK|FAIL|SKIPPED moved= missing= delete_failed= unreferenced= exposed= safe=yes|no
      * exposed = receipts still on the public (served) disk after this run; safe = exposed is 0.
      * Default: non-zero exit for FAIL and SKIPPED (a release gate); FAIL also alerts the owners.
      * --boot (#31 review): non-zero exit only when not safe, so the server never opens while an
@@ -34,11 +33,13 @@ class SecureReceiptsCommand extends Command
             $alerts->taskFailed('app:secure-receipts');
         }
         $public = Storage::disk('public');
-        $exposed = DB::table('expenses')->whereNotNull('photo')->pluck('photo')->filter(fn ($path) => $public->exists($path))->count();
+        // Referenced receipts AND any file left in the public receipts folder without an expense row.
+        $c = MoveExpenseReceiptsToPrivateDisk::candidates();
+        $exposed = collect([...$c['referenced'], ...$c['unreferenced']])->unique()->filter(fn ($path) => $public->exists($path))->count();
         if ($exposed > 0) {
             $this->error("{$exposed} receipt(s) still on the public disk: do not open the server until they are secured.");
         }
-        $this->line("SECURE_RECEIPTS status={$status} moved={$r['moved']} missing={$r['missing']} delete_failed={$r['delete_failed']} exposed={$exposed} safe=".($exposed === 0 ? 'yes' : 'no'));
+        $this->line("SECURE_RECEIPTS status={$status} moved={$r['moved']} missing={$r['missing']} delete_failed={$r['delete_failed']} unreferenced={$r['unreferenced']} exposed={$exposed} safe=".($exposed === 0 ? 'yes' : 'no'));
 
         if ($this->option('boot')) {
             return $exposed === 0 ? self::SUCCESS : self::FAILURE;

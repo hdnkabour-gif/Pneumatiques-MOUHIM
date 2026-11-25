@@ -21,16 +21,32 @@ use RuntimeException;
  * throw on a failed delete, so it is checked; a failure is reported (delete_failed), the verified
  * private copy is kept, and the next run retries.
  *
- * @return array{moved: int, missing: int, delete_failed: int, skipped: ?string}
+ * Files in the public receipts folder WITHOUT an expense row (the old cash desk stored the upload
+ * before the expense could be refused) are receipts too: they are preserved the same way (verified
+ * private copy, then public copy removed) and counted as "unreferenced", never deleted unverified.
+ *
+ * @return array{moved: int, missing: int, delete_failed: int, unreferenced: int, skipped: ?string}
  */
 class MoveExpenseReceiptsToPrivateDisk
 {
+    /** Folder the cash desk has always used for receipts (CashDesk FileUpload ->directory()). */
+    public const RECEIPTS_FOLDER = 'expenses';
+
+    /** Every receipt that can be on the public disk: referenced paths plus any file in the receipts folder. */
+    public static function candidates(): array
+    {
+        $referenced = DB::table('expenses')->whereNotNull('photo')->orderBy('id')->pluck('photo')->all();
+        $inFolder = Storage::disk('public')->allFiles(self::RECEIPTS_FOLDER);
+
+        return ['referenced' => $referenced, 'unreferenced' => array_values(array_diff($inFolder, $referenced))];
+    }
+
     public function __invoke(): array
     {
         if ($problem = app(DocumentStorageGuard::class)->problem()) {
             Log::warning('Expense receipts NOT moved to the private disk: '.$problem);
 
-            return ['moved' => 0, 'missing' => 0, 'delete_failed' => 0, 'skipped' => $problem];
+            return ['moved' => 0, 'missing' => 0, 'delete_failed' => 0, 'unreferenced' => count(self::candidates()['unreferenced']), 'skipped' => $problem];
         }
         $public = Storage::disk('public');
         $documents = Storage::disk('documents');
@@ -38,9 +54,11 @@ class MoveExpenseReceiptsToPrivateDisk
         $missing = 0;
         $deleteFailed = 0;
 
-        foreach (DB::table('expenses')->whereNotNull('photo')->orderBy('id')->pluck('photo') as $path) {
+        $candidates = self::candidates();
+        $unreferenced = array_flip($candidates['unreferenced']);
+        foreach ([...$candidates['referenced'], ...$candidates['unreferenced']] as $path) {
             if (! $public->exists($path)) {
-                $documents->exists($path) || $missing++;
+                isset($unreferenced[$path]) || $documents->exists($path) || $missing++;
 
                 continue;
             }
@@ -61,9 +79,9 @@ class MoveExpenseReceiptsToPrivateDisk
             $moved++;
         }
         if ($moved || $missing || $deleteFailed) {
-            Log::info('Expense receipts secured.', ['moved' => $moved, 'missing' => $missing, 'delete_failed' => $deleteFailed]);
+            Log::info('Expense receipts secured.', ['moved' => $moved, 'missing' => $missing, 'delete_failed' => $deleteFailed, 'unreferenced' => count($unreferenced)]);
         }
 
-        return ['moved' => $moved, 'missing' => $missing, 'delete_failed' => $deleteFailed, 'skipped' => null];
+        return ['moved' => $moved, 'missing' => $missing, 'delete_failed' => $deleteFailed, 'unreferenced' => count($unreferenced), 'skipped' => null];
     }
 }
