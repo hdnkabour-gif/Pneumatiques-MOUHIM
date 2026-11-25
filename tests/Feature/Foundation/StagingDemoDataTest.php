@@ -35,7 +35,9 @@ function railwayEnvironment(?string $project, ?string $environment): void
 beforeEach(function () {
     Storage::fake('public');
     Storage::fake('documents');
+    putenv('RAILWAY_VOLUME_MOUNT_PATH='.storage_path());   // the staging service has a persistent volume (#29)
 });
+afterEach(fn () => putenv('RAILWAY_VOLUME_MOUNT_PATH'));
 
 afterEach(function () {
     railwayEnvironment(null, null);

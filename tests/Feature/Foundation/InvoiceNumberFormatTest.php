@@ -2,6 +2,7 @@
 
 use App\Enums\DocumentType;
 use App\Filament\Pages\DocumentNumbering;
+use App\Services\InvoiceNumberingApproval;
 use App\Services\SequenceService;
 use App\Services\SettingsService;
 use Livewire\Livewire;
@@ -14,10 +15,11 @@ it('numbers invoices "219/26" without letters while other documents keep theirs'
     ]);
     $seq = app(SequenceService::class);
     $seq->setNextNumber(DocumentType::Invoice, (int) now()->year, 219);
+    app(InvoiceNumberingApproval::class)->approve(null);   // #20
     $yy = now()->format('y');
 
-    expect($seq->nextDocumentNumber(DocumentType::Invoice))->toBe("219/{$yy}")
-        ->and($seq->nextDocumentNumber(DocumentType::Invoice))->toBe("220/{$yy}")
+    expect(issueInvoice())->toBe("219/{$yy}")
+        ->and(issueInvoice())->toBe("220/{$yy}")
         ->and($seq->nextDocumentNumber(DocumentType::Quote))->toBe("DV1/{$yy}");
 });
 
@@ -47,7 +49,7 @@ it('updates the future numbering format without renumbering invoices already iss
     $this->actingAs(owner());
     $sequence = app(SequenceService::class);
     $year = (int) now()->year;
-    $oldNumber = $sequence->nextDocumentNumber(DocumentType::Invoice);
+    $oldNumber = issueInvoice();
 
     Livewire::test(DocumentNumbering::class)
         ->set('data.number_pattern', '{PREFIX}{NUMBER}/{YY}')
@@ -61,7 +63,7 @@ it('updates the future numbering format without renumbering invoices already iss
     expect($oldNumber)->toBe('FA-'.$year.'-000001')
         ->and(app(SettingsService::class)->get('documents.number_pattern'))->toBe('{PREFIX}{NUMBER}/{YY}')
         ->and(app(SettingsService::class)->get('documents.number_padding'))->toBe(1)
-        ->and($sequence->nextDocumentNumber(DocumentType::Invoice))->toBe('219/'.now()->format('y'))
+        ->and(issueInvoice())->toBe('219/'.now()->format('y'))
         ->and($sequence->nextDocumentNumber(DocumentType::Quote))->toBe('DV1/'.now()->format('y'));
 });
 

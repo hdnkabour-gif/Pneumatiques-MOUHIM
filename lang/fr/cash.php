@@ -26,6 +26,7 @@ return [
     'categories' => ['supplies' => 'Fournitures', 'transport' => 'Transport', 'food' => 'Repas', 'repairs' => 'Réparation', 'utilities' => 'Eau / électricité / téléphone', 'salary_advance' => 'Avance sur salaire', 'other' => 'Autre'],
     'errors' => [
         'closed' => 'La caisse du jour est clôturée : demandez au propriétaire de la rouvrir.',
+        'documents_not_durable' => 'Le stockage des justificatifs n\'est pas encore sécurisé : la dépense peut être enregistrée sans photo. Prévenez le propriétaire.',
         'expense' => 'Indiquez le montant et pour quoi.',
     ],
 ];
