@@ -1,17 +1,25 @@
 <?php
 
+use App\Enums\DocumentType;
 use App\Enums\RoleName;
+use App\Models\Sale;
 use App\Models\Site;
 use App\Models\User;
+use App\Services\InvoiceNumberingApproval;
+use App\Services\SequenceService;
 use Database\Seeders\DatabaseSeeder;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
-    ->beforeEach(fn () => $this->seed(DatabaseSeeder::class))
+    ->beforeEach(function () {
+        $this->seed(DatabaseSeeder::class);
+        app(InvoiceNumberingApproval::class)->approve(null);   // #20: tests start from an approved numbering
+    })
     ->in('Feature');
 
 pest()->extend(TestCase::class)->in('Unit');
@@ -22,7 +30,10 @@ pest()->extend(TestCase::class)->in('Unit');
 // rebuilt instead (migrate:fresh before each test, rollback after).
 pest()->extend(TestCase::class)
     ->use(DatabaseMigrations::class)
-    ->beforeEach(fn () => $this->seed(DatabaseSeeder::class))
+    ->beforeEach(function () {
+        $this->seed(DatabaseSeeder::class);
+        app(InvoiceNumberingApproval::class)->approve(null);   // #20: tests start from an approved numbering
+    })
     ->in('Concurrency');
 
 function site(string $code): Site
@@ -45,4 +56,13 @@ function owner(): User
     $owner->forceFill(['app_authentication_secret' => app(AppAuthentication::class)->generateSecret()])->save();
 
     return $owner;
+}
+
+/** #20: issue an invoice the way the sale actions do (number taken and stored in one transaction). */
+function issueInvoice(): string
+{
+    return DB::transaction(fn () => Sale::query()->forceCreate([
+        'site_id' => site('M01')->id, 'kind' => 'invoice', 'status' => 'confirmed',
+        'number' => app(SequenceService::class)->nextDocumentNumber(DocumentType::Invoice),
+    ]))->number;
 }

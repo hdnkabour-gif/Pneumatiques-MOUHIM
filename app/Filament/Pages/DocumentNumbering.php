@@ -6,6 +6,7 @@ use App\Enums\DocumentType;
 use App\Enums\Permission;
 use App\Exceptions\BusinessRuleException;
 use App\Filament\Support\PageHub;
+use App\Services\InvoiceNumberingApproval;
 use App\Services\SequenceService;
 use App\Services\SettingsService;
 use BackedEnum;
@@ -112,6 +113,41 @@ class DocumentNumbering extends Page
                 ->description(__('settings.numbering.help'))
                 ->schema([...$formatFields, ...$rows]),
         ]);
+    }
+
+    /**
+     * #20: the owner approves the exact number of the first invoice. Visible until the invoice
+     * series exists; the approval goes stale if the format or the next number changes later.
+     */
+    protected function getHeaderActions(): array
+    {
+        $approval = app(InvoiceNumberingApproval::class);
+
+        return [
+            Action::make('approveInvoiceNumbering')
+                ->label(__('settings.numbering.approve'))
+                ->color(fn () => $approval->problem() === null ? 'gray' : 'warning')
+                ->visible(fn () => ! $approval->seriesEstablished())
+                ->requiresConfirmation()
+                // The number shown is frozen into the form when the window opens and sent back on
+                // confirmation: approve() refuses it if the numbering changed meanwhile (#32 review).
+                // The window DISPLAYS exactly this captured value (read-only field) and submits it; the
+                // description never recomputes a number, so what is approved and audited is what was seen.
+                ->fillForm(fn () => ['number' => $approval->nextInvoiceNumber()])
+                ->schema([TextInput::make('number')->label(__('settings.numbering.first_invoice'))->readOnly()])
+                ->modalDescription(__('settings.numbering.approve_confirm'))
+                ->action(function (array $data) use ($approval) {
+                    abort_unless(static::canAccess(), 403);
+                    try {
+                        $number = $approval->approve(auth()->user(), (string) ($data['number'] ?? ''));
+                    } catch (BusinessRuleException $e) {
+                        Notification::make()->danger()->title($e->getMessage())->send();
+
+                        return;
+                    }
+                    Notification::make()->success()->title(__('settings.numbering.approved', ['number' => $number]))->send();
+                }),
+        ];
     }
 
     public function content(Schema $schema): Schema

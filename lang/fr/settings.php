@@ -48,6 +48,16 @@ return [
         'preview' => 'Exemple',
         'year' => 'Année :year',
         'duplicate_prefix' => 'Deux documents ne peuvent pas avoir le même préfixe (un seul peut être vide).',
+        'approve' => 'Approuver la numérotation des factures',
+        'approve_confirm' => 'La première facture portera le numéro affiché ci-dessous. Ce numéro doit suivre la dernière facture papier. Confirmer ?',
+        'first_invoice' => 'Premier numéro de facture',
+        'approved' => 'Numérotation approuvée : première facture « :number ».',
+        'approval_status' => 'Première facture approuvée : :number',
+        'approval_missing' => 'Numérotation des factures non approuvée : aucune facture ne peut être émise.',
+        'errors' => [
+            'invoice_not_approved' => 'Première facture bloquée : le numéro « :number » n\'a pas été approuvé. Le propriétaire doit vérifier le format et le prochain numéro (dernière facture papier + 1) dans Paramètres › Numérotation des documents, puis cliquer sur « Approuver la numérotation des factures ».',
+            'approval_stale' => 'Numérotation modifiée entre-temps : vous avez confirmé « :shown » mais le prochain numéro est maintenant « :current ». Rien n\'a été approuvé : rouvrez la fenêtre et vérifiez le nouveau numéro.',
+        ],
     ],
     'errors' => [
         'number_backwards' => 'Impossible : le numéro :last a déjà été utilisé pour « :type ». Le prochain numéro doit être supérieur.',

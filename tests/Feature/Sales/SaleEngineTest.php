@@ -25,6 +25,7 @@ use App\Models\StockLevel;
 use App\Models\StockMovement;
 use App\Models\UsedTyre;
 use App\Services\Approvals\ApprovalService;
+use App\Services\InvoiceNumberingApproval;
 use App\Services\SequenceService;
 use App\Services\SettingsService;
 use App\Services\Stock\LotInput;
@@ -273,6 +274,7 @@ it('refuses sales to users without the permission or outside their sites', funct
 it('continues the numbering of the last real invoice and never goes back (D-49)', function () {
     $seq = app(SequenceService::class);
     $seq->setNextNumber(DocumentType::Invoice, now()->year, 1251);
+    app(InvoiceNumberingApproval::class)->approve(null);   // #20: the owner approves before the first invoice
 
     $sale = ($this->confirm)(($this->draft)([['product_id' => $this->tyre->id, 'quantity' => 1]]));
     expect($sale->number)->toBe('FA-'.now()->year.'-001251');
@@ -283,6 +285,7 @@ it('continues the numbering of the last real invoice and never goes back (D-49)'
 
 it('uses the owner prefix for new numbers', function () {
     app(SettingsService::class)->set('documents.prefix.invoice', 'F');
+    app(InvoiceNumberingApproval::class)->approve(null);
     $sale = ($this->confirm)(($this->draft)([['product_id' => $this->tyre->id, 'quantity' => 1]]));
 
     expect($sale->number)->toBe('F-'.now()->year.'-000001');
