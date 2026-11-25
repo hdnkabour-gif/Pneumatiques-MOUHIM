@@ -11,7 +11,6 @@ use App\Services\SequenceService;
 use App\Services\SettingsService;
 use BackedEnum;
 use Filament\Actions\Action;
-use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -132,9 +131,11 @@ class DocumentNumbering extends Page
                 ->requiresConfirmation()
                 // The number shown is frozen into the form when the window opens and sent back on
                 // confirmation: approve() refuses it if the numbering changed meanwhile (#32 review).
+                // The window DISPLAYS exactly this captured value (read-only field) and submits it; the
+                // description never recomputes a number, so what is approved and audited is what was seen.
                 ->fillForm(fn () => ['number' => $approval->nextInvoiceNumber()])
-                ->schema([Hidden::make('number')])
-                ->modalDescription(fn () => __('settings.numbering.approve_confirm', ['number' => $approval->nextInvoiceNumber()]))
+                ->schema([TextInput::make('number')->label(__('settings.numbering.first_invoice'))->readOnly()])
+                ->modalDescription(__('settings.numbering.approve_confirm'))
                 ->action(function (array $data) use ($approval) {
                     abort_unless(static::canAccess(), 403);
                     try {

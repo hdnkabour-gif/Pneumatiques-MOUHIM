@@ -122,3 +122,25 @@ it('refuses a confirmation made on a number that changed meanwhile, then approve
     Livewire::actingAs($owner)->test(DocumentNumbering::class)->callAction('approveInvoiceNumbering');   // re-read
     expect(app(SettingsService::class)->get('documents.invoice_numbering_approved'))->toBe("1300/{$yy}");
 });
+
+/*
+ * #32 review (P1, f537313): the number the owner SEES in the window is the very value submitted and
+ * audited. The window shows the captured number in its (read-only) field; nothing recomputes it.
+ */
+it('shows and submits the same captured number: a format change after opening is refused, citing the number shown', function () {
+    d58(1251);
+    $yy = now()->format('y');
+    $audits = Activity::query()->where('event', 'invoice_numbering_approved')->count();
+    $page = Livewire::actingAs(owner())->test(DocumentNumbering::class)->mountAction('approveInvoiceNumbering');
+    $shown = data_get($page->instance()->mountedActions, '0.data.number');
+    expect($shown)->toBe("1251/{$yy}");
+    $page->assertSee("1251/{$yy}");
+
+    app(SettingsService::class)->set('documents.prefix.invoice', 'F');   // another tab changes the prefix
+
+    $page->callMountedAction()
+        ->assertNotified(__('settings.numbering.errors.approval_stale', ['shown' => "1251/{$yy}", 'current' => "F1251/{$yy}"]));
+    expect(app(SettingsService::class)->get('documents.invoice_numbering_approved'))->toBeNull()
+        ->and(Activity::query()->where('event', 'invoice_numbering_approved')->count())->toBe($audits);
+    expect(__('settings.numbering.approve_confirm'))->not->toContain(':number');   // the description never renders its own number
+});
