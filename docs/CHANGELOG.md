@@ -1,5 +1,11 @@
 # Changelog
 
+## [Plan de stockage durable et inventaire des justificatifs — #29] – 2026-11-25
+
+### Ajouté
+- `docs/plan-stockage-durable-documents.md` : topologie cible (volume `/app/storage/app`), deux chemins (nouvel environnement propre recommandé, ou transfert avec retour arrière), restauration hors site isolée et liste go/no-go. **Plan non exécuté.**
+- `php artisan app:receipts-inventory [--json]` : inventaire **en lecture seule** des justificatifs (emplacement, taille, SHA-256, copies identiques), à comparer avant/après un changement de volume ou une restauration. Code de sortie non nul si un justificatif manque ou si deux copies diffèrent.
+
 ## [Clôture de caisse sans opération perdue — #17] – 2026-11-20
 
 ### Corrigé
