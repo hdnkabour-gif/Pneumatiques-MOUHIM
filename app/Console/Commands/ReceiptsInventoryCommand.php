@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Actions\Documents\MoveExpenseReceiptsToPrivateDisk;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -23,10 +24,17 @@ class ReceiptsInventoryCommand extends Command
         $public = Storage::disk('public');
         $documents = Storage::disk('documents');
         $sum = fn ($disk, $path) => $disk->exists($path) ? ['size' => $disk->size($path), 'sha256' => hash('sha256', $disk->get($path))] : null;
-        $counts = ['total' => 0, 'private' => 0, 'public' => 0, 'both' => 0, 'missing' => 0, 'mismatch' => 0];
+        $counts = ['total' => 0, 'private' => 0, 'public' => 0, 'both' => 0, 'missing' => 0, 'mismatch' => 0, 'unreferenced' => 0];
         $rows = [];
 
-        foreach (DB::table('expenses')->whereNotNull('photo')->orderBy('id')->get(['id', 'site_id', 'photo']) as $e) {
+        // Same scope as app:secure-receipts: referenced receipts plus files in the receipts folder
+        // without an expense row (expense_id null).
+        $entries = DB::table('expenses')->whereNotNull('photo')->orderBy('id')->get(['id', 'site_id', 'photo'])->all();
+        foreach (MoveExpenseReceiptsToPrivateDisk::candidates()['unreferenced'] as $path) {
+            $entries[] = (object) ['id' => null, 'site_id' => null, 'photo' => $path];
+            $counts['unreferenced']++;
+        }
+        foreach ($entries as $e) {
             $p = $sum($public, $e->photo);
             $d = $sum($documents, $e->photo);
             $location = $p && $d ? 'both' : ($d ? 'private' : ($p ? 'public' : 'missing'));

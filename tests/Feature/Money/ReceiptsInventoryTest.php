@@ -42,3 +42,15 @@ it('fails when a receipt is missing or two copies differ', function () {
     expect(Artisan::call('app:receipts-inventory'))->toBe(1)
         ->and(Artisan::output())->toContain('total=2')->toContain('missing=1')->toContain('mismatch=1');
 });
+
+it('also lists files in the receipts folder that have no expense row (same scope as app:secure-receipts)', function () {
+    Storage::fake('public');
+    Storage::fake('documents');
+    Storage::disk('public')->put('expenses/orphan.jpg', 'ORPHAN');
+    Storage::disk('public')->put('logo/brand.png', 'LOGO');
+
+    expect(Artisan::call('app:receipts-inventory', ['--json' => true]))->toBe(0);
+    $out = Artisan::output();
+    expect($out)->toContain('"expense_id":null')->toContain('"path":"expenses/orphan.jpg"')->toContain(hash('sha256', 'ORPHAN'))
+        ->toContain('total=1')->toContain('unreferenced=1')->not->toContain('brand.png');
+});
